@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    
+        <script>
+            L_NO_TOUCH = false;
+            L_DISABLE_3D = false;
+        </script>
+    
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.0/css/all.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/python-visualization/folium/folium/templates/leaflet.awesome.rotate.min.css"/>
+    
+            <meta name="viewport" content="width=device-width,
+                initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <style>
+                #map_45551ed1b94ee5426c5f258305036dfb {
+                    position: relative;
+                    width: 100.0%;
+                    height: 100.0%;
+                    left: 0.0%;
+                    top: 0.0%;
+                }
+                .leaflet-container { font-size: 1rem; }
+            </style>
+        
+</head>
+<body>
+    
+    
+            <div class="folium-map" id="map_45551ed1b94ee5426c5f258305036dfb" ></div>
+        
+</body>
+<script>
+    
+    
+            var map_45551ed1b94ee5426c5f258305036dfb = L.map(
+                "map_45551ed1b94ee5426c5f258305036dfb",
+                {
+                    center: [47.3769, 8.5417],
+                    crs: L.CRS.EPSG3857,
+                    zoom: 5,
+                    zoomControl: true,
+                    preferCanvas: false,
+                }
+            );
+
+            
+
+        
+    
+            var tile_layer_ae8d889cf690135fdd5359bff9a20b71 = L.tileLayer(
+                "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+                {"attribution": "Data by \u0026copy; \u003ca target=\"_blank\" href=\"http://openstreetmap.org\"\u003eOpenStreetMap\u003c/a\u003e, under \u003ca target=\"_blank\" href=\"http://www.openstreetmap.org/copyright\"\u003eODbL\u003c/a\u003e.", "detectRetina": false, "maxNativeZoom": 18, "maxZoom": 18, "minZoom": 0, "noWrap": false, "opacity": 1, "subdomains": "abc", "tms": false}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+            var marker_e31bdf68d829b31078dbcabe481b1a05 = L.marker(
+                [41.9028, 12.4964],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_27ec504a2db41e639bdea55a6f3cb2e2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_5e57b823759fef9d91d060c1a18050b7 = $(`<div id="html_5e57b823759fef9d91d060c1a18050b7" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Rome (1일차)</b><br>1. 콜로세움 방문<br>2. <span style='background-color: yellow;'>바티칸 시티 투어</span>     </div>     </div>`)[0];
+                popup_27ec504a2db41e639bdea55a6f3cb2e2.setContent(html_5e57b823759fef9d91d060c1a18050b7);
+            
+        
+
+        marker_e31bdf68d829b31078dbcabe481b1a05.bindPopup(popup_27ec504a2db41e639bdea55a6f3cb2e2)
+        ;
+
+        
+    
+    
+            var marker_5959549b1473840ade59ff5f200847b7 = L.marker(
+                [43.7696, 11.2558],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_ebad9cb8337fe97d00e5ba0c26e6c098 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_3a79e075b65086b6b7c319204b8d4801 = $(`<div id="html_3a79e075b65086b6b7c319204b8d4801" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Florence (2일차)</b><br>1. <span style='background-color: yellow;'>우피치 갤러리 방문</span><br>2. 두오모 구경하기     </div>     </div>`)[0];
+                popup_ebad9cb8337fe97d00e5ba0c26e6c098.setContent(html_3a79e075b65086b6b7c319204b8d4801);
+            
+        
+
+        marker_5959549b1473840ade59ff5f200847b7.bindPopup(popup_ebad9cb8337fe97d00e5ba0c26e6c098)
+        ;
+
+        
+    
+    
+            var marker_ed5fd16ba9f48f90463c8f5a4a750733 = L.marker(
+                [45.4408, 12.3155],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_585e5d335aee52ee39b8dbf1fca1ac23 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_d9f061ed3314f5423dcafa2cd9096127 = $(`<div id="html_d9f061ed3314f5423dcafa2cd9096127" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Venice (3일차)</b><br>1. <span style='background-color: yellow;'>곤돌라 타기</span><br>2. 성 마르코 광장 방문     </div>     </div>`)[0];
+                popup_585e5d335aee52ee39b8dbf1fca1ac23.setContent(html_d9f061ed3314f5423dcafa2cd9096127);
+            
+        
+
+        marker_ed5fd16ba9f48f90463c8f5a4a750733.bindPopup(popup_585e5d335aee52ee39b8dbf1fca1ac23)
+        ;
+
+        
+    
+    
+            var marker_d94089fa80cba62e558fdd2a2f051869 = L.marker(
+                [45.4642, 9.19],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_8872e72a8f7556c5c0fe4064a6bf7479 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_55af98cf93aced6bd3f5198f1ca510a0 = $(`<div id="html_55af98cf93aced6bd3f5198f1ca510a0" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Milan (4일차)</b><br>1. 두오모 구경하기<br>2. <span style='background-color: yellow;'>라 스칼라 오페라하우스 방문</span>     </div>     </div>`)[0];
+                popup_8872e72a8f7556c5c0fe4064a6bf7479.setContent(html_55af98cf93aced6bd3f5198f1ca510a0);
+            
+        
+
+        marker_d94089fa80cba62e558fdd2a2f051869.bindPopup(popup_8872e72a8f7556c5c0fe4064a6bf7479)
+        ;
+
+        
+    
+    
+            var marker_8a0178e3362d5659dbb263566eb19fdd = L.marker(
+                [46.0037, 8.9511],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_dfee25492624e7d05eaacdef220594a7 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_d37b971216d8e5fb7841677f5167c24d = $(`<div id="html_d37b971216d8e5fb7841677f5167c24d" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Lugano (5일차)</b><br>1. 루가노 호수 탐험<br>2. <span style='background-color: yellow;'>몬테 브레 방문</span>     </div>     </div>`)[0];
+                popup_dfee25492624e7d05eaacdef220594a7.setContent(html_d37b971216d8e5fb7841677f5167c24d);
+            
+        
+
+        marker_8a0178e3362d5659dbb263566eb19fdd.bindPopup(popup_dfee25492624e7d05eaacdef220594a7)
+        ;
+
+        
+    
+    
+            var marker_8f4c2382225c712939cc5d9ae7cfd394 = L.marker(
+                [47.3769, 8.5417],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_73a5f571739362743be89c3a18cbf013 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_abc43ac8b7c0af899a957c756665f4e7 = $(`<div id="html_abc43ac8b7c0af899a957c756665f4e7" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Zurich (6일차)</b><br>1. 반호프슈트라세 산책<br>2. <span style='background-color: yellow;'>취리히 호수 구경하기</span>     </div>     </div>`)[0];
+                popup_73a5f571739362743be89c3a18cbf013.setContent(html_abc43ac8b7c0af899a957c756665f4e7);
+            
+        
+
+        marker_8f4c2382225c712939cc5d9ae7cfd394.bindPopup(popup_73a5f571739362743be89c3a18cbf013)
+        ;
+
+        
+    
+    
+            var marker_7a7e36c8c9fc5fdeecd09fff01282ee7 = L.marker(
+                [47.0502, 8.3093],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_4ec60b6e066444c8064c0cf6f432eaa2 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_4bb5a234abf1c9e88dc59ff38c4cb626 = $(`<div id="html_4bb5a234abf1c9e88dc59ff38c4cb626" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Lucerne (7일차)</b><br>1. 채플 브리지 건너기<br>2. <span style='background-color: yellow;'>리기 산 방문</span>     </div>     </div>`)[0];
+                popup_4ec60b6e066444c8064c0cf6f432eaa2.setContent(html_4bb5a234abf1c9e88dc59ff38c4cb626);
+            
+        
+
+        marker_7a7e36c8c9fc5fdeecd09fff01282ee7.bindPopup(popup_4ec60b6e066444c8064c0cf6f432eaa2)
+        ;
+
+        
+    
+    
+            var marker_b94a36b578abca9477d4ed2ece3c31a2 = L.marker(
+                [46.6863, 7.8632],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_0147b0772b8ab19270bf14c57f1af947 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_828affa0f827e500ba4d752ee98f5600 = $(`<div id="html_828affa0f827e500ba4d752ee98f5600" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Interlaken (8일차)</b><br>1. <span style='background-color: yellow;'>융프라우요흐 방문</span><br>2. <span style='background-color: yellow;'>신라면먹기</span><br>3. 인터라켄 호수 탐험     </div>     </div>`)[0];
+                popup_0147b0772b8ab19270bf14c57f1af947.setContent(html_828affa0f827e500ba4d752ee98f5600);
+            
+        
+
+        marker_b94a36b578abca9477d4ed2ece3c31a2.bindPopup(popup_0147b0772b8ab19270bf14c57f1af947)
+        ;
+
+        
+    
+    
+            var marker_119d66c3f996650fbac44d5954f718c7 = L.marker(
+                [48.1351, 11.582],
+                {}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+        var popup_672e9bbbd11865e7a603311654e80796 = L.popup({"maxWidth": 300});
+
+        
+            
+                var html_4acd4fa569bbc97a3fcf946696c94a5f = $(`<div id="html_4acd4fa569bbc97a3fcf946696c94a5f" style="width: 100.0%; height: 100.0%;">     <div style="width:300px;">         <b>Munich (9일차)</b><br>1. 마리엔플라츠 방문<br>2. <span style='background-color: yellow;'>님펜부르크 궁전 구경하기</span>     </div>     </div>`)[0];
+                popup_672e9bbbd11865e7a603311654e80796.setContent(html_4acd4fa569bbc97a3fcf946696c94a5f);
+            
+        
+
+        marker_119d66c3f996650fbac44d5954f718c7.bindPopup(popup_672e9bbbd11865e7a603311654e80796)
+        ;
+
+        
+    
+    
+            var poly_line_339691c7630c1840482d6f58caf688a2 = L.polyline(
+                [[41.9028, 12.4964], [43.7696, 11.2558]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+            var poly_line_493d3503dcf27cd107ea08cbd75e4c64 = L.polyline(
+                [[43.7696, 11.2558], [45.4408, 12.3155]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+            var poly_line_aff9d174da03466054e39457004e57ad = L.polyline(
+                [[45.4408, 12.3155], [45.4642, 9.19]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+            var poly_line_8902f5ba95245e8decfa45af44ec440a = L.polyline(
+                [[45.4642, 9.19], [46.0037, 8.9511]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+            var poly_line_77a9d2fab881cea75eab85df9d7d6606 = L.polyline(
+                [[46.0037, 8.9511], [47.3769, 8.5417]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+            var poly_line_904ab94d27830ddcf48b65ba22e7c652 = L.polyline(
+                [[47.3769, 8.5417], [47.0502, 8.3093]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+            var poly_line_fc880b824131f95c193559c4312f1054 = L.polyline(
+                [[47.0502, 8.3093], [46.6863, 7.8632]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+    
+            var poly_line_3645292ca889dbb252ebed089be42cd2 = L.polyline(
+                [[46.6863, 7.8632], [48.1351, 11.582]],
+                {"bubblingMouseEvents": true, "color": "blue", "dashArray": null, "dashOffset": null, "fill": false, "fillColor": "blue", "fillOpacity": 0.2, "fillRule": "evenodd", "lineCap": "round", "lineJoin": "round", "noClip": false, "opacity": 1, "smoothFactor": 1.0, "stroke": true, "weight": 2.5}
+            ).addTo(map_45551ed1b94ee5426c5f258305036dfb);
+        
+</script>
+</html>
