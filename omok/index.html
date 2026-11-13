@@ -1,0 +1,2580 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>렌주 오목 대국</title>
+<meta name="description" content="링크를 받은 친구와 실시간으로 두는 렌주룰 오목. 한 수마다 제한시간이 새로 시작돼요.">
+<meta property="og:title" content="렌주 오목 한 판 둘까요?">
+<meta property="og:description" content="링크를 열면 바로 대국방으로 들어와요. 15×15 렌주룰, 한 수 제한시간.">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#E2B26A">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23E2B26A'/%3E%3Ccircle cx='24' cy='26' r='13' fill='%23151515'/%3E%3Ccircle cx='41' cy='39' r='13' fill='%23f4f3ee'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Song+Myung&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Layout: the kaya-wood board is the hero; each clock is a string of six beads
+     (連珠, "linked pearls"), one bead per 10 s, capped at 60 s. Side rail on wide screens. */
+  --paper: #E2E7E1;
+  --surface: #F4F6F2;
+  --ink: #16201A;
+  --ink-2: #55645B;
+  --line: #C3CEC6;
+  --jade: #2D7860;
+  --alarm: #C23A25;
+  --font-display: "Song Myung", "Nanum Myeongjo", "AppleMyungjo", "Batang", serif;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --wood-ink: rgba(58, 34, 10, .82);
+  --shadow: 0 22px 44px -26px rgba(20, 32, 26, .55);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #111714;
+    --surface: #1A231F;
+    --ink: #E5ECE7;
+    --ink-2: #98A99F;
+    --line: #2D3A34;
+    --jade: #5CBC99;
+    --alarm: #FF7B5E;
+    --shadow: 0 22px 44px -24px rgba(0, 0, 0, .8);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #111714;
+  --surface: #1A231F;
+  --ink: #E5ECE7;
+  --ink-2: #98A99F;
+  --line: #2D3A34;
+  --jade: #5CBC99;
+  --alarm: #FF7B5E;
+  --shadow: 0 22px 44px -24px rgba(0, 0, 0, .8);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+button, input { font: inherit; color: inherit; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.app { min-height: 100%; display: flex; flex-direction: column; }
+
+/* ---------- header ---------- */
+.top {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 14px clamp(16px, 3vw, 32px) 10px;
+  max-width: 1200px; width: 100%; margin: 0 auto;
+}
+.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.seal {
+  flex: none; display: grid; place-items: center;
+  width: 40px; height: 40px; border-radius: 6px;
+  background: var(--jade); color: var(--surface);
+  font-family: var(--font-display); font-size: 15px; line-height: 1.05;
+  writing-mode: vertical-rl; letter-spacing: .04em;
+}
+.brand h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 27px; line-height: 1.1; letter-spacing: -.01em; }
+.brand p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
+.top-actions { display: flex; gap: 8px; flex: none; }
+.chip {
+  border: 1px solid var(--line); background: transparent; border-radius: 999px;
+  padding: 6px 12px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--ink-2);
+}
+.chip:hover { color: var(--ink); border-color: var(--ink-2); }
+.chip[aria-pressed="false"] { text-decoration: line-through; }
+
+/* ---------- stage layout ---------- */
+.stage {
+  flex: 1; width: 100%; max-width: 1200px; margin: 0 auto;
+  padding: 4px clamp(16px, 3vw, 32px) 28px;
+  display: grid; gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "top" "board" "bot" "status" "actions" "room";
+  align-content: start;
+}
+#pTop { grid-area: top; }
+#pBot { grid-area: bot; }
+.board-wrap { grid-area: board; }
+.status { grid-area: status; }
+.actions { grid-area: actions; }
+.roombox { grid-area: room; }
+
+@media (min-width: 900px) {
+  .stage {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-rows: auto auto auto auto 1fr;
+    grid-template-areas: "board top" "board status" "board bot" "board actions" "board room";
+    column-gap: 28px; row-gap: 12px;
+  }
+}
+
+/* ---------- board ---------- */
+.board-wrap {
+  position: relative; width: 100%;
+  max-width: min(100%, calc(100dvh - 96px));
+  aspect-ratio: 1 / 1; margin: 0 auto; justify-self: center;
+  border-radius: 10px;
+  background:
+    repeating-linear-gradient(93deg, rgba(110, 62, 14, .055) 0 2px, transparent 2px 11px),
+    repeating-linear-gradient(87deg, rgba(255, 236, 190, .09) 0 1px, transparent 1px 17px),
+    radial-gradient(130% 90% at 28% 18%, #F2D193 0%, #E2B26A 55%, #D29D52 100%);
+  box-shadow: inset 0 0 0 1px rgba(90, 52, 12, .25), var(--shadow);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .board-wrap { filter: brightness(.9) saturate(.95); } }
+:root[data-theme="dark"] .board-wrap { filter: brightness(.9) saturate(.95); }
+@media (min-width: 900px) { .board-wrap { max-width: min(100%, calc(100dvh - 92px)); } }
+
+#board { display: block; width: 100%; height: 100%; touch-action: manipulation; cursor: pointer; border-radius: 10px; outline: none; user-select: none; -webkit-user-select: none; }
+#board:focus-visible { box-shadow: 0 0 0 3px var(--jade); }
+#board #gMarks, #board #gStones, #board #gTop { pointer-events: none; }
+#board .frame { fill: none; stroke: var(--wood-ink); stroke-width: 1.6; }
+#board .lines line { stroke: var(--wood-ink); stroke-width: 1; }
+#board .stars circle { fill: var(--wood-ink); }
+#board .coords text { fill: rgba(58, 34, 10, .62); font-family: var(--font-mono); font-size: 12.5px; font-weight: 500; text-anchor: middle; }
+#board .sb { fill: url(#gB); }
+#board .sw { fill: url(#gW); }
+#board .sh { fill: rgba(48, 24, 0, .3); }
+#board .num { font-family: var(--font-mono); font-size: 14px; font-weight: 600; text-anchor: middle; pointer-events: none; }
+#board .num.sb { fill: #F4F1EA; }
+#board .num.sw { fill: #1B1B1B; }
+#board .st.pop { animation: pop .22s cubic-bezier(.2, .9, .3, 1.3); transform-box: fill-box; transform-origin: center; }
+@keyframes pop { from { transform: scale(1.18); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+#board .fb path { stroke: var(--alarm); stroke-width: 2.6; stroke-linecap: round; opacity: .85; }
+#board .lastmk { fill: #E2482F; }
+#board .lastmk.on-w { fill: #D23A22; }
+#board .ghost { opacity: .42; pointer-events: none; }
+#board .ghost.bad { opacity: .25; }
+#board .ghostx path { stroke: var(--alarm); stroke-width: 3.2; stroke-linecap: round; }
+#board .winln { fill: none; stroke: #2D7860; stroke-width: 5; stroke-linecap: round; opacity: .9; }
+#board .winring { fill: none; stroke: #2D7860; stroke-width: 3; }
+#board .hint { fill: none; stroke: #2D7860; stroke-width: 3; animation: breathe 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes breathe { 0%, 100% { opacity: .35; transform: scale(.92); } 50% { opacity: 1; transform: scale(1.08); } }
+#board .kcur { fill: none; stroke: #2D7860; stroke-width: 2.4; stroke-dasharray: 5 4; }
+#board.demo { cursor: default; }
+#board.demo #gStones { opacity: .55; }
+
+/* ---------- overlays on the board ---------- */
+.overlay {
+  position: absolute; inset: 0; z-index: 2;
+  display: grid; place-items: center; padding: 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--paper) 46%, transparent);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+  overflow: auto;
+}
+.overlay.ov-countdown { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; pointer-events: none; }
+.ov-card {
+  width: min(420px, 100%); max-height: 100%; overflow: auto;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 14px;
+  padding: 22px 22px 20px; box-shadow: var(--shadow);
+  display: grid; gap: 12px;
+}
+.ov-card h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.2; text-wrap: balance; }
+.ov-card p { margin: 0; color: var(--ink-2); }
+.ov-card .eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .06em; color: var(--jade); text-transform: uppercase; }
+.ov-card .hint { font-size: 13px; }
+.ov-card label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.field { display: grid; gap: 6px; }
+.field input, .linkbox input {
+  width: 100%; min-width: 0; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--paper); color: var(--ink);
+}
+.field input:focus-visible, .linkbox input:focus-visible { outline: 2px solid var(--jade); outline-offset: 1px; }
+.row { display: flex; gap: 8px; }
+.row > input { flex: 1; }
+.linkbox { display: flex; gap: 8px; align-items: stretch; }
+.linkbox .btn { flex: none; white-space: nowrap; }
+.linkbox input { font-family: var(--font-mono); font-size: 13px; }
+.code-big { font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+.code-big b { font-size: 20px; letter-spacing: .14em; color: var(--ink); font-weight: 600; margin-left: 6px; }
+.versus { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 10px; }
+.vs-p { display: grid; justify-items: center; gap: 4px; text-align: center; min-width: 0; }
+.vs-p .nm { font-weight: 600; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vs-p .st { font-size: 12px; font-family: var(--font-mono); color: var(--ink-2); }
+.vs-p .st.ok { color: var(--jade); font-weight: 600; }
+.vs-mid { font-family: var(--font-display); font-size: 22px; color: var(--ink-2); }
+.count {
+  font-family: var(--font-display); font-size: clamp(96px, 26vw, 190px); line-height: 1;
+  color: #1A1208; text-shadow: 0 2px 0 rgba(255, 240, 210, .6);
+  animation: tickin .9s ease-out;
+}
+.count-sub { font-weight: 600; color: #3A2A14; text-align: center; margin-top: 6px; }
+@keyframes tickin { from { transform: scale(1.25); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1); } }
+.spin { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--jade); animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ov-row { display: flex; gap: 10px; align-items: center; }
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 11px 16px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  font-weight: 600; font-size: 15px; line-height: 1.2; text-align: center;
+}
+.btn:hover { border-color: var(--ink-2); }
+.btn.primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.btn.primary:hover { filter: brightness(1.15); }
+.btn.jade { background: var(--jade); border-color: var(--jade); color: #fff; }
+.btn.quiet { background: transparent; }
+.btn.danger { color: var(--alarm); }
+.btn.armed { background: var(--alarm); border-color: var(--alarm); color: #fff; }
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+.btn:focus-visible, .chip:focus-visible { outline: 3px solid color-mix(in srgb, var(--jade) 60%, transparent); outline-offset: 2px; }
+.btn.sm { padding: 8px 12px; font-size: 14px; }
+
+/* ---------- player cards ---------- */
+.player {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 12px;
+  background: var(--surface); border: 1px solid var(--line);
+  transition: border-color .2s, box-shadow .2s;
+}
+.player.turn { border-color: var(--jade); box-shadow: 0 0 0 3px color-mix(in srgb, var(--jade) 20%, transparent); }
+.player.low.turn { border-color: var(--alarm); box-shadow: 0 0 0 3px color-mix(in srgb, var(--alarm) 22%, transparent); }
+.player.placeholder .pc-name { color: var(--ink-2); font-weight: 500; }
+.pc-stone { width: 30px; height: 30px; border-radius: 50%; flex: none; }
+.pc-stone.b { background: radial-gradient(circle at 36% 30%, #747474, #2a2a2a 40%, #060606); box-shadow: 1px 2px 3px rgba(0, 0, 0, .35); }
+.pc-stone.w { background: radial-gradient(circle at 36% 30%, #fff, #ecece5 60%, #c4c4ba); box-shadow: 1px 2px 3px rgba(0, 0, 0, .3); }
+.pc-stone.n { background: transparent; border: 1.5px dashed var(--line); }
+.pc-meta { display: grid; min-width: 0; }
+.pc-name { display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 16px; min-width: 0; }
+.pc-name .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-tag, .pc-off, .pc-ready {
+  flex: none; font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--ink-2); line-height: 1.5;
+}
+.pc-off { border-color: var(--alarm); color: var(--alarm); }
+.pc-ready { border-color: var(--jade); color: var(--jade); }
+.pc-sub { font-size: 12.5px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pc-clock { display: grid; justify-items: end; gap: 5px; }
+.pc-time { font-family: var(--font-mono); font-weight: 600; font-size: 26px; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.player.low .pc-time { color: var(--alarm); }
+.player:not(.turn) .pc-time { color: var(--ink-2); }
+.beads { position: relative; display: inline-flex; gap: 5px; }
+.beads::before { content: ""; position: absolute; left: -3px; right: -3px; top: 50%; height: 1.5px; margin-top: -.75px; background: var(--line); }
+.bead { position: relative; width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--ink-2); background: var(--surface); overflow: hidden; }
+.bead b { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--f, 1) * 100%); background: var(--ink-2); }
+.player.turn .bead { border-color: var(--jade); }
+.player.turn .bead b { background: var(--jade); }
+.player.low .bead { border-color: var(--alarm); }
+.player.low .bead b { background: var(--alarm); }
+
+/* ---------- status / actions / room ---------- */
+.status {
+  display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px;
+  padding: 2px 2px; min-height: 28px;
+}
+.status .main { font-weight: 700; font-size: 17px; }
+.status .sub { color: var(--ink-2); font-size: 13.5px; }
+.status.mine .main { color: var(--jade); }
+.status.alarm .main { color: var(--alarm); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions:empty { display: none; }
+.roombox {
+  display: grid; gap: 8px; padding: 12px 14px; border-radius: 12px;
+  align-self: start; align-content: start;
+  border: 1px dashed var(--line); font-size: 13px; color: var(--ink-2);
+}
+.roombox .rb-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.roombox .rb-code { font-family: var(--font-mono); color: var(--ink); font-weight: 600; letter-spacing: .1em; }
+.dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ink-2); margin-right: 6px; vertical-align: 1px; }
+.dot.live { background: var(--jade); }
+.dot.down { background: var(--alarm); }
+
+/* ---------- rules sheet / toast ---------- */
+.sheet {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px;
+  background: color-mix(in srgb, var(--ink) 38%, transparent);
+}
+.sheet-card {
+  width: min(560px, 100%); max-height: calc(100% - 16px); overflow: auto;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+  padding: 24px; box-shadow: var(--shadow); display: grid; gap: 14px;
+}
+.sheet-card h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: 26px; }
+.sheet-card dl { margin: 0; display: grid; gap: 12px; }
+.sheet-card dt { font-weight: 700; font-size: 14px; }
+.sheet-card dd { margin: 2px 0 0; color: var(--ink-2); max-width: 62ch; }
+.sheet-card .btn { justify-self: end; }
+.toast {
+  position: fixed; left: 50%; bottom: 22px; z-index: 30; transform: translate(-50%, 20px);
+  max-width: min(92vw, 440px); padding: 11px 16px; border-radius: 12px;
+  background: var(--ink); color: var(--surface); font-weight: 600; font-size: 14px; text-align: center;
+  opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.alarm { background: var(--alarm); color: #fff; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 520px) {
+  .brand h1 { font-size: 23px; }
+  .brand p { display: none; }
+  .seal { width: 34px; height: 34px; font-size: 13px; }
+  .player { padding: 9px 11px; gap: 10px; }
+  .pc-stone { width: 24px; height: 24px; }
+  .pc-time { font-size: 22px; }
+  .bead { width: 9px; height: 9px; }
+  .beads { gap: 4px; }
+  .ov-card { padding: 18px 16px; gap: 10px; }
+  .ov-card h2 { font-size: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------- connection details ---------- */
+.diag summary { cursor: pointer; font-weight: 600; color: var(--ink-2); width: fit-content; }
+.diag summary:hover { color: var(--ink); }
+.diag pre {
+  margin: 8px 0; padding: 8px 10px; border-radius: 8px; background: var(--paper); color: var(--ink);
+  font-family: var(--font-mono); font-size: 11.5px; line-height: 1.55;
+  white-space: pre-wrap; word-break: break-all; max-height: 240px; overflow: auto;
+}
+
+/* ---------- time per move ---------- */
+.tl-pick { display: grid; gap: 6px; }
+.tl-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.tl-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.tl-opt {
+  padding: 9px 0; border: 0; border-left: 1px solid var(--line); background: var(--surface); color: var(--ink-2);
+  font-family: var(--font-mono); font-weight: 600; font-size: 14px; cursor: pointer;
+}
+.tl-opt:first-child { border-left: 0; }
+.tl-opt:hover { color: var(--ink); }
+.tl-opt[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.tl-opt:focus-visible { outline: 3px solid color-mix(in srgb, var(--jade) 60%, transparent); outline-offset: -3px; }
+.tl-fixed { font-size: 13px; color: var(--ink-2); }
+.tl-fixed b { font-family: var(--font-mono); color: var(--ink); }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">
+      <span class="seal" aria-hidden="true">連珠</span>
+      <div>
+        <h1>렌주 오목</h1>
+        <p>링크를 받은 친구와 실시간으로 한 판</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="chip" id="btnRules" type="button" data-act="rules">규칙</button>
+      <button class="chip" id="btnSound" type="button" data-act="sound" aria-pressed="true">소리</button>
+    </div>
+  </header>
+
+  <main class="stage">
+    <section class="player placeholder" id="pTop" aria-label="위쪽 대국자"></section>
+    <section class="board-wrap" id="boardWrap">
+      <svg id="board" viewBox="0 0 640 640" tabindex="0" role="application" aria-label="오목판. 방향키로 칸을 옮기고 Enter로 돌을 둡니다.">
+        <defs>
+          <radialGradient id="gB" cx="36%" cy="30%" r="72%">
+            <stop offset="0" stop-color="#727272"/>
+            <stop offset=".38" stop-color="#2a2a2a"/>
+            <stop offset="1" stop-color="#050505"/>
+          </radialGradient>
+          <radialGradient id="gW" cx="36%" cy="30%" r="78%">
+            <stop offset="0" stop-color="#ffffff"/>
+            <stop offset=".62" stop-color="#ededE6"/>
+            <stop offset="1" stop-color="#c6c6bb"/>
+          </radialGradient>
+        </defs>
+        <g id="gGrid"></g>
+        <g id="gMarks"></g>
+        <g id="gStones"></g>
+        <g id="gTop"></g>
+      </svg>
+      <div class="overlay" id="overlay" hidden></div>
+    </section>
+    <section class="player placeholder" id="pBot" aria-label="아래쪽 대국자"></section>
+    <section class="status" id="status" aria-live="polite"></section>
+    <section class="actions" id="actions"></section>
+    <section class="roombox" id="roomBox" hidden></section>
+  </main>
+</div>
+
+<div class="sheet" id="rules" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+    <h2 id="rulesTitle">렌주룰 요약</h2>
+    <dl>
+      <dt>판과 순서</dt>
+      <dd>15×15 판에서 흑이 먼저 둡니다. 흑의 첫 수는 정중앙(천원, H8)에 놓아요.</dd>
+      <dt>이기는 법</dt>
+      <dd>가로·세로·대각선으로 다섯 개를 먼저 이으면 이깁니다. 흑은 정확히 다섯 개여야 하고, 백은 여섯 개 이상 이어도 이깁니다.</dd>
+      <dt>흑의 금수</dt>
+      <dd>삼삼(열린 3을 한꺼번에 두 개), 사사(4를 한꺼번에 두 개), 장목(여섯 개 이상)은 흑이 둘 수 없어요. 흑 차례에 판 위에 ×로 표시됩니다. 열린 3을 만드는 자리가 그 자체로 금수라면 그 3은 세지 않고, 오목이 함께 완성되면 오목이 우선이에요.</dd>
+      <dt>제한 시간</dt>
+      <dd>내 차례가 올 때마다 제한시간이 새로 시작되고, 남은 시간은 다음 수로 넘어가지 않아요. 기본은 한 수 30초이고, 방장이 대국 전에 15·20·30·60초 중에서 고를 수 있어요. 시계 옆 구슬 여섯 개가 남은 시간을 보여 주고, 마지막 몇 초는 빨갛게 바뀌며 똑딱 소리가 나요. 0초가 되면 그 판은 집니다.</dd>
+      <dt>링크로 대국하기</dt>
+      <dd id="ddLink">대국방을 만들면 초대 링크가 나옵니다. 친구는 공유 메뉴에서 이메일로 초대받아야 실시간 방에 들어올 수 있어요. 공개 링크로만 연 사람은 접속되지 않습니다. 둘 다 준비를 누르면 3초 뒤 시작하고, 첫 판의 색은 무작위, 다음 판부터는 번갈아 바뀝니다. 연결이 이상하면 방 정보의 ‘연결 정보’를 열어 보세요.</dd>
+    </dl>
+    <button class="btn primary" type="button" data-act="closeRules">닫기</button>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="assertive"></div>
+<div class="sr" id="announcer" aria-live="polite"></div>
+
+<script>
+/* Renju rules engine — 15x15.
+ * Black: forbidden 3-3, 4-4 and overline (6+); wins only with exactly five.
+ * A five made together with a forbidden shape still wins for Black.
+ * White: no restrictions; five or more wins.
+ * First move must be on the centre point (H8).
+ * Board: Int8Array(225), index = y*15 + x, y = 0 is the top row. 0 empty, 1 black, 2 white.
+ */
+(function (root) {
+  'use strict';
+  var N = 15;
+  var CENTER = 7 * N + 7;
+  var EMPTY = 0, BLACK = 1, WHITE = 2;
+  var DIRS = [[1, 0], [0, 1], [1, 1], [1, -1]];
+  var MAX_DEPTH = 6;
+
+  function at(b, x, y) {
+    return (x >= 0 && x < N && y >= 0 && y < N) ? b[y * N + x] : -1;
+  }
+
+  // Length of the contiguous run of colour c through (x,y) along (dx,dy). (x,y) is assumed to hold c.
+  function runLen(b, x, y, dx, dy, c) {
+    var n = 1, i = x + dx, j = y + dy;
+    while (at(b, i, j) === c) { n++; i += dx; j += dy; }
+    i = x - dx; j = y - dy;
+    while (at(b, i, j) === c) { n++; i -= dx; j -= dy; }
+    return n;
+  }
+
+  // First empty point reached from (x,y) stepping (dx,dy) through contiguous black stones, or null.
+  function nextEmpty(b, x, y, dx, dy) {
+    var i = x + dx, j = y + dy;
+    while (at(b, i, j) === BLACK) { i += dx; j += dy; }
+    return at(b, i, j) === EMPTY ? [i, j] : null;
+  }
+
+  // Number of fours (0, 1 or 2) through the black stone at (x,y) along one line.
+  // A four: one more black stone makes exactly five. An open four (_XXXX_) counts once;
+  // shapes like X_XXX_X or XX_XX_XX count twice (double four on one line).
+  function foursInDir(b, x, y, dx, dy) {
+    var pts = [];
+    for (var s = 1; s >= -1; s -= 2) {
+      var p = nextEmpty(b, x, y, s * dx, s * dy);
+      if (!p) continue;
+      var k = p[1] * N + p[0];
+      b[k] = BLACK;
+      if (runLen(b, p[0], p[1], dx, dy, BLACK) === 5) pts.push(p);
+      b[k] = EMPTY;
+    }
+    if (pts.length < 2) return pts.length;
+    var d = Math.max(Math.abs(pts[0][0] - pts[1][0]), Math.abs(pts[0][1] - pts[1][1]));
+    return d === 5 ? 1 : 2;
+  }
+
+  // Straight (open) four through the black stone at (x,y): a run of exactly four with both
+  // ends empty, where filling either end makes exactly five.
+  function straightFour(b, x, y, dx, dy) {
+    var i = x, j = y, k = x, l = y;
+    while (at(b, i + dx, j + dy) === BLACK) { i += dx; j += dy; }
+    while (at(b, k - dx, l - dy) === BLACK) { k -= dx; l -= dy; }
+    var len = Math.max(Math.abs(i - k), Math.abs(j - l)) + 1;
+    if (len !== 4) return false;
+    if (at(b, i + dx, j + dy) !== EMPTY || at(b, k - dx, l - dy) !== EMPTY) return false;
+    if (at(b, i + 2 * dx, j + 2 * dy) === BLACK || at(b, k - 2 * dx, l - 2 * dy) === BLACK) return false;
+    return true;
+  }
+
+  // A real three through the black stone at (x,y) along one line: some point turns it into a
+  // straight four, and that point is not itself forbidden for Black.
+  function threeInDir(b, x, y, dx, dy, depth) {
+    for (var s = 1; s >= -1; s -= 2) {
+      var p = nextEmpty(b, x, y, s * dx, s * dy);
+      if (!p) continue;
+      var k = p[1] * N + p[0];
+      b[k] = BLACK;
+      var sf = straightFour(b, p[0], p[1], dx, dy);
+      b[k] = EMPTY;
+      if (sf && forbiddenKind(b, p[0], p[1], depth + 1) === null) return true;
+    }
+    return false;
+  }
+
+  // Why a black move at (x,y) is forbidden: '6' overline, '44' double four, '33' double three; null if legal.
+  function forbiddenKind(b, x, y, depth) {
+    depth = depth || 0;
+    var k = y * N + x;
+    if (at(b, x, y) !== EMPTY) return null;
+    b[k] = BLACK;
+    var five = false, over = false, d, n, res = null;
+    for (d = 0; d < 4; d++) {
+      n = runLen(b, x, y, DIRS[d][0], DIRS[d][1], BLACK);
+      if (n === 5) five = true; else if (n > 5) over = true;
+    }
+    if (!five) {
+      if (over) res = '6';
+      else {
+        var fours = 0, threes = 0;
+        for (d = 0; d < 4; d++) {
+          var f = foursInDir(b, x, y, DIRS[d][0], DIRS[d][1]);
+          if (f) fours += f;
+          else if (depth < MAX_DEPTH && threeInDir(b, x, y, DIRS[d][0], DIRS[d][1], depth)) threes++;
+          if (fours >= 2 || threes >= 2) break;
+        }
+        if (fours >= 2) res = '44';
+        else if (threes >= 2) res = '33';
+      }
+    }
+    b[k] = EMPTY;
+    return res;
+  }
+
+  // Indices of the winning run through (x,y) for colour c (stone already placed), or null.
+  function winLine(b, x, y, c) {
+    for (var d = 0; d < 4; d++) {
+      var dx = DIRS[d][0], dy = DIRS[d][1];
+      var n = runLen(b, x, y, dx, dy, c);
+      if (c === BLACK ? n === 5 : n >= 5) {
+        var i = x, j = y, line = [];
+        while (at(b, i - dx, j - dy) === c) { i -= dx; j -= dy; }
+        while (at(b, i, j) === c) { line.push(j * N + i); i += dx; j += dy; }
+        return line;
+      }
+    }
+    return null;
+  }
+
+  function nearBlack(b, x, y) {
+    for (var d = 0; d < 4; d++) {
+      for (var s = 1; s <= 4; s++) {
+        if (at(b, x + DIRS[d][0] * s, y + DIRS[d][1] * s) === BLACK) return true;
+        if (at(b, x - DIRS[d][0] * s, y - DIRS[d][1] * s) === BLACK) return true;
+      }
+    }
+    return false;
+  }
+
+  // Every forbidden point for Black on this board: Map(index -> kind).
+  function forbiddenMap(b) {
+    var out = new Map();
+    for (var y = 0; y < N; y++) {
+      for (var x = 0; x < N; x++) {
+        var k = y * N + x;
+        if (b[k] !== EMPTY || !nearBlack(b, x, y)) continue;
+        var t = forbiddenKind(b, x, y, 0);
+        if (t) out.set(k, t);
+      }
+    }
+    return out;
+  }
+
+  // ---- game record: 4 base-36 chars per move (2 for the point, 2 for tenths of a second spent) ----
+  function encMove(i, ds) {
+    ds = Math.min(1295, Math.max(0, Math.round(ds) || 0));
+    return ('0' + i.toString(36)).slice(-2) + ('0' + ds.toString(36)).slice(-2);
+  }
+
+  // Replays a record, stopping at the first illegal move. Returns the board, the legal part of
+  // the record (each move keeps the tenths of a second it took) and the result.
+  function replay(rec) {
+    var b = new Int8Array(N * N);
+    var moves = [];
+    var winner = 0, line = null, ok = '';
+    if (typeof rec !== 'string' || !/^[0-9a-z]*$/.test(rec)) rec = '';
+    for (var p = 0; p + 4 <= rec.length; p += 4) {
+      if (winner) break;
+      var i = parseInt(rec.slice(p, p + 2), 36), ds = parseInt(rec.slice(p + 2, p + 4), 36);
+      if (!(i >= 0 && i < N * N) || b[i] !== EMPTY || !(ds >= 0)) break;
+      var n = moves.length, c = n % 2 === 0 ? BLACK : WHITE;
+      if (n === 0 && i !== CENTER) break;
+      var x = i % N, y = (i - x) / N;
+      if (c === BLACK && forbiddenKind(b, x, y, 0) !== null) break;
+      b[i] = c;
+      moves.push({ i: i, ds: ds, c: c });
+      ok += rec.slice(p, p + 4);
+      var wl = winLine(b, x, y, c);
+      if (wl) { winner = c; line = wl; }
+    }
+    return {
+      b: b, moves: moves, winner: winner, line: line, rec: ok,
+      len: moves.length, full: !winner && moves.length === N * N,
+      turn: moves.length % 2 === 0 ? BLACK : WHITE
+    };
+  }
+
+  // Board coordinate label in Renju notation: columns A–O, rows 1–15 from the bottom.
+  function label(i) {
+    var x = i % N, y = (i - x) / N;
+    return 'ABCDEFGHIJKLMNO'.charAt(x) + (N - y);
+  }
+
+  var api = {
+    N: N, CENTER: CENTER, EMPTY: EMPTY, BLACK: BLACK, WHITE: WHITE,
+    at: at, runLen: runLen, forbiddenKind: forbiddenKind, forbiddenMap: forbiddenMap,
+    winLine: winLine, encMove: encMove, replay: replay, label: label
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else root.Renju = api;
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+/* OmokRelay — link-only realtime for the standalone page (no sign-in, no invitations).
+ *
+ * Each page connects to several free public MQTT brokers at once over secure WebSocket
+ * (MQTT 3.1.1, QoS 0, nothing retained) and offers the small surface the game already uses
+ * from a claude.ai room: presence(patch), peers(), onPeers(fn), onConnection(fn), leave().
+ *
+ * One room is one topic. Every page keeps announcing its whole state and receivers keep the
+ * newest state per page, so duplicates across brokers, lost packets and reconnects heal by
+ * themselves. A game works as long as both players can reach any one broker in the list.
+ * The room code never goes on the wire (the topic is a hash of it); the payload is plain JSON.
+ */
+(function (root) {
+  'use strict';
+
+  // Free public brokers, checked from a browser on 2026-11-14. The last one listens on port 443,
+  // which gets through networks that block unusual ports; "public"/"public" is its open login.
+  var BROKERS = [
+    'wss://broker.emqx.io:8084/mqtt',
+    'wss://broker.hivemq.com:8884/mqtt',
+    'wss://test.mosquitto.org:8081/mqtt',
+    { url: 'wss://public.cloud.shiftr.io/', user: 'public', pass: 'public' }
+  ];
+  var BEAT_MS = 3000;       // heartbeat
+  var FULL_EVERY = 5;       // every 5th heartbeat carries the whole state again
+  var PEER_TTL = 10000;     // a page is gone after this long without a heartbeat
+  var RX_TTL = 12000;       // a broker connection is dead after this long without any byte
+  var CONNECT_TTL = 9000;
+  var PING_MS = 10000;
+  var MAX_MSG = 8192;
+  var ID_RE = /^[a-z0-9]{8}$/;
+  var ALPH = 'abcdefghijkmnpqrstuvwxyz23456789';
+
+  var supported = typeof root.WebSocket === 'function' && typeof root.TextEncoder === 'function' && typeof root.Map === 'function';
+  var te = supported ? new TextEncoder() : null, td = supported ? new TextDecoder() : null;
+  var debug = function () { return !!root.__omokDebug; };
+  var cut = function () { return debug() && !!root.__mockOffline; };     // tests: the network is gone
+
+  function rid(n) {
+    var a = new Uint8Array(n), s = '', i;
+    try { root.crypto.getRandomValues(a); } catch (e) { for (i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256); }
+    for (i = 0; i < n; i++) s += ALPH.charAt(a[i] % ALPH.length);
+    return s;
+  }
+
+  // cyrb53-style string hash, 16 hex chars: keeps the room code itself off the wire.
+  function hash(str) {
+    var h1 = 0xdeadbeef ^ 0x5eed, h2 = 0x41c6ce57 ^ 0x5eed, i, ch;
+    for (i = 0; i < str.length; i++) {
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return ('0000000' + (h2 >>> 0).toString(16)).slice(-8) + ('0000000' + (h1 >>> 0).toString(16)).slice(-8);
+  }
+  function topicFor(code) { return 'omokrj/1/' + hash('omok-renju|' + code); }
+  function hostOf(url) { return url.replace(/^wss?:\/\//, '').replace(/[:/].*$/, ''); }
+
+  // ---- MQTT 3.1.1 packets ----
+  function mstr(s) {
+    var b = te.encode(s), o = new Uint8Array(b.length + 2);
+    o[0] = b.length >> 8; o[1] = b.length & 255; o.set(b, 2);
+    return o;
+  }
+  function packet(first, parts) {
+    var len = 0, i, head = [first], x, d, out, off;
+    for (i = 0; i < parts.length; i++) len += parts[i].length;
+    x = len;
+    do { d = x % 128; x = Math.floor(x / 128); if (x > 0) d |= 128; head.push(d); } while (x > 0);
+    out = new Uint8Array(head.length + len);
+    out.set(head, 0);
+    off = head.length;
+    for (i = 0; i < parts.length; i++) { out.set(parts[i], off); off += parts[i].length; }
+    return out;
+  }
+  var PING = supported ? Uint8Array.of(0xC0, 0) : null;
+
+  // ---- one broker connection: a single QoS 0 subscription, reconnecting for ever ----
+  function Conn(broker, topic, onMsg, onChange) {
+    var url = typeof broker === 'string' ? broker : broker.url;
+    var user = typeof broker === 'string' ? '' : (broker.user || ''), pass = typeof broker === 'string' ? '' : (broker.pass || '');
+    var c = { url: url, host: hostOf(url), state: 'down', rtt: null, lastRx: 0, beatKey: 0, beatAt: 0, blocked: false };
+    var ws = null, buf = null, tries = 0, timer = 0, closed = false, probeAt = 0, lastPing = 0;
+    var cid = 'om' + rid(14);
+    var SUB = packet(0x82, [Uint8Array.of(0, 1), mstr(topic), Uint8Array.of(0)]);
+
+    function set(s) { if (c.state !== s) { c.state = s; onChange(c); } }
+    function unhook(sock) {
+      sock.onopen = sock.onmessage = sock.onclose = sock.onerror = null;
+      try { sock.close(); } catch (e) { /* already closed */ }
+    }
+
+    function open() {
+      if (closed) return;
+      clearTimeout(timer);
+      if (cut()) { set('down'); timer = setTimeout(open, 1000); return; }
+      var sock;
+      try { sock = new root.WebSocket(url, ['mqtt']); }
+      catch (e) {
+        // A page whose host forbids outside connections (app previews, sandboxed viewers) fails here.
+        if (e && (e.name === 'SecurityError' || /policy|security|refused/i.test(String(e.message)))) {
+          c.blocked = true; set('down'); clearTimeout(timer); timer = setTimeout(open, 30000); return;
+        }
+        retry(); return;
+      }
+      c.blocked = false;
+      sock.binaryType = 'arraybuffer';
+      ws = sock; buf = null; probeAt = 0;
+      set('connecting');
+      sock.onopen = function () {
+        if (ws !== sock) return;
+        // CONNECT: protocol "MQTT" level 4, clean session, keep-alive 60 s, random client id
+        var parts = [mstr('MQTT'), Uint8Array.of(4, user ? 0xC2 : 2, 0, 60), mstr(cid)];
+        if (user) { parts.push(mstr(user)); parts.push(mstr(pass)); }
+        try { sock.send(packet(0x10, parts)); } catch (e) { drop(); }
+      };
+      sock.onmessage = function (ev) {
+        if (ws !== sock || cut() || !ev.data || typeof ev.data === 'string') return;
+        c.lastRx = Date.now();
+        feed(sock, new Uint8Array(ev.data));
+      };
+      sock.onclose = sock.onerror = function () { if (ws === sock) drop(); };
+      timer = setTimeout(function () { if (ws === sock && c.state !== 'live') drop(); }, CONNECT_TTL);
+    }
+
+    function retry() {
+      set('down');
+      if (closed) return;
+      var d = Math.min(5000, 500 * Math.pow(2, tries++)) * (0.8 + Math.random() * 0.4);
+      clearTimeout(timer);
+      timer = setTimeout(open, d);
+    }
+
+    function drop() {
+      var sock = ws;
+      ws = null; buf = null;
+      if (sock) unhook(sock);
+      retry();
+    }
+
+    // MQTT packets are not aligned to WebSocket frames: collect bytes, cut whole packets.
+    function feed(sock, chunk) {
+      var b = chunk, off = 0, i, len, mul, d, done, m;
+      if (buf && buf.length) { m = new Uint8Array(buf.length + chunk.length); m.set(buf, 0); m.set(chunk, buf.length); b = m; }
+      for (;;) {
+        if (b.length - off < 2) break;
+        len = 0; mul = 1; done = false;
+        for (i = off + 1; i < b.length && i <= off + 4; i++) {
+          d = b[i]; len += (d & 127) * mul; mul *= 128;
+          if (!(d & 128)) { done = true; i++; break; }
+        }
+        if (!done) { if (i > off + 4) { drop(); return; } break; }
+        if (len > 262144) { drop(); return; }
+        if (b.length - i < len) break;
+        handle(sock, b[off], b.subarray(i, i + len));
+        if (ws !== sock) return;
+        off = i + len;
+      }
+      buf = off < b.length ? b.slice(off) : null;
+    }
+
+    function handle(sock, b0, body) {
+      var type = b0 >> 4, tl, p, qos;
+      if (type === 2) {                       // CONNACK
+        if (body.length < 2 || body[1] !== 0) { drop(); return; }
+        try { sock.send(SUB); } catch (e) { drop(); }
+      } else if (type === 9) {                // SUBACK
+        if (body.length < 3 || body[2] === 0x80) { drop(); return; }
+        tries = 0; clearTimeout(timer); lastPing = Date.now();
+        set('live');
+      } else if (type === 3) {                // PUBLISH
+        if (body.length < 2) return;
+        tl = (body[0] << 8) | body[1]; p = 2 + tl; qos = (b0 >> 1) & 3;
+        if (qos) {
+          if (body.length < p + 2) return;
+          if (qos === 1) { try { sock.send(Uint8Array.of(0x40, 2, body[p], body[p + 1])); } catch (e) { /* ignore */ } }
+          p += 2;
+        }
+        if (p > body.length) return;
+        onMsg(c, body.subarray(p));
+      }
+      // PINGRESP and anything else: receiving it already refreshed lastRx
+    }
+
+    c.start = open;
+    c.send = function (bytes) {
+      if (c.state !== 'live' || !ws || ws.readyState !== 1 || cut()) return false;
+      if (ws.bufferedAmount > 65536) return false;
+      try { ws.send(bytes); return true; } catch (e) { return false; }
+    };
+    c.tick = function (now) {
+      if (cut()) {
+        if (ws) { var s = ws; ws = null; buf = null; unhook(s); set('down'); clearTimeout(timer); timer = setTimeout(open, 1000); }
+        return;
+      }
+      if (c.state !== 'live') return;
+      if (now - c.lastRx > RX_TTL || (probeAt && now - probeAt > 3500 && c.lastRx < probeAt)) { drop(); return; }
+      if (probeAt && c.lastRx >= probeAt) probeAt = 0;
+      if (now - lastPing >= PING_MS) { lastPing = now; c.send(PING); }
+    };
+    c.kick = function () {
+      if (closed) return;
+      if (c.state === 'down') { tries = 0; open(); }
+      else if (c.state === 'live' && !probeAt) { probeAt = Date.now(); c.send(PING); }
+    };
+    c.close = function () {
+      closed = true;
+      clearTimeout(timer);
+      var s = ws;
+      ws = null; buf = null;
+      if (s) {
+        try { if (s.readyState === 1) s.send(Uint8Array.of(0xE0, 0)); } catch (e) { /* ignore */ }
+        unhook(s);
+      }
+      c.state = 'down';
+    };
+    return c;
+  }
+
+  // ---- a room ----
+  function join(code) {
+    var urls = (debug() && root.__omokBrokers) || BROKERS;
+    var topic = topicFor(code), head = mstr(topic);
+    var me = rid(8);                       // this join; a page that leaves and comes back is a new peer
+    var peers = new Map(), peerFns = [], connFns = [];
+    var mine = {}, ver = 0, key = 0, live = false, left = false, snap = null;
+    var helloAt = 0, replyT = 0, beatAt = Date.now(), beatN = 0, queued = false, timer = 0, cspBlocked = false;
+    var conns = urls.map(function (u) { return Conn(u, topic, onMsg, onConnChange); });
+
+    function wire(obj) { return packet(0x30, [head, te.encode(JSON.stringify(obj))]); }
+    function sendAll(bytes, k) {
+      var now = Date.now(), i, c;
+      for (i = 0; i < conns.length; i++) {
+        c = conns[i];
+        if (c.send(bytes) && k) { c.beatKey = k; c.beatAt = now; }
+      }
+    }
+    function nextKey() { key = (key % 1000000) + 1; return key; }
+    function pubState() {
+      if (left || !ver) return;
+      var p = {}, f;
+      for (f in mine) if (f !== 'code' && Object.prototype.hasOwnProperty.call(mine, f)) p[f] = mine[f];
+      var k = nextKey();
+      sendAll(wire({ t: 's', s: me, v: ver, k: k, p: p }), k);
+    }
+    function pubBeat() {
+      if (left || !ver) return;
+      var k = nextKey();
+      sendAll(wire({ t: 'b', s: me, v: ver, k: k }), k);
+    }
+    function pubHello() { helloAt = Date.now(); sendAll(wire({ t: 'h', s: me })); }
+    function reply() {
+      if (!replyT) replyT = setTimeout(function () { replyT = 0; pubState(); }, 50 + Math.random() * 200);
+    }
+
+    function list() {
+      if (!snap) {
+        var out = [];
+        peers.forEach(function (x, id) {
+          out.push({ peer: id, by: null, isMe: false, sameTab: false, kind: 'viewer', guest: false, presence: x.p, updatedAt: x.at });
+        });
+        snap = Object.freeze(out);
+      }
+      return snap;
+    }
+    function changed() {
+      snap = null;
+      if (queued) return;
+      queued = true;
+      Promise.resolve().then(function () {
+        queued = false;
+        if (left) return;
+        var ch = { peers: list() };
+        peerFns.slice().forEach(function (f) { try { f(ch); } catch (e) { try { console.error(e); } catch (e2) { /* ignore */ } } });
+      });
+    }
+    function keep(p) {
+      var o = {}, f;
+      for (f in p) if (Object.prototype.hasOwnProperty.call(p, f)) o[f] = p[f];
+      o.code = code;
+      return Object.freeze(o);
+    }
+
+    function onMsg(c, bytes) {
+      if (left || bytes.length > MAX_MSG) return;
+      var now = Date.now(), m, cur;
+      try { m = JSON.parse(td.decode(bytes)); } catch (e) { return; }
+      if (!m || typeof m !== 'object' || typeof m.s !== 'string' || !ID_RE.test(m.s)) return;
+      if (m.s === me) {                      // my own echo: round-trip time through this broker
+        if (m.k && m.k === c.beatKey) { c.rtt = now - c.beatAt; c.beatKey = 0; }
+        return;
+      }
+      cur = peers.get(m.s);
+      if (m.t === 'x') { if (cur) { peers.delete(m.s); changed(); } return; }
+      if (m.t === 'h') { reply(); return; }
+      if (typeof m.v !== 'number') return;
+      if (m.t === 's' && m.p && typeof m.p === 'object' && !Array.isArray(m.p)) {
+        if (!cur) { peers.set(m.s, { p: keep(m.p), v: m.v, at: now, seen: now }); changed(); }
+        else {
+          cur.seen = now;
+          if (m.v > cur.v) { cur.v = m.v; cur.p = keep(m.p); cur.at = now; changed(); }
+        }
+      } else if (m.t === 'b') {
+        if (cur) cur.seen = now;
+        if ((!cur || m.v > cur.v) && now - helloAt > 1500) pubHello();   // I missed something: ask again
+      }
+    }
+
+    function onConnChange(c) {
+      if (left) return;
+      if (c.state === 'live') { pubHello(); pubState(); }
+      var any = false, i;
+      for (i = 0; i < conns.length; i++) if (conns[i].state === 'live') any = true;
+      if (any !== live) {
+        live = any;
+        if (live) { var t = Date.now(); peers.forEach(function (x) { x.seen = t; }); }   // fresh grace after an outage
+        connFns.slice().forEach(function (f) { try { f(live); } catch (e) { /* ignore */ } });
+      }
+    }
+
+    function tick() {
+      var now = Date.now(), gone = false;
+      conns.forEach(function (c) { c.tick(now); });
+      if (live) {
+        peers.forEach(function (x, id) { if (now - x.seen > PEER_TTL) { peers.delete(id); gone = true; } });
+        if (gone) changed();
+      }
+      if (now - beatAt >= BEAT_MS) {
+        beatAt = now; beatN++;
+        if (beatN % FULL_EVERY === 0) pubState(); else pubBeat();
+      }
+    }
+    function kick() { if (!left) conns.forEach(function (c) { c.kick(); }); }
+    function onShow() { if (!left && !root.document.hidden) { kick(); pubState(); } }
+    function onHide() { if (!left) sendAll(wire({ t: 'x', s: me })); }
+    function off(arr, fn) { var i = arr.indexOf(fn); if (i >= 0) arr.splice(i, 1); }
+    function onCsp(e) {
+      var d = String((e && (e.effectiveDirective || e.violatedDirective)) || ''), u = String((e && e.blockedURI) || '');
+      if (/connect-src|default-src/.test(d) && /^wss?:|^wss?$/.test(u)) cspBlocked = true;
+    }
+
+    timer = setInterval(tick, 1000);
+    root.addEventListener('online', kick);
+    root.addEventListener('pageshow', onShow);
+    root.addEventListener('pagehide', onHide);
+    root.document.addEventListener('visibilitychange', onShow);
+    root.document.addEventListener('securitypolicyviolation', onCsp);
+    conns.forEach(function (c) { c.start(); });
+
+    return {
+      name: 'omok-' + code,
+      presence: function (patch) {
+        if (left) return Promise.reject({ code: 'invalid_argument', message: 'left' });
+        for (var f in patch) {
+          if (!Object.prototype.hasOwnProperty.call(patch, f)) continue;
+          if (patch[f] === null || patch[f] === undefined) delete mine[f]; else mine[f] = patch[f];
+        }
+        ver++;
+        pubState();
+        return Promise.resolve();
+      },
+      peers: list,
+      onPeers: function (fn) {
+        peerFns.push(fn);
+        Promise.resolve().then(function () { if (!left && peerFns.indexOf(fn) >= 0) fn({ peers: list() }); });
+        return function () { off(peerFns, fn); };
+      },
+      onConnection: function (fn) {
+        connFns.push(fn);
+        Promise.resolve().then(function () { if (!left && connFns.indexOf(fn) >= 0) fn(live); });
+        return function () { off(connFns, fn); };
+      },
+      connected: function () { return live; },
+      // true when this page's host forbids the connections outright (not a network outage)
+      blocked: function () { return !live && (cspBlocked || conns.every(function (c) { return c.blocked; })); },
+      lastRx: function () { var m = 0; conns.forEach(function (c) { if (c.lastRx > m) m = c.lastRx; }); return m; },
+      kick: kick,
+      info: function () {
+        return conns.map(function (c) { return { host: c.host, state: c.blocked ? 'blocked' : c.state, rtt: c.rtt }; });
+      },
+      leave: function () {
+        if (left) return Promise.resolve();
+        sendAll(wire({ t: 'x', s: me }));
+        left = true;
+        clearInterval(timer); clearTimeout(replyT);
+        root.removeEventListener('online', kick);
+        root.removeEventListener('pageshow', onShow);
+        root.removeEventListener('pagehide', onHide);
+        root.document.removeEventListener('visibilitychange', onShow);
+        root.document.removeEventListener('securitypolicyviolation', onCsp);
+        conns.forEach(function (c) { c.close(); });
+        peers.clear(); snap = null;
+        return Promise.resolve();
+      }
+    };
+  }
+
+  root.OmokRelay = { join: join, supported: supported, BROKERS: BROKERS, topicFor: topicFor };
+})(window);
+
+</script>
+<script>
+(() => {
+  'use strict';
+  const R = window.Renju;
+  const N = R.N, CENTER = R.CENTER;
+  const APP = 'omok1';
+  const COUNTDOWN = 3000;      // ms before Black's clock starts
+  // Each move has its own limit that restarts every turn (leftover time does not carry over).
+  const TL_OPTS = [15, 20, 30, 60];
+  const TL_DEFAULT = 30;
+  const TL_OK = s => typeof s === 'number' && s >= 5 && s <= 300;
+  const tlOf = g => (g && TL_OK(g.t) ? g.t : TL_DEFAULT);
+  const limitMs = g => tlOf(g) * 1000;
+  const GRACE = 5000;          // ms past zero before the waiting player claims a timeout
+  const ARTIFACT_URL = '%%ARTIFACT_URL%%';
+  const FIELDS = ['app', 'code', 'pid', 'sid', 'since', 'nick', 'opp', 'rdy', 'tl', 'g', 'sy'];
+  const TERMINAL = new Set(['revoked', 'not_granted', 'capability_disabled', 'capability_removed', 'transform_error']);
+  const CODE_RE = /^[a-z0-9]{4,12}$/;
+  const CNAME = { 1: '흑', 2: '백' };
+  const REASON = { five: '오목 완성', time: '시간 초과', resign: '기권', draw: '무승부' };
+  const FORBID = {
+    '33': '삼삼 금수 자리예요. 열린 3이 한꺼번에 두 개 생겨요.',
+    '44': '사사 금수 자리예요. 4가 한꺼번에 두 개 생겨요.',
+    '6': '장목 금수 자리예요. 흑은 여섯 개 이상 이을 수 없어요.'
+  };
+  const SAMPLE_REC = [[7, 7], [8, 6], [8, 8], [6, 6], [6, 8], [7, 8], [9, 7], [9, 9], [5, 9], [10, 6], [7, 10]]
+    .map(([x, y]) => R.encMove(y * N + x, 0)).join('');
+
+  // ---------------------------------------------------------------- utils
+  const $ = (s, el) => (el || document).querySelector(s);
+  const now = () => Date.now();
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const ALPH = 'abcdefghijkmnpqrstuvwxyz23456789';
+  function rid(n) {
+    const a = new Uint8Array(n);
+    try { crypto.getRandomValues(a); } catch (e) { for (let i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256); }
+    let s = '';
+    for (let i = 0; i < n; i++) s += ALPH[a[i] % ALPH.length];
+    return s;
+  }
+  const mkStore = get => ({
+    get(k) { try { return get().getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { get().setItem(k, v); } catch (e) { /* storage unavailable */ } }
+  });
+  const ls = mkStore(() => window.localStorage);
+  const ss = mkStore(() => window.sessionStorage);
+  const SID = rid(8);          // this page load; tells apart tabs that present the same player id
+  const SINCE = Date.now();
+  const log = (...a) => { try { console.log('[omok]', ...a); } catch (e) { /* ignore */ } };
+  // The standalone page ships its own relay (public brokers); inside claude.ai the platform's room is used.
+  const STANDALONE = !!(window.OmokRelay && window.OmokRelay.join);
+  // Opened inside another page (an app preview, a viewer) or from a file on this device.
+  const EMBEDDED = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+  const LOCALFILE = location.protocol === 'file:' || location.protocol === 'blob:' || location.protocol === 'data:';
+
+  // ---------------------------------------------------------------- platform capabilities
+  function cap(name) {
+    return new Promise(resolve => {
+      let tries = 0, settled = false;
+      const done = v => { if (!settled) { settled = true; resolve(v || null); } };
+      const attempt = () => {
+        let c = null;
+        try { c = window.claude; } catch (e) { c = null; }
+        if (c && typeof c.use === 'function') {
+          setTimeout(() => done(null), 12000);
+          Promise.resolve().then(() => c.use(name)).then(done, () => done(null));
+        } else if (++tries < 15) setTimeout(attempt, 200);
+        else done(null);
+      };
+      attempt();
+    });
+  }
+  let roomP = null, userP = null;
+  const getRoom = () => roomP || (roomP = STANDALONE ? Promise.resolve(null) : cap('room'));
+  const getUser = () => userP || (userP = STANDALONE ? Promise.resolve(null) : cap('user'));
+
+  // ---------------------------------------------------------------- sound
+  const Sound = {
+    ctx: null,
+    on: ls.get('omok.sound') !== '0',
+    unlock() {
+      try {
+        if (!this.ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) this.ctx = new AC(); }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume().catch(() => {});
+      } catch (e) { /* audio refused */ }
+    },
+    play(fn) {
+      if (!this.on || !this.ctx || this.ctx.state !== 'running') return;
+      try { fn(this.ctx, this.ctx.currentTime); } catch (e) { /* ignore */ }
+    },
+    stone() {
+      this.play((ac, t) => {
+        const len = Math.floor(ac.sampleRate * 0.045);
+        const buf = ac.createBuffer(1, len, ac.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
+        const src = ac.createBufferSource(); src.buffer = buf;
+        const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1650; bp.Q.value = 1.3;
+        const g1 = ac.createGain(); g1.gain.value = 0.6;
+        src.connect(bp); bp.connect(g1); g1.connect(ac.destination); src.start(t);
+        const o = ac.createOscillator(); o.type = 'sine';
+        o.frequency.setValueAtTime(200, t); o.frequency.exponentialRampToValueAtTime(85, t + 0.1);
+        const g2 = ac.createGain(); g2.gain.setValueAtTime(0.32, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.13);
+        o.connect(g2); g2.connect(ac.destination); o.start(t); o.stop(t + 0.14);
+      });
+    },
+    tick() {
+      this.play((ac, t) => {
+        const o = ac.createOscillator(); o.type = 'square'; o.frequency.value = 1320;
+        const g = ac.createGain(); g.gain.setValueAtTime(0.045, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.05);
+        o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.06);
+      });
+    },
+    chord(up) {
+      this.play((ac, t) => {
+        (up ? [523.25, 659.25, 783.99] : [392, 311.13, 261.63]).forEach((f, i) => {
+          const o = ac.createOscillator(); o.type = 'triangle'; o.frequency.value = f;
+          const g = ac.createGain(), s = t + i * 0.09;
+          g.gain.setValueAtTime(0.0001, s); g.gain.exponentialRampToValueAtTime(0.16, s + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, s + 0.5);
+          o.connect(g); g.connect(ac.destination); o.start(s); o.stop(s + 0.55);
+        });
+      });
+    }
+  };
+
+  // ---------------------------------------------------------------- shared game logic
+  // A match tracks one game: its replayed state, result, and when the current turn began (local clock).
+  function makeMatch() { return { g: null, st: null, end: null, T0: 0, T0real: false, key: '', seen: {}, endClocks: null, endKey: '' }; }
+
+  const rankEvt = e => (e.k === 'rs' ? 0 : 2) + (e.c === 'b' ? 0 : 1);
+  const sameEvt = (a, b) => !!a && !!b && a.k === b.k && a.c === b.c && a.n === b.n;
+
+  // Result from the board first (five, full board), then from resign / timeout events.
+  // A timeout event only counts if the move it names was never made.
+  function evalEnd(st, evts) {
+    if (st.winner) return { kind: 'five', winner: st.winner, loser: 3 - st.winner };
+    if (st.full) return { kind: 'draw', winner: 0, loser: 0 };
+    let best = null;
+    for (const e of evts) {
+      if (!e || typeof e !== 'object' || (e.k !== 'rs' && e.k !== 'to') || (e.c !== 'b' && e.c !== 'w') || typeof e.n !== 'number') continue;
+      if (e.k === 'to' && e.n !== st.len) continue;
+      if (e.k === 'rs' && e.n > st.len) continue;
+      if (!best || rankEvt(e) < rankEvt(best)) best = e;
+    }
+    if (!best) return null;
+    const loser = best.c === 'b' ? 1 : 2;
+    return { kind: best.k === 'rs' ? 'resign' : 'time', winner: 3 - loser, loser, evt: { k: best.k, c: best.c, n: best.n } };
+  }
+
+  function matchUpdate(m, g, evts, t, st) {
+    m.g = g;
+    if (!g) { m.st = null; m.end = null; m.key = ''; m.endClocks = null; m.endKey = ''; return; }
+    if (!m.seen[g.id]) m.seen[g.id] = t;
+    st = st || R.replay(g.r || '');
+    const key = g.id + ':' + st.len;
+    if (key !== m.key) {
+      const sameGame = m.key.split(':')[0] === g.id;
+      m.key = key;
+      if (st.len === 0) { m.T0 = m.seen[g.id] + COUNTDOWN; m.T0real = true; }
+      else { m.T0 = t; m.T0real = sameGame; }
+    }
+    const end = evalEnd(st, evts || []);
+    if (end) {
+      const ek = key + ':' + end.kind + ':' + end.loser;
+      if (ek !== m.endKey) {
+        const L0 = limitMs(g), b = [L0, L0];
+        if (end.kind === 'time') b[end.loser - 1] = 0;
+        else if (end.kind === 'resign') { const k = st.turn - 1; b[k] = Math.max(0, L0 - Math.max(0, t - m.T0)); }
+        m.endClocks = b; m.endKey = ek;
+      }
+    } else { m.endClocks = null; m.endKey = ''; }
+    m.st = st; m.end = end;
+  }
+
+  // The player to move counts down from the move limit; the other player shows a full limit.
+  function clockVals(m, t) {
+    const L0 = limitMs(m.g);
+    if (!m.st) return [L0, L0];
+    if (m.end) return m.endClocks || [L0, L0];
+    const b = [L0, L0], k = m.st.turn - 1;
+    b[k] -= Math.max(0, t - m.T0);
+    return b;
+  }
+  const rawLeft = (m, t) => limitMs(m.g) - (t - m.T0);
+
+  function moveError(st, i) {
+    if (st.b[i] !== 0) return '이미 돌이 놓인 자리예요.';
+    if (st.len === 0 && i !== CENTER) return '첫 수는 정중앙(천원)에 둡니다.';
+    if (st.turn === 1) {
+      const x = i % N, y = (i - x) / N;
+      const k = R.forbiddenKind(st.b, x, y, 0);
+      if (k) return FORBID[k];
+    }
+    return null;
+  }
+
+  function validG(g) {
+    return !!g && typeof g === 'object' && typeof g.id === 'string' && CODE_RE.test(g.id) &&
+      typeof g.b === 'string' && typeof g.w === 'string' && g.b !== g.w &&
+      typeof g.r === 'string' && g.r.length <= 900 && /^[0-9a-z]*$/.test(g.r) &&
+      (g.t === undefined || g.t === null || TL_OK(g.t));
+  }
+  const cloneG = g => ({ id: g.id, b: g.b, w: g.w, r: g.r, t: tlOf(g), e: g.e && typeof g.e === 'object' ? { k: g.e.k, c: g.e.c, n: g.e.n } : null });
+  const longer = (a, b) => { a = a || ''; b = b || ''; return b.length > a.length && b.startsWith(a) ? b : a; };
+  // rb: Black's copy of the record, rw: White's. The longer one wins when one extends the other;
+  // on a real split, the copy of whoever owned the first differing move wins.
+  function mergeRecs(rb, rw) {
+    rb = rb || ''; rw = rw || '';
+    if (rb.startsWith(rw)) return rb;
+    if (rw.startsWith(rb)) return rw;
+    let k = 0;
+    while (k < rb.length && k < rw.length && rb.substr(k, 4) === rw.substr(k, 4)) k += 4;
+    return (k / 4) % 2 === 0 ? rb : rw;
+  }
+  let fmCache = { rec: null, map: null };
+  function fmapFor(st) {
+    if (!st || st.turn !== 1 || st.winner) return null;
+    if (fmCache.rec !== st.rec) fmCache = { rec: st.rec, map: R.forbiddenMap(st.b) };
+    return fmCache.map;
+  }
+
+  // ---------------------------------------------------------------- state
+  const S = { mode: 'home', nick: '', numbers: false, tl: TL_DEFAULT };
+  const UI = {
+    hover: -1, preview: -1, kcur: CENTER, kbd: false, ptype: 'mouse',
+    ovSig: null, hideOverFor: null, lastRec: '', stonesKey: null, marksKey: null, bv: null, vm: null,
+    phase: '', resignArmed: false, resignT: 0, toastT: 0, nickT: 0, lastTickSec: -1,
+    fb: { gid: '', rec: '', len: 0 }, endSeen: '', bootAt: 0, defNick: '', ownHash: null, touchHinted: false
+  };
+  let O = { active: false };
+  const L = { g: null, m: makeMatch() };
+
+  // ---------------------------------------------------------------- local (same device) mode
+  function localStart() {
+    L.g = { id: rid(6), b: 'L1', w: 'L2', r: '', e: null, t: S.tl };
+    L.m = makeMatch();
+    UI.hideOverFor = null;
+    localUpdate();
+    render();
+  }
+  function localUpdate() {
+    if (!L.g) { matchUpdate(L.m, null); return; }
+    const st = R.replay(L.g.r);
+    L.g.r = st.rec;
+    matchUpdate(L.m, L.g, [L.g.e], now(), st);
+  }
+  function localMove(i) {
+    const m = L.m, st = m.st, t = now();
+    if (!st || m.end || t < m.T0 || rawLeft(m, t) <= 0) return;
+    const err = moveError(st, i);
+    if (err) { toast(err, true); return; }
+    L.g.r = st.rec + R.encMove(i, (t - m.T0) / 100);
+    localUpdate();
+    render();
+  }
+  function localTick(t) {
+    const m = L.m;
+    if (!L.g || !m.st || m.end || t < m.T0) return;
+    if (rawLeft(m, t) <= 0) {
+      L.g.e = { k: 'to', c: m.st.turn === 1 ? 'b' : 'w', n: m.st.len };
+      localUpdate(); render();
+    }
+  }
+  function localResign() {
+    const m = L.m;
+    if (!L.g || !m.st || m.end) return;
+    L.g.e = { k: 'rs', c: m.st.turn === 1 ? 'b' : 'w', n: m.st.len };
+    localUpdate(); render();
+  }
+
+  // ---------------------------------------------------------------- online mode (room presence)
+  // Every player keeps the whole game in their own presence: {g: {id, b, w, r, e}}.
+  // Only the player to move can extend the record, so copies converge on the longest one.
+  // The host (whose player id equals the room code) picks the opponent and starts each game.
+  function inviteLink(code) {
+    const base = ARTIFACT_URL.charAt(0) === '%' ? location.href.split('#')[0].split('?')[0] : ARTIFACT_URL;
+    return base + '#om-' + code;
+  }
+  function setHash(h) {
+    UI.ownHash = h || '';
+    const cur = location.hash.replace(/^#/, '');
+    if (cur === (h || '')) return;
+    try { location.hash = h || ''; } catch (e) { /* ignore */ }
+  }
+
+  function stopOnline() {
+    if (!O.active) return;
+    const old = O;
+    O = { active: false };
+    for (const u of old.unsub || []) { try { u(); } catch (e) { /* ignore */ } }
+    if (old.R) {
+      try {
+        const p = old.named ? old.R.leave() : old.R.presence({ app: null, code: null, pid: null, nick: null, opp: null, rdy: null, g: null, sy: null });
+        Promise.resolve(p).catch(() => {});
+      } catch (e) { /* ignore */ }
+    }
+  }
+
+  async function startOnline(code, create) {
+    stopOnline();
+    const me = { app: APP, code, pid: null, sid: SID, since: SINCE, nick: S.nick || UI.defNick, opp: null, rdy: null, tl: S.tl, g: null, sy: null };
+    const my = {
+      active: true, code, pid: null, how: '', amHost: false, R: null, named: false, rejoining: false,
+      conn: 'connecting', downSince: 0, liveSince: 0, startedAt: now(), relay: false, dead: false, why: '', joinedAt: 0,
+      clashSeen: {}, goneAt: {}, lastPub: null, rawPeers: 0,
+      me, pub: {}, by: new Map(), firstSeen: {}, present: new Set(), m: makeMatch(), unsub: []
+    };
+    O = my;
+    S.mode = 'online';
+    UI.hideOverFor = null;
+    setHash('om-' + code);
+    render();
+
+    let Rm;
+    if (STANDALONE) {
+      // Link-only page: public relay servers, so nobody signs in and nobody is invited.
+      if (!window.OmokRelay.supported) { my.dead = true; my.why = 'nows'; render(); return; }
+      Rm = window.OmokRelay.join(code); my.named = true; my.relay = true;
+    } else {
+      const room = await getRoom();
+      if (O !== my) return;
+      if (!room) { my.dead = true; my.why = 'nocap'; log('room capability unavailable'); render(); return; }
+      try { Rm = await room.join('omok-' + code); my.named = true; }
+      catch (e) {
+        log('named room join failed', e && e.code, e && e.message);
+        if (e && TERMINAL.has(e.code)) { my.dead = true; my.why = e.code; render(); return; }
+        Rm = room; my.named = false;      // named rooms unavailable: share the lobby, filtered by code
+      }
+      if (O !== my) { if (my.named) { try { Promise.resolve(Rm.leave()).catch(() => {}); } catch (e) { /* ignore */ } } return; }
+    }
+    my.R = Rm;
+    const onErr = err => {
+      if (O !== my) return;
+      const c = err && err.code;
+      log('room error', c, err && err.message);
+      if (TERMINAL.has(c)) { my.dead = true; my.why = c; render(); return; }
+      if (my.named && !my.rejoining) { my.rejoining = true; setTimeout(() => { if (O === my) startOnline(code, false); }, 1500); }
+    };
+    my.unsub.push(Rm.onConnection(c => {
+      if (O !== my) return;
+      if (c) { if (my.conn !== 'live') my.liveSince = now(); my.conn = 'live'; my.downSince = 0; }
+      else if (my.conn === 'live') { my.conn = 'down'; my.downSince = now(); }
+      render();
+    }, onErr));
+    my.unsub.push(Rm.onPeers(ch => { if (O === my) onPeers(ch); }, onErr));
+
+    // Identity: the room's creator plays as the room code, every other tab gets its own id at once,
+    // and a reload keeps the tab's id (sessionStorage). Seats left by this browser's closed tabs are
+    // taken back by maintain() once the room has settled; two pages with one id are sorted by checkClash().
+    let pid = ss.get('omok.pid.' + code), how = 'session';
+    if (create) { pid = code; how = 'create'; ls.set('omok.host.' + code, '1'); }
+    else if (!pid || !CODE_RE.test(pid)) { pid = freshPid(code); how = 'fresh'; }
+    ss.set('omok.pid.' + code, pid);
+    addSeat(code, pid);
+    my.pid = pid; my.how = how; my.amHost = pid === code; me.pid = pid;
+    my.joinedAt = now();
+    log('joined', my.named ? 'room omok-' + code : 'lobby', 'as', pid, how);
+    try {
+      const bk = JSON.parse(ls.get('omok.g.' + code) || 'null');
+      if (validG(bk) && (bk.b === my.pid || bk.w === my.pid)) me.g = cloneG(bk);
+    } catch (e) { /* no backup */ }
+    let peers = [];
+    try { peers = Rm.peers(); } catch (e) { peers = []; }
+    onPeers({ peers });
+  }
+
+  function freshPid(code) {
+    let p;
+    do { p = rid(6); } while (p === code);
+    return p;
+  }
+  // Player ids this browser has used in a room, newest first, so a closed tab's seat can be taken back.
+  function seats(code) {
+    try {
+      const a = JSON.parse(ls.get('omok.seats.' + code) || '[]');
+      return Array.isArray(a) ? a.filter(x => typeof x === 'string' && CODE_RE.test(x)) : [];
+    } catch (e) { return []; }
+  }
+  function addSeat(code, pid) {
+    const a = seats(code).filter(x => x !== pid);
+    a.unshift(pid);
+    ls.set('omok.seats.' + code, JSON.stringify(a.slice(0, 8)));
+  }
+
+  function onPeers(ch) {
+    const my = O;
+    if (!my.active) return;
+    const by = new Map(), t = now();
+    let raw = 0;
+    for (const p of (ch && ch.peers) || []) {
+      if (!p || p.sameTab || p.kind === 'agent') continue;
+      raw++;
+      const pr = p.presence || {};
+      if (pr.app !== APP || pr.code !== my.code || typeof pr.pid !== 'string' || !CODE_RE.test(pr.pid)) continue;
+      if (!by.has(pr.pid)) by.set(pr.pid, []);
+      by.get(pr.pid).push({ pr, at: p.updatedAt || 0 });
+      if (!my.firstSeen[pr.pid]) my.firstSeen[pr.pid] = t;
+    }
+    const prev = my.present;
+    my.rawPeers = raw;
+    my.by = by;
+    my.present = new Set(by.keys());
+    for (const pid of prev) if (!my.present.has(pid)) my.goneAt[pid] = t;
+    for (const pid of my.present) delete my.goneAt[pid];
+    if (checkClash((ch && ch.peers) || [])) return;
+    reconcile();
+    if (my.pid && O === my) for (const pid of my.present) if (!prev.has(pid)) pidJoined(pid);
+  }
+
+  function bestOf(pid) {
+    if (!pid || !O.active) return null;
+    if (pid === O.pid) return O.me;
+    const arr = O.by.get(pid);
+    if (!arr || !arr.length) return null;
+    let b = arr[0];
+    for (const x of arr) if (x.at > b.at) b = x;
+    return b.pr;
+  }
+  const hostPr = () => bestOf(O.code);
+  const here = pid => !!pid && O.active && (pid === O.pid || O.by.has(pid));
+
+  function reconcile() {
+    const my = O;
+    if (!my.active || !my.pid) { render(); return; }
+    const t = now(), me = my.me;
+    if (my.amHost) {
+      if (!me.g) {    // host came back without a local copy: take the game back from the opponent
+        for (const arr of my.by.values()) for (const { pr } of arr) {
+          const g = pr.g;
+          if (validG(g) && (g.b === me.pid || g.w === me.pid) && (!me.g || g.r.length > me.g.r.length)) me.g = cloneG(g);
+        }
+        if (me.g) me.opp = me.g.b === me.pid ? me.g.w : me.g.b;
+      }
+    } else {
+      const h = hostPr();
+      if (h && validG(h.g)) {
+        const named = h.g.b === me.pid || h.g.w === me.pid;
+        if (named && (!me.g || me.g.id !== h.g.id)) me.g = cloneG(h.g);
+        else if (!named && me.g && me.g.id !== h.g.id && my.m.end) me.g = null;   // host moved on with someone else
+      }
+    }
+    if (me.g) mergeMine(t);
+    if (my.amHost) {
+      hostPickOpp();
+      if (hostMaybeCreate()) mergeMine(t);
+    }
+    if (!me.g) spectate(t);
+    publish();
+    render();
+  }
+
+  function mergeMine(t) {
+    const my = O, me = my.me, g = me.g;
+    const myC = g.b === me.pid ? 1 : g.w === me.pid ? 2 : 0;
+    if (!myC) { me.g = null; return; }
+    const other = myC === 1 ? g.w : g.b;
+    const theirs = [], mine = [];
+    for (const { pr } of my.by.get(other) || []) if (validG(pr.g) && pr.g.id === g.id) theirs.push(pr.g);
+    for (const { pr } of my.by.get(me.pid) || []) if (validG(pr.g) && pr.g.id === g.id) mine.push(pr.g);
+    let rm = g.r;
+    for (const x of mine) rm = longer(rm, x.r);
+    let rt = '';
+    for (const x of theirs) rt = longer(rt, x.r);
+    const st = R.replay(myC === 1 ? mergeRecs(rm, rt) : mergeRecs(rt, rm));
+    g.r = st.rec;
+    const evts = [g.e];
+    for (const x of theirs) evts.push(x.e);
+    for (const x of mine) evts.push(x.e);
+    matchUpdate(my.m, g, evts, t, st);
+    const end = my.m.end;
+    if (end && end.evt && !sameEvt(g.e, end.evt)) g.e = end.evt;
+    // After I (re)join during my own turn, the opponent tells me how much time I really have left.
+    if (!end && st.turn === myC) {
+      const op = bestOf(other), sy = op && op.sy;
+      if (sy && sy.id === g.id && sy.n === st.len && typeof sy.l === 'number') {
+        const lim = limitMs(g);
+        if (sy.l < lim - (t - my.m.T0) - 400) my.m.T0 = t - (lim - sy.l);
+      }
+    }
+  }
+
+  function hostPickOpp() {
+    const my = O, me = my.me;
+    if (me.opp && here(me.opp)) return;
+    const inGame = me.g && (me.g.b === me.opp || me.g.w === me.opp) && !my.m.end;
+    if (me.opp && inGame) return;        // hold the seat for a player who dropped mid-game
+    let pick = null;
+    for (const pid of my.by.keys()) {
+      if (pid === me.pid) continue;
+      if (!pick || my.firstSeen[pid] < my.firstSeen[pick]) pick = pid;
+    }
+    if (pick !== me.opp) { me.opp = pick; me.rdy = null; }
+  }
+
+  function hostMaybeCreate() {
+    const my = O, me = my.me;
+    if (!me.opp || !here(me.opp)) return false;
+    if (me.g && !my.m.end) return false;
+    const T = readyToken();
+    const op = bestOf(me.opp);
+    if (!op || me.rdy !== T || op.rdy !== T) return false;
+    let b, w;
+    if (me.g && (me.g.b === me.opp || me.g.w === me.opp)) { b = me.g.w; w = me.g.b; }    // rematch: swap colours
+    else if (Math.random() < 0.5) { b = me.pid; w = me.opp; }
+    else { b = me.opp; w = me.pid; }
+    me.g = { id: rid(6), b, w, r: '', e: null, t: TL_OK(me.tl) ? me.tl : TL_DEFAULT };
+    me.sy = null;
+    UI.hideOverFor = null;
+    return true;
+  }
+
+  function spectate(t) {
+    const my = O, h = hostPr();
+    const g0 = h && validG(h.g) ? h.g : null;
+    if (!g0) { matchUpdate(my.m, null); return; }
+    let rb = '', rw = '';
+    const evts = [];
+    for (const [pid, arr] of my.by) for (const { pr } of arr) {
+      if (!validG(pr.g) || pr.g.id !== g0.id) continue;
+      if (pid === g0.b) rb = longer(rb, pr.g.r);
+      else if (pid === g0.w) rw = longer(rw, pr.g.r);
+      else continue;
+      evts.push(pr.g.e);
+    }
+    const st = R.replay(mergeRecs(rb, rw));
+    matchUpdate(my.m, { id: g0.id, b: g0.b, w: g0.w, r: st.rec, t: tlOf(g0), e: null }, evts, t, st);
+  }
+
+  function pidJoined(pid) {
+    const my = O, me = my.me, g = me.g, m = my.m;
+    if (!g || !m.st || m.end || m.g !== g || !m.T0real) return;
+    const other = g.b === me.pid ? g.w : g.b;
+    if (pid !== other) return;
+    if (m.st.turn !== (other === g.b ? 1 : 2)) return;
+    me.sy = { id: g.id, n: m.st.len, l: Math.round(rawLeft(m, now())) };
+    publish();
+  }
+
+  function publish() {
+    const my = O;
+    if (!my.active || !my.R || !my.pid) return;
+    const me = my.me, patch = {};
+    let any = false;
+    for (const k of FIELDS) {
+      const v = me[k] == null ? null : me[k];
+      const s = JSON.stringify(v);
+      if (my.pub[k] !== s) { patch[k] = v; my.pub[k] = s; any = true; }
+    }
+    if (!any) return;
+    if ('g' in patch && me.g) ls.set('omok.g.' + my.code, JSON.stringify(me.g));
+    let p;
+    try { p = my.R.presence(patch); } catch (e) { p = Promise.reject(e); }
+    Promise.resolve(p).then(() => { if (O === my) my.lastPub = { at: now(), ok: true }; }, err => {
+      if (O !== my) return;
+      for (const k in patch) delete my.pub[k];
+      const c = err && err.code;
+      my.lastPub = { at: now(), ok: false, code: c || 'error' };
+      log('presence failed', c, err && err.message);
+      if (TERMINAL.has(c)) { my.dead = true; my.why = c; render(); }
+      else setTimeout(() => { if (O === my) publish(); }, 1200);
+    });
+  }
+
+  // Two open pages presenting the same player id: the newer page gives the id up. A page that owned
+  // its id (made the room, or reloaded) waits 10 s first, because a reload's old page can linger briefly.
+  function checkClash(peers) {
+    const my = O;
+    if (!my.active || !my.pid) return false;
+    const t = now();
+    for (const p of peers || []) {
+      if (!p || p.sameTab || p.kind === 'agent') continue;
+      const o = p.presence || {};
+      if (o.app !== APP || o.code !== my.code || o.pid !== my.pid || typeof o.sid !== 'string' || o.sid === SID) continue;
+      const os = Number(o.since) || 0;
+      if (!(os < SINCE || (os === SINCE && o.sid < SID))) continue;
+      if (!my.clashSeen[o.sid]) my.clashSeen[o.sid] = t;
+      if (my.how === 'reclaim' || my.how === 'fresh' || t - my.clashSeen[o.sid] > 10000) {
+        switchIdentity(freshPid(my.code), 'fresh');
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function switchIdentity(pid, how) {
+    const my = O, me = my.me;
+    log('id', my.pid, '->', pid, how);
+    my.pid = pid; my.how = how; my.amHost = pid === my.code;
+    me.pid = pid; me.g = null; me.opp = null; me.rdy = null; me.sy = null;
+    my.m = makeMatch(); my.clashSeen = {};
+    try {
+      const bk = JSON.parse(ls.get('omok.g.' + my.code) || 'null');
+      if (validG(bk) && (bk.b === pid || bk.w === pid)) me.g = cloneG(bk);
+    } catch (e) { /* no backup */ }
+    ss.set('omok.pid.' + my.code, pid);
+    addSeat(my.code, pid);
+    UI.hideOverFor = null;
+    reconcile();
+  }
+
+  // How long a player has been missing, counted only while my own link has been up.
+  const absentFor = (pid, t) => (here(pid) ? 0 : t - Math.max(O.goneAt[pid] || 0, O.liveSince));
+
+  // Runs about once a second. Once the room has settled, take back a seat this browser left behind
+  // in a closed tab: the host seat if this browser made the room, or a seat in the host's current game.
+  function maintain(t) {
+    const my = O;
+    if (!my.active || !my.pid || my.dead || !my.R) return;
+    let peers = [];
+    try { peers = my.R.peers(); } catch (e) { peers = []; }
+    if (checkClash(peers)) return;
+    if (my.amHost || my.me.g || my.conn !== 'live' || t - my.liveSince < 3500) return;
+    if (ls.get('omok.host.' + my.code) === '1' && absentFor(my.code, t) >= 3500) { switchIdentity(my.code, 'reclaim'); return; }
+    const h = hostPr();
+    if (h && validG(h.g)) {
+      for (const s of seats(my.code)) {
+        if (s !== my.pid && s !== my.code && (h.g.b === s || h.g.w === s) && absentFor(s, t) >= 3500) { switchIdentity(s, 'reclaim'); return; }
+      }
+    }
+  }
+
+  function diagText() {
+    const my = O;
+    if (!my.active) return '';
+    const t = now(), L2 = [];
+    const ago = at => (at ? Math.max(0, Math.round((t - at) / 1000)) + '초 전' : '-');
+    if (my.relay && my.R) {
+      const inf = my.R.info();
+      L2.push('방식      링크 전용 · 중계 서버 ' + inf.filter(b => b.state === 'live').length + '/' + inf.length + ' 연결');
+      for (const b of inf) {
+        L2.push('  ' + b.host + ' · ' + ({ live: '연결됨', connecting: '연결 중', down: '재시도 중', blocked: '이 화면에서 차단됨' }[b.state] || b.state) + (b.state === 'live' && b.rtt != null ? ' · ' + b.rtt + 'ms' : ''));
+      }
+    } else L2.push('방식      ' + (my.R ? (my.named ? '전용 방 omok-' + my.code : '공용 로비') : '연결 전'));
+    L2.push('연결      ' + ({ live: '실시간 연결됨', down: '끊김', connecting: '연결 중' }[connState()]) + (my.dead ? ' · ' + (my.why || '불가') : ''));
+    L2.push('내 ID     ' + (my.pid || '-') + (my.amHost ? ' · 방장' : '') + ' · ' + ({ create: '방 만듦', session: '새로고침 유지', fresh: '새 자리', reclaim: '자리 되찾음' }[my.how] || '-'));
+    L2.push('보이는 창  ' + my.rawPeers + '개 · 이 방 ' + my.by.size + '명');
+    for (const [pid, arr] of my.by) {
+      const pr = bestOf(pid);
+      let at = 0;
+      for (const x of arr) at = Math.max(at, x.at || 0);
+      const g = pr && validG(pr.g) ? '대국 ' + pr.g.id + ' · ' + (pr.g.r.length / 4) + '수' : '대국 없음';
+      L2.push('  ' + pid + (pid === my.code ? ' 방장' : '') + (pid === my.pid ? ' (같은 ID!)' : '') + ' · ' + sanitizeNick(pr && pr.nick) + ' · ' + g + ' · ' + ago(at) + ' 갱신');
+    }
+    const g = my.me.g;
+    L2.push('내 대국   ' + (g ? g.id + ' · ' + (g.r.length / 4) + '수' : '없음'));
+    const lp = my.lastPub;
+    L2.push('내 상태 전송 ' + (lp ? (lp.ok ? '성공' : '실패 ' + lp.code) + ' · ' + ago(lp.at) : '아직 없음'));
+    return L2.join('\n');
+  }
+  function updateDiag() {
+    const pre = $('#diagText'), d = $('#diag');
+    if (!pre || !d || !d.open || !O.active) return;
+    const txt = diagText();
+    if (pre.textContent !== txt) pre.textContent = txt;
+  }
+
+  function myColorOnline() {
+    const g = O.active && O.me.g;
+    if (!g || O.m.g !== g) return 0;
+    return g.b === O.pid ? 1 : g.w === O.pid ? 2 : 0;
+  }
+
+  function onlineMove(i) {
+    const my = O, m = my.m, g = my.me.g, t = now();
+    const myC = myColorOnline();
+    if (my.conn !== 'live' && my.R && typeof my.R.kick === 'function') my.R.kick();
+    if (!myC || !m.st) { if (m.st) toast('관전 중이에요.'); return; }
+    if (m.end || t < m.T0) return;
+    if (m.st.turn !== myC) { toast('상대 차례예요.'); return; }
+    if (rawLeft(m, t) <= 0) return;
+    const err = moveError(m.st, i);
+    if (err) { toast(err, true); return; }
+    g.r = m.st.rec + R.encMove(i, (t - m.T0) / 100);
+    my.me.sy = null;
+    reconcile();
+  }
+
+  function onlineTick(t) {
+    const my = O, m = my.m, g = my.me.g;
+    const myC = myColorOnline();
+    if (!myC || !m.st || m.end || t < m.T0) return;
+    const turn = m.st.turn, left = rawLeft(m, t);
+    if (turn === myC) { if (left > 0) return; }           // my own flag falls on my own clock
+    else {
+      // The opponent's flag: claim it only while my link is up and hearing the room, so a move
+      // I could not receive during my own outage is never mistaken for a timeout.
+      if (left > -GRACE || my.conn !== 'live' || t - my.liveSince < 3000) return;
+      if (my.R && typeof my.R.lastRx === 'function' && t - my.R.lastRx() > 4500) return;
+    }
+    g.e = { k: 'to', c: turn === 1 ? 'b' : 'w', n: m.st.len };
+    reconcile();
+  }
+
+  function onlineResign() {
+    const myC = myColorOnline(), m = O.m;
+    if (!myC || !m.st || m.end) return;
+    O.me.g.e = { k: 'rs', c: myC === 1 ? 'b' : 'w', n: m.st.len };
+    reconcile();
+  }
+
+  // What both players say they are ready for: the next game after the host's current one, at the
+  // host's chosen time. Changing the time changes the token, so both press ready again.
+  const hostTl = () => { const h = hostPr(); return h && TL_OK(h.tl) ? h.tl : TL_DEFAULT; };
+  function readyToken() { const h = hostPr(); return (h && validG(h.g) ? h.g.id : 's') + '@' + hostTl(); }
+  function onlineReady() {
+    if (!O.active || !O.pid) return;
+    const T = readyToken();
+    O.me.rdy = O.me.rdy === T ? null : T;
+    reconcile();
+  }
+
+  function myRole() {
+    const my = O;
+    if (!my.pid) return 'pending';
+    if (my.amHost) return 'host';
+    if (my.me.g) return 'player';
+    const h = hostPr();
+    if (!h) return 'nohost';
+    if (h.opp === my.pid) return 'player';
+    if (h.opp && here(h.opp)) return 'spectator';
+    return 'pending';
+  }
+
+  function connState() {
+    const my = O;
+    if (my.dead) return 'down';
+    if (my.conn === 'live') return 'live';
+    if (my.conn === 'down') return now() - my.downSince > 2000 ? 'down' : 'live';
+    return 'connecting';
+  }
+
+  function goHome() {
+    stopOnline();
+    L.g = null; L.m = makeMatch();
+    S.mode = 'home';
+    UI.hideOverFor = null;
+    setHash('');
+    render();
+  }
+
+  // ---------------------------------------------------------------- view models
+  const pvm = o => Object.assign({ name: '', color: 0, tag: '', sub: '', ready: false, offline: false, placeholder: false, clock: null, limit: 0 }, o);
+  const numbersAct = () => ['numbers', S.numbers ? '수순 숨기기' : '수순 보기'];
+  const emptyBoard = () => ({ st: R.replay(''), line: null, fmap: null, interactive: false, ghost: 0, hint: false, gid: '' });
+
+  function boardVM(m, canPlay) {
+    const st = m.st;
+    if (!st) return emptyBoard();
+    return {
+      st, line: st.line, fmap: m.end ? null : fmapFor(st),
+      interactive: canPlay, ghost: canPlay ? st.turn : 0,
+      hint: !m.end && st.len === 0, gid: m.g ? m.g.id : ''
+    };
+  }
+
+  function endStatus(end, myC) {
+    if (end.kind === 'draw') return { main: '무승부', sub: '판이 가득 찼어요', tone: '' };
+    if (!myC) return { main: CNAME[end.winner] + ' 승리', sub: REASON[end.kind], tone: '' };
+    return end.winner === myC
+      ? { main: '이겼어요', sub: CNAME[end.winner] + ' · ' + REASON[end.kind], tone: 'mine' }
+      : { main: '졌어요', sub: CNAME[end.loser] + ' · ' + REASON[end.kind], tone: 'alarm' };
+  }
+
+  function homeVM() {
+    const st = R.replay(SAMPLE_REC);
+    return {
+      demo: true,
+      board: { st, line: null, fmap: null, interactive: false, ghost: 0, hint: false, gid: '' },
+      top: pvm({ name: '상대', placeholder: true, sub: '링크를 받은 친구' }),
+      bot: pvm({ name: S.nick || '나', placeholder: true, sub: '대국방을 만들면 링크가 나와요' }),
+      status: { main: '렌주룰 · 15×15', sub: '한 수마다 제한시간이 새로 시작돼요 · 기본 30초', tone: '' },
+      actions: [], room: null, overlay: { kind: 'home' }
+    };
+  }
+
+  function localVM(t) {
+    const m = L.m, st = m.st;
+    const clockFor = c => tt => { const v = clockVals(m, tt); return { ms: v[c - 1], limit: limitMs(m.g), running: !!m.st && !m.end && m.st.turn === c && tt >= m.T0 }; };
+    const canPlay = !!st && !m.end && t >= m.T0;
+    const vm = {
+      board: boardVM(m, canPlay),
+      top: pvm({ name: '백', color: 2, sub: '제한 없음 · 장목도 승리', clock: L.g ? clockFor(2) : null, limit: S.tl * 1000 }),
+      bot: pvm({ name: '흑', color: 1, sub: '금수 적용 · 정확히 다섯', clock: L.g ? clockFor(1) : null, limit: S.tl * 1000 }),
+      status: null, actions: [], room: null, overlay: null
+    };
+    if (!L.g) {
+      vm.overlay = { kind: 'localstart', tl: S.tl };
+      vm.status = { main: '이 기기에서 둘이 번갈아 둡니다', sub: '흑이 먼저 둬요', tone: '' };
+      vm.actions = [['home', '처음으로']];
+      return vm;
+    }
+    if (m.end) {
+      vm.status = endStatus(m.end, 0);
+      vm.endKey = L.g.id + m.end.kind; vm.endWin = true;
+      if (UI.hideOverFor !== L.g.id) vm.overlay = { kind: 'over', persp: 0, end: m.end, moves: st.len, online: false, tl: S.tl, canTl: true };
+      vm.actions = [['localAgain', '다시 하기', 'primary'], UI.hideOverFor === L.g.id ? ['showOver', '결과 보기'] : null, numbersAct(), ['home', '처음으로']].filter(Boolean);
+    } else if (t < m.T0) {
+      vm.overlay = { kind: 'countdown', n: Math.ceil((m.T0 - t) / 1000), who: '흑이 먼저, 첫 수는 정중앙' };
+      vm.status = { main: '곧 시작해요', sub: '흑이 먼저 둡니다', tone: '' };
+      vm.actions = [['home', '처음으로']];
+    } else {
+      vm.status = { main: CNAME[st.turn] + ' 차례', sub: (st.len === 0 ? '첫 수는 정중앙(천원)에 둡니다' : (st.len + 1) + '번째 수') + ' · 한 수 ' + tlOf(L.g) + '초', tone: 'mine' };
+      vm.actions = [['resign', CNAME[st.turn] + ' 기권', 'danger'], numbersAct(), ['home', '처음으로']];
+    }
+    return vm;
+  }
+
+  // The relay has been unreachable long enough that the page should say so.
+  function linkTrouble(t) {
+    const my = O;
+    if (!my.active || my.dead || !my.relay || connState() === 'live') return false;
+    if (relayBlocked()) return true;
+    return t - (my.conn === 'down' ? my.downSince : my.startedAt) > 8000;
+  }
+  const relayBlocked = () => !!(O.active && O.relay && O.R && typeof O.R.blocked === 'function' && O.R.blocked());
+
+  function onlineVM(t) {
+    const vm = onlineVM0(t);
+    if (!vm.playing && linkTrouble(t) && (!vm.overlay || vm.overlay.kind !== 'over')) {
+      const blocked = relayBlocked();
+      vm.overlay = { kind: 'relaywait', blocked, embedded: EMBEDDED || LOCALFILE };
+      vm.status = blocked
+        ? { main: '이 화면에서는 인터넷 연결이 막혀 있어요', sub: '웹 주소(https://…)로 열어 주세요', tone: 'alarm' }
+        : { main: '중계 서버에 연결하지 못했어요', sub: '계속 다시 시도하는 중이에요', tone: 'alarm' };
+    }
+    return vm;
+  }
+
+  function onlineVM0(t) {
+    const my = O, cs = connState();
+    const vm = {
+      board: emptyBoard(),
+      top: pvm({ name: '상대', placeholder: true }),
+      bot: pvm({ name: S.nick || UI.defNick, tag: '나' }),
+      status: { main: '', sub: '', tone: '' },
+      actions: [['home', '방 나가기']],
+      room: { code: my.code, link: inviteLink(my.code), conn: cs },
+      overlay: null, playing: false
+    };
+    if (my.dead) {
+      vm.overlay = { kind: 'unavailable', why: my.why };
+      vm.status = { main: '실시간 연결을 쓸 수 없어요', sub: '같은 기기에서 둘이 두기는 할 수 있어요', tone: 'alarm' };
+      vm.actions = [['local', '이 기기에서 두기'], ['home', '처음으로']];
+      return vm;
+    }
+    if (!my.pid) {
+      vm.overlay = { kind: 'connecting' };
+      vm.status = { main: '연결하는 중…', sub: '방 코드 ' + my.code.toUpperCase(), tone: '' };
+      return vm;
+    }
+    const me = my.me, m = my.m, st = m.st, g = m.g, role = myRole(), h = hostPr();
+    const clockFor = c => tt => { const v = clockVals(m, tt); return { ms: v[c - 1], limit: limitMs(m.g), running: !!m.st && !m.end && m.st.turn === c && tt >= m.T0 }; };
+    const nextLimit = hostTl() * 1000;
+    const card = (pid, c, tag, fallback) => {
+      const pr = bestOf(pid);
+      return pvm({
+        name: pr ? (sanitizeNick(pr.nick) || '이름 없음') : (fallback || '기다리는 중'), placeholder: !pr, color: c, tag,
+        sub: c === 1 ? '흑 · 금수 적용' : c === 2 ? '백 · 제한 없음' : (pid === my.code && pid !== my.pid ? '방장' : ''),
+        offline: !!pid && !!pr && !here(pid), clock: c ? clockFor(c) : null, limit: nextLimit
+      });
+    };
+    const myC = myColorOnline();
+    const hostSwap = my.amHost && !!me.g && !!me.opp && me.g.b !== me.opp && me.g.w !== me.opp && !!m.end;
+    const showGame = g && st && ((myC && !hostSwap) || (!myC && role !== 'player' && role !== 'host'));
+
+    if (showGame) {
+      if (myC) { vm.bot = card(my.pid, myC, '나'); vm.top = card(myC === 1 ? g.w : g.b, 3 - myC, '상대', '나간 상대'); }
+      else { vm.bot = card(g.b, 1, ''); vm.top = card(g.w, 2, ''); }
+      const canPlay = !!myC && !m.end && st.turn === myC && t >= m.T0;
+      vm.board = boardVM(m, canPlay);
+      vm.playing = !m.end;
+      if (m.end) {
+        vm.status = endStatus(m.end, myC);
+        vm.endKey = g.id + m.end.kind; vm.endWin = myC ? m.end.winner === myC : true;
+        if (myC) {
+          const oppPid = myC === 1 ? g.w : g.b, op = bestOf(oppPid), T = readyToken();
+          const same = T.startsWith(g.id + '@');
+          const meReady = same && me.rdy === T;
+          const oppReady = same && !!op && op.rdy === T;
+          const oppGone = !here(oppPid) || (!my.amHost && !h);
+          if (UI.hideOverFor !== g.id) vm.overlay = { kind: 'over', persp: myC, end: m.end, moves: st.len, online: true, meReady, oppReady, oppGone, tl: hostTl(), canTl: my.amHost };
+          vm.actions = [oppGone ? null : ['ready', meReady ? '다시 하기 취소' : '다시 하기', 'primary'], UI.hideOverFor === g.id ? ['showOver', '결과 보기'] : null, numbersAct(), ['home', '방 나가기']].filter(Boolean);
+        } else {
+          if (UI.hideOverFor !== g.id) vm.overlay = { kind: 'over', persp: 0, end: m.end, moves: st.len, online: true, spectator: true };
+          vm.actions = [UI.hideOverFor === g.id ? ['showOver', '결과 보기'] : null, numbersAct(), ['home', '방 나가기']].filter(Boolean);
+        }
+      } else if (t < m.T0) {
+        vm.overlay = { kind: 'countdown', n: Math.ceil((m.T0 - t) / 1000), who: myC === 1 ? '나는 흑 · 먼저 둬요' : myC === 2 ? '나는 백 · 흑이 먼저 둬요' : '흑이 먼저 둡니다' };
+        vm.status = { main: '곧 시작해요', sub: myC === 1 ? '첫 수는 정중앙(천원)' : myC === 2 ? '상대가 흑이에요' : '관전 중', tone: '' };
+      } else {
+        const turnPid = st.turn === 1 ? g.b : g.w;
+        if (cs === 'down') {
+          vm.status = { main: '연결이 끊겼어요', sub: '다시 연결하는 중이에요. 시계는 계속 흘러요', tone: 'alarm' };
+        } else if (myC && st.turn === myC) {
+          vm.status = { main: '내 차례예요', sub: (st.len === 0 ? '첫 수는 정중앙(천원)에 둡니다' : (st.len + 1) + '번째 수') + ' · 한 수 ' + tlOf(g) + '초', tone: 'mine' };
+        } else if (myC) {
+          vm.status = here(turnPid)
+            ? { main: '상대 차례예요', sub: (st.len + 1) + '번째 수 · 생각 중', tone: '' }
+            : { main: '상대 연결이 끊겼어요', sub: '시간은 계속 흐르고, 0초가 지나면 내가 이겨요', tone: 'alarm' };
+        } else {
+          vm.status = { main: '관전 중', sub: CNAME[st.turn] + ' 차례 · ' + (st.len + 1) + '번째 수', tone: '' };
+        }
+        vm.actions = myC ? [['resign', '기권', 'danger'], numbersAct(), ['home', '방 나가기']] : [numbersAct(), ['home', '방 나가기']];
+      }
+      return vm;
+    }
+
+    // ---- no game on the board yet (or about to start a new one)
+    const T = readyToken();
+    const first = T.startsWith('s@');
+    if (role === 'host' || role === 'player') {
+      const oppPid = role === 'host' ? me.opp : my.code;
+      vm.bot = card(my.pid, 0, '나');
+      vm.top = oppPid ? card(oppPid, 0, role === 'host' ? '상대' : '방장') : pvm({ name: '친구를 기다리는 중', placeholder: true, sub: '초대 링크를 보내 주세요' });
+      const op = bestOf(oppPid);
+      if (oppPid && here(oppPid) && op) {
+        const meReady = me.rdy === T, oppReady = op.rdy === T;
+        vm.bot.ready = meReady; vm.top.ready = oppReady;
+        vm.overlay = { kind: 'lobby', opp: sanitizeNick(op.nick) || '상대', meReady, oppReady, first, tl: hostTl(), canTl: my.amHost };
+        vm.status = { main: '둘 다 준비하면 시작해요', sub: '한 수 ' + hostTl() + '초 · ' + (first ? '첫 판 색은 무작위' : '새 판 · 색은 무작위'), tone: '' };
+        vm.actions = [['ready', meReady ? '준비 취소' : '준비 완료', 'primary'], ['home', '방 나가기']];
+      } else if (role === 'host') {
+        vm.overlay = { kind: 'invite', code: my.code, link: inviteLink(my.code), hint: INVITE_HINT };
+        vm.status = { main: '친구를 기다리는 중', sub: STANDALONE ? '링크를 보내면 친구가 바로 들어와요' : '링크를 보내고, 공유 메뉴에서 친구를 초대해 주세요', tone: '' };
+      } else {
+        vm.overlay = { kind: 'waithost' };
+        vm.status = { main: '방장을 기다리는 중', sub: '방 코드 ' + my.code.toUpperCase(), tone: '' };
+      }
+      return vm;
+    }
+    if (role === 'spectator') {
+      vm.bot = card(my.code, 0, ''); vm.top = card(h && h.opp, 0, '');
+      vm.overlay = { kind: 'spectate' };
+      vm.status = { main: '관전 중', sub: '두 사람이 대국을 준비하고 있어요', tone: '' };
+      return vm;
+    }
+    vm.bot = card(my.pid, 0, '나');
+    vm.top = card(my.code, 0, '방장', '방장');
+    vm.overlay = { kind: role === 'nohost' ? 'waithost' : 'pending' };
+    vm.status = role === 'nohost' ? { main: '방장을 기다리는 중', sub: '방 코드 ' + my.code.toUpperCase(), tone: '' } : { main: '자리를 잡는 중…', sub: '', tone: '' };
+    return vm;
+  }
+
+  // ---------------------------------------------------------------- overlays
+  const INVITE_HINT = !STANDALONE
+    ? '공개 링크(링크가 있는 모든 사용자)로 들어온 사람은 실시간 방에 접속할 수 없어요. 이 페이지의 공유 메뉴에서 친구 이메일을 직접 초대해 주세요. 친구도 Claude에 로그인해야 해요.'
+    : location.protocol === 'file:'
+      ? '지금은 내 기기에 있는 파일로 열려 있어요. 이 주소는 다른 기기에서 열리지 않으니, 웹에 올린 주소에서 방을 만들어 주세요.'
+      : '친구는 로그인이나 초대 없이 링크만 열면 돼요. 친구가 들어올 때까지 이 창을 열어 두세요.';
+  const RULES_LINK_SA = '대국방을 만들면 초대 링크가 나옵니다. 링크를 받은 친구는 로그인이나 초대 없이 바로 들어와요. 둘 다 준비를 누르면 3초 뒤 시작하고, 첫 판의 색은 무작위, 다음 판부터는 번갈아 바뀝니다. 대국 내용(이름과 수순)은 무료 공개 중계 서버를 거쳐 전달돼요. 연결이 이상하면 방 정보의 ‘연결 정보’를 열어 보세요.';
+  function whyText(why) {
+    if (why === 'nows') return '이 브라우저는 실시간 연결(WebSocket)을 지원하지 않아요. 최신 크롬, 사파리, 엣지에서 열어 주세요.';
+    if (why === 'revoked') return '공유 설정이 바뀌어 연결이 끊겼어요. 방장에게 다시 초대해 달라고 해 주세요.';
+    return '실시간 대국방에는 방장이 공유 메뉴에서 이메일로 초대한 사람만 들어올 수 있어요. 공개 링크로 열었다면 방장에게 내 이메일로 초대해 달라고 한 뒤, Claude에 로그인한 상태로 다시 열어 주세요.';
+  }
+  const spin = '<span class="spin" aria-hidden="true"></span>';
+  // Time per move: the host (or the players on one device) picks it; the friend sees the choice.
+  const tlPick = (cur, can) => can
+    ? `<div class="tl-pick"><span class="tl-label" id="tlLabel">한 수 제한시간</span><div class="tl-row" role="group" aria-labelledby="tlLabel">${TL_OPTS.map(v =>
+        `<button class="tl-opt" type="button" data-act="setTl" data-tl="${v}" aria-pressed="${v === cur}">${v}초</button>`).join('')}</div></div>`
+    : `<p class="tl-fixed">한 수 제한시간 <b>${cur}초</b> · 방장이 정해요</p>`;
+  const OVL = {
+    home: () => `
+      <div class="ov-card">
+        <p class="eyebrow">15×15 · 렌주룰 · 한 수 제한시간</p>
+        <h2>친구와 오목 한 판 둘까요?</h2>
+        <div class="field"><label for="nickIn">내 이름</label><input id="nickIn" maxlength="12" autocomplete="nickname" value="${esc(S.nick)}" placeholder="상대에게 보일 이름"></div>
+        <button class="btn primary" type="button" data-act="create">대국방 만들고 링크 받기</button>
+        <button class="btn" type="button" data-act="local">이 기기에서 둘이 두기</button>
+        <form class="field" id="joinForm" autocomplete="off">
+          <label for="codeIn">받은 방 코드로 들어가기</label>
+          <div class="row"><input id="codeIn" maxlength="80" placeholder="예: k3v6q2" autocapitalize="off" spellcheck="false"><button class="btn sm" type="submit">입장</button></div>
+        </form>
+      </div>`,
+    connecting: () => `<div class="ov-card"><div class="ov-row">${spin}<h2>연결하는 중…</h2></div><p>실시간 대국방에 들어가고 있어요.</p></div>`,
+    invite: o => `
+      <div class="ov-card">
+        <p class="eyebrow">대국방이 열렸어요</p>
+        <h2>친구를 기다리고 있어요</h2>
+        <p>이 링크를 친구에게 보내 주세요. 친구가 열면 바로 이 방으로 들어와요.</p>
+        <div class="linkbox"><input id="linkIn" readonly value="${esc(o.link)}" aria-label="초대 링크"><button class="btn sm jade" type="button" data-act="copy">복사</button></div>
+        <p class="code-big">방 코드<b>${esc(o.code.toUpperCase())}</b></p>
+        <p class="hint">${esc(o.hint)}</p>
+      </div>`,
+    relaywait: o => o.blocked ? `
+      <div class="ov-card">
+        <p class="eyebrow">연결이 막힌 화면</p>
+        <h2>여기서는 친구와 연결할 수 없어요</h2>
+        <p>앱 미리보기나 메신저 안의 뷰어처럼 외부 연결을 막는 화면에서 열려 있어요. 이 페이지의 웹 주소(https://…)를 크롬이나 사파리에서 열면 바로 연결돼요.</p>
+        <button class="btn primary" type="button" data-act="local">이 기기에서 둘이 두기</button>
+        <button class="btn" type="button" data-act="home">처음으로</button>
+      </div>` : `
+      <div class="ov-card">
+        <div class="ov-row">${spin}<h2>중계 서버에 연결하는 중…</h2></div>
+        <p>${o.embedded
+          ? '앱 미리보기나 내려받은 파일로 열면 연결이 막힐 수 있어요. 이 페이지의 웹 주소(https://…)를 크롬이나 사파리에서 열어 주세요.'
+          : '연결이 오래 걸리고 있어요. 계속 다시 시도하고 있으니, Wi-Fi나 모바일 데이터를 바꿔 보거나 잠시만 기다려 주세요.'}</p>
+        <button class="btn primary" type="button" data-act="retry">지금 다시 시도</button>
+        <button class="btn" type="button" data-act="local">이 기기에서 둘이 두기</button>
+      </div>`,
+    lobby: o => `
+      <div class="ov-card">
+        <p class="eyebrow">${o.first ? '첫 판 · 색은 무작위' : '새 판 · 색은 무작위'}</p>
+        <div class="versus">
+          <div class="vs-p"><span class="nm">나</span><span class="st${o.meReady ? ' ok' : ''}">${o.meReady ? '준비 완료' : '준비 전'}</span></div>
+          <span class="vs-mid" aria-hidden="true">對</span>
+          <div class="vs-p"><span class="nm">${esc(o.opp)}</span><span class="st${o.oppReady ? ' ok' : ''}">${o.oppReady ? '준비 완료' : '준비 전'}</span></div>
+        </div>
+        ${tlPick(o.tl, o.canTl)}
+        <button class="btn primary" type="button" data-act="ready">${o.meReady ? '준비 취소' : '준비 완료'}</button>
+        <div class="field"><label for="nickIn2">내 이름</label><input id="nickIn2" maxlength="12" value="${esc(S.nick || UI.defNick)}"></div>
+        <p class="hint">둘 다 준비하면 3초 뒤 시작해요. 내 차례마다 시간이 새로 시작되고, 다 쓰면 그 판은 집니다. 다음 판부터는 색이 번갈아 바뀌어요.</p>
+      </div>`,
+    over: o => {
+      const e = o.end, w = e.winner, me = o.persp;
+      let title, line;
+      if (e.kind === 'draw') { title = '무승부'; line = '판이 가득 찼어요.'; }
+      else if (me) {
+        const won = w === me;
+        title = won ? '이겼어요!' : '아쉽게 졌어요';
+        line = e.kind === 'five' ? (won ? '다섯 개를 먼저 이었어요.' : '상대가 다섯 개를 먼저 이었어요.')
+          : e.kind === 'time' ? (won ? '상대 시간이 다 됐어요.' : '시간이 다 됐어요.')
+            : (won ? '상대가 기권했어요.' : '기권했어요.');
+      } else {
+        title = CNAME[w] + ' 승리';
+        line = e.kind === 'five' ? CNAME[w] + '이 다섯 개를 먼저 이었어요.'
+          : e.kind === 'time' ? CNAME[e.loser] + '의 시간이 다 됐어요.' : CNAME[e.loser] + '이 기권했어요.';
+      }
+      let btns = '', note = '';
+      if (o.online && !o.spectator) {
+        note = o.oppGone ? '상대가 방을 나갔어요.' : o.oppReady ? '상대가 다시 하기를 눌렀어요. 누르면 바로 시작해요.'
+          : o.meReady ? '상대가 누르면 색을 바꿔 시작해요.' : '둘 다 누르면 색을 바꿔 새 판을 시작해요.';
+        btns = o.oppGone ? '' : `<button class="btn primary" type="button" data-act="ready">${o.meReady ? '다시 하기 취소' : '다시 하기'}</button>`;
+      } else if (!o.online) {
+        btns = '<button class="btn primary" type="button" data-act="localAgain">다시 하기</button>';
+      }
+      const pick = (o.online && !o.spectator && !o.oppGone) || !o.online ? tlPick(o.tl, o.canTl) : '';
+      return `<div class="ov-card"><p class="eyebrow">${esc(o.moves + '수 · ' + REASON[e.kind])}</p><h2>${esc(title)}</h2><p>${esc(line)}</p>${pick}${btns}<button class="btn quiet" type="button" data-act="hideOver">판 보기</button>${note ? `<p class="hint">${esc(note)}</p>` : ''}</div>`;
+    },
+    countdown: o => `<div><div class="count" aria-live="assertive">${o.n}</div><div class="count-sub">${esc(o.who)}</div></div>`,
+    waithost: () => `<div class="ov-card"><div class="ov-row">${spin}<h2>방장을 기다리는 중</h2></div><p>방장이 이 페이지를 열어 두면 바로 이어져요. 방장이 방을 닫았다면 새 링크를 받아 주세요.</p></div>`,
+    pending: () => `<div class="ov-card"><div class="ov-row">${spin}<h2>자리를 잡는 중…</h2></div></div>`,
+    spectate: () => `<div class="ov-card"><p class="eyebrow">관전</p><h2>이미 두 사람이 이 방에 있어요</h2><p>대국이 시작되면 여기서 지켜볼 수 있어요.</p></div>`,
+    unavailable: o => `
+      <div class="ov-card">
+        <p class="eyebrow">실시간 연결 불가</p>
+        <h2>이 화면에서는 친구와 연결할 수 없어요</h2>
+        <p>${esc(whyText(o.why))}</p>
+        <button class="btn primary" type="button" data-act="local">이 기기에서 둘이 두기</button>
+        <button class="btn" type="button" data-act="home">처음으로</button>
+      </div>`,
+    localstart: o => `
+      <div class="ov-card">
+        <p class="eyebrow">같은 기기 · 번갈아 두기</p>
+        <h2>한 화면에서 둘이 둡니다</h2>
+        <p>흑이 먼저 둬요. 내 차례마다 제한시간이 새로 시작되고, 다 쓰면 그 판은 집니다.</p>
+        ${tlPick(o.tl, true)}
+        <button class="btn primary" type="button" data-act="localGo">시작</button>
+        <button class="btn" type="button" data-act="home">처음으로</button>
+      </div>`
+  };
+
+  // ---------------------------------------------------------------- board drawing
+  const VB = 640, MG = 40, SP = 40, SR = 18.2;
+  const svg = $('#board');
+  const cx = i => MG + (i % N) * SP, cy = i => MG + Math.floor(i / N) * SP;
+
+  function buildStatic() {
+    let lines = '', stars = '', coords = '';
+    for (let k = 0; k < N; k++) {
+      const p = MG + k * SP, L = 'ABCDEFGHIJKLMNO'[k];
+      lines += `<line x1="${MG}" y1="${p}" x2="${MG + (N - 1) * SP}" y2="${p}"/><line x1="${p}" y1="${MG}" x2="${p}" y2="${MG + (N - 1) * SP}"/>`;
+      coords += `<text x="${p}" y="17">${L}</text><text x="${p}" y="${VB - 9}">${L}</text>`;
+      coords += `<text x="15" y="${p + 4.5}">${N - k}</text><text x="${VB - 15}" y="${p + 4.5}">${N - k}</text>`;
+    }
+    for (const [x, y] of [[3, 3], [11, 3], [7, 7], [3, 11], [11, 11]]) stars += `<circle cx="${MG + x * SP}" cy="${MG + y * SP}" r="4.2"/>`;
+    $('#gGrid').innerHTML = `<rect class="frame" x="${MG}" y="${MG}" width="${(N - 1) * SP}" height="${(N - 1) * SP}"/><g class="lines">${lines}</g><g class="stars">${stars}</g><g class="coords" aria-hidden="true">${coords}</g>`;
+  }
+
+  function renderBoard(bv) {
+    const st = bv.st, rec = st.rec;
+    const key = (bv.gid || '') + '|' + rec + '|' + (S.numbers ? 1 : 0);
+    if (key !== UI.stonesKey) {
+      const animate = rec.length === UI.lastRec.length + 4 && rec.startsWith(UI.lastRec);
+      let h = '';
+      st.moves.forEach((mv, n) => {
+        const x = cx(mv.i), y = cy(mv.i), cls = mv.c === 1 ? 'sb' : 'sw';
+        const pop = animate && n === st.moves.length - 1;
+        h += `<g class="st${pop ? ' pop' : ''}"><circle class="sh" cx="${x + 1.5}" cy="${y + 2.5}" r="${SR}"/><circle class="${cls}" cx="${x}" cy="${y}" r="${SR}"/>${S.numbers ? `<text class="num ${cls}" x="${x}" y="${y + 5}">${n + 1}</text>` : ''}</g>`;
+      });
+      $('#gStones').innerHTML = h;
+      if (rec !== UI.lastRec) UI.preview = -1;
+      UI.stonesKey = key; UI.lastRec = rec;
+    }
+    const fkey = bv.fmap ? rec + ':' + bv.fmap.size : '';
+    if (fkey !== UI.marksKey) {
+      let h = '';
+      if (bv.fmap) bv.fmap.forEach((kind, i) => {
+        const x = cx(i), y = cy(i);
+        h += `<path d="M${x - 6} ${y - 6}L${x + 6} ${y + 6}M${x + 6} ${y - 6}L${x - 6} ${y + 6}"/>`;
+      });
+      $('#gMarks').innerHTML = `<g class="fb">${h}</g>`;
+      UI.marksKey = fkey;
+    }
+    UI.bv = bv;
+    drawTop();
+  }
+
+  function drawTop() {
+    const bv = UI.bv;
+    if (!bv) return;
+    const st = bv.st;
+    let h = '';
+    if (bv.hint) h += `<circle class="hint" cx="${cx(CENTER)}" cy="${cy(CENTER)}" r="23"/>`;
+    if (st.len && !S.numbers) {
+      const lm = st.moves[st.len - 1];
+      h += `<circle class="lastmk${lm.c === 2 ? ' on-w' : ''}" cx="${cx(lm.i)}" cy="${cy(lm.i)}" r="5.2"/>`;
+    }
+    if (bv.line) {
+      const a = bv.line[0], b = bv.line[bv.line.length - 1];
+      h += `<line class="winln" x1="${cx(a)}" y1="${cy(a)}" x2="${cx(b)}" y2="${cy(b)}"/>`;
+      for (const i of bv.line) h += `<circle class="winring" cx="${cx(i)}" cy="${cy(i)}" r="21"/>`;
+    }
+    const focused = document.activeElement === svg;
+    const gi = UI.preview >= 0 ? UI.preview : UI.hover >= 0 ? UI.hover : (UI.kbd && focused ? UI.kcur : -1);
+    if (bv.interactive && gi >= 0 && st.b[gi] === 0) {
+      const bad = (bv.fmap && bv.fmap.has(gi)) || (st.len === 0 && gi !== CENTER);
+      const x = cx(gi), y = cy(gi);
+      h += `<circle class="ghost ${bv.ghost === 1 ? 'sb' : 'sw'}${bad ? ' bad' : ''}" cx="${x}" cy="${y}" r="${SR}"/>`;
+      if (bad) h += `<g class="ghostx"><path d="M${x - 8} ${y - 8}L${x + 8} ${y + 8}M${x + 8} ${y - 8}L${x - 8} ${y + 8}"/></g>`;
+    }
+    if (UI.kbd && focused) h += `<rect class="kcur" x="${cx(UI.kcur) - 17}" y="${cy(UI.kcur) - 17}" width="34" height="34" rx="7"/>`;
+    $('#gTop').innerHTML = h;
+  }
+
+  // ---------------------------------------------------------------- panels
+  function renderCard(el, p) {
+    const sig = JSON.stringify([p.name, p.color, p.tag, p.sub, p.ready, p.offline, p.placeholder]);
+    if (el.dataset.sig !== sig) {
+      el.dataset.sig = sig;
+      el.innerHTML =
+        `<span class="pc-stone ${p.color === 1 ? 'b' : p.color === 2 ? 'w' : 'n'}" aria-hidden="true"></span>` +
+        `<span class="pc-meta"><span class="pc-name"><span class="nm">${esc(p.name)}</span>` +
+        (p.tag ? `<span class="pc-tag">${esc(p.tag)}</span>` : '') +
+        (p.offline ? '<span class="pc-off">연결 끊김</span>' : '') +
+        (p.ready ? '<span class="pc-ready">준비</span>' : '') +
+        `</span><span class="pc-sub">${esc(p.sub)}</span></span>` +
+        `<span class="pc-clock"><span class="pc-time">0:30</span><span class="beads" aria-hidden="true">${'<i class="bead"><b></b></i>'.repeat(6)}</span></span>`;
+      el.classList.toggle('placeholder', !!p.placeholder);
+    }
+  }
+
+  function fmtClock(ms) {
+    if (ms < 10000) return (Math.floor(ms / 100) / 10).toFixed(1);
+    const s = Math.floor(ms / 1000);
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  }
+
+  function renderClocks(t) {
+    const vm = UI.vm;
+    if (!vm) return;
+    for (const [el, p] of [[$('#pTop'), vm.top], [$('#pBot'), vm.bot]]) {
+      let lim = p.limit || TL_DEFAULT * 1000, ms = lim, running = false;
+      if (p.clock) { const c = p.clock(t); ms = c.ms; running = c.running; lim = c.limit || lim; }
+      const shown = Math.max(0, Math.min(lim, ms));
+      const tEl = el.querySelector('.pc-time');
+      if (tEl) {
+        const txt = fmtClock(shown);
+        if (tEl.textContent !== txt) tEl.textContent = txt;
+        tEl.setAttribute('aria-label', '남은 시간 ' + Math.ceil(shown / 1000) + '초');
+      }
+      const beads = el.querySelectorAll('.bead'), per = lim / (beads.length || 1);
+      for (let k = 0; k < beads.length; k++) {
+        const f = Math.max(0, Math.min(1, (shown - k * per) / per)).toFixed(3);
+        if (beads[k].style.getPropertyValue('--f') !== f) beads[k].style.setProperty('--f', f);
+      }
+      el.classList.toggle('turn', running);
+      el.classList.toggle('low', running && shown <= (lim <= 20000 ? 5000 : 10000));
+    }
+  }
+
+  function renderStatus(s) {
+    const el = $('#status');
+    const sig = JSON.stringify(s);
+    if (el.dataset.sig === sig) return;
+    el.dataset.sig = sig;
+    el.className = 'status' + (s && s.tone ? ' ' + s.tone : '');
+    el.innerHTML = s ? `<span class="main">${esc(s.main)}</span>${s.sub ? `<span class="sub">${esc(s.sub)}</span>` : ''}` : '';
+  }
+
+  function renderActions(list) {
+    const el = $('#actions');
+    const sig = JSON.stringify(list) + (UI.resignArmed ? '!' : '');
+    if (el.dataset.sig === sig) return;
+    el.dataset.sig = sig;
+    el.innerHTML = (list || []).map(([act, label, style]) => {
+      const armed = act === 'resign' && UI.resignArmed;
+      return `<button class="btn sm ${armed ? 'armed' : (style || '')}" type="button" data-act="${act}">${esc(armed ? '한 번 더 누르면 기권' : label)}</button>`;
+    }).join('');
+  }
+
+  function renderRoom(r) {
+    const el = $('#roomBox');
+    if (!r) { el.hidden = true; el.dataset.sig = ''; return; }
+    el.hidden = false;
+    const sig = r.code + '|' + r.link;
+    if (el.dataset.sig !== sig) {
+      el.dataset.sig = sig;
+      el.innerHTML = `<div class="rb-head"><span id="rbConn"></span><span>방 코드 <span class="rb-code">${esc(r.code.toUpperCase())}</span></span></div>` +
+        `<div class="linkbox"><input id="linkIn2" readonly value="${esc(r.link)}" aria-label="초대 링크"><button class="btn sm" type="button" data-act="copy">링크 복사</button></div>` +
+        `<details class="diag" id="diag"><summary>연결 정보</summary><pre id="diagText"></pre><button class="btn sm quiet" type="button" data-act="copyDiag">연결 정보 복사</button></details>`;
+    }
+    const c = $('#rbConn');
+    if (c.dataset.s !== r.conn) {
+      c.dataset.s = r.conn;
+      const txt = r.conn === 'live' ? '실시간 연결됨' : r.conn === 'down' ? '연결 끊김' : '연결 중…';
+      c.innerHTML = `<span class="dot ${r.conn}"></span>${txt}`;
+    }
+    updateDiag();
+  }
+
+  function renderOverlay(ov) {
+    const el = $('#overlay');
+    const sig = ov ? JSON.stringify(ov) : '';
+    if (sig === UI.ovSig) return;
+    UI.ovSig = sig;
+    if (!ov) { el.hidden = true; el.innerHTML = ''; return; }
+    const ae = document.activeElement;
+    const keep = ae && el.contains(ae) && ae.id ? { id: ae.id, v: ae.value, s: ae.selectionStart, e: ae.selectionEnd } : null;
+    el.hidden = false;
+    el.className = 'overlay ov-' + ov.kind;
+    el.innerHTML = OVL[ov.kind](ov);
+    if (keep) {
+      const n = document.getElementById(keep.id);
+      if (n) {
+        if (typeof keep.v === 'string' && 'value' in n && n.tagName === 'INPUT' && !n.readOnly) n.value = keep.v;
+        try { n.focus({ preventScroll: true }); n.setSelectionRange(keep.s, keep.e); } catch (e) { /* not a text input */ }
+      }
+    }
+  }
+
+  function toast(msg, alarm) {
+    const el = $('#toast');
+    el.textContent = msg;
+    el.className = 'toast show' + (alarm ? ' alarm' : '');
+    clearTimeout(UI.toastT);
+    UI.toastT = setTimeout(() => { el.className = 'toast' + (alarm ? ' alarm' : ''); }, 2400);
+  }
+  function announce(msg) { const a = $('#announcer'); a.textContent = ''; setTimeout(() => { a.textContent = msg; }, 30); }
+
+  function feedback(vm) {
+    const bv = vm.board, gid = bv.gid || '', rec = bv.st.rec, prev = UI.fb;
+    if (gid && prev.gid === gid && rec.length === prev.len + 4 && rec.startsWith(prev.rec)) {
+      Sound.stone();
+      const mv = bv.st.moves[bv.st.len - 1];
+      announce(CNAME[mv.c] + ' ' + R.label(mv.i));
+    }
+    UI.fb = { gid, rec, len: rec.length };
+    const ek = vm.endKey || '';
+    if (ek && ek !== UI.endSeen) {
+      UI.endSeen = ek;
+      if (now() - UI.bootAt > 2500) Sound.chord(vm.endWin !== false);
+    }
+  }
+
+  function phaseKey(t) {
+    const m = S.mode === 'local' ? L.m : (S.mode === 'online' && O.active ? O.m : null);
+    const c = S.mode === 'online' && O.active ? connState() + (linkTrouble(t) ? (relayBlocked() ? '#' : '!') : '') : '';
+    if (!m || !m.st || m.end) return 'x' + c;
+    if (t < m.T0) return 'cd' + Math.ceil((m.T0 - t) / 1000) + c;
+    return 'p' + m.st.len + c;
+  }
+
+  function render() {
+    const t = now();
+    let vm;
+    try { vm = S.mode === 'home' ? homeVM() : S.mode === 'local' ? localVM(t) : onlineVM(t); }
+    catch (e) { console.error(e); return; }
+    UI.vm = vm;
+    svg.classList.toggle('demo', !!vm.demo);
+    renderBoard(vm.board);
+    renderCard($('#pTop'), vm.top);
+    renderCard($('#pBot'), vm.bot);
+    renderStatus(vm.status);
+    renderActions(vm.actions);
+    renderRoom(vm.room);
+    renderOverlay(vm.overlay);
+    renderClocks(t);
+    feedback(vm);
+    UI.phase = phaseKey(t);
+  }
+
+  // ---------------------------------------------------------------- input
+  function cellAt(e) {
+    const r = svg.getBoundingClientRect();
+    if (!r.width) return -1;
+    const sx = (e.clientX - r.left) / r.width * VB, sy = (e.clientY - r.top) / r.height * VB;
+    const x = Math.round((sx - MG) / SP), y = Math.round((sy - MG) / SP);
+    if (x < 0 || x >= N || y < 0 || y >= N) return -1;
+    return y * N + x;
+  }
+  function play(i) {
+    UI.preview = -1;
+    if (S.mode === 'local') localMove(i);
+    else if (S.mode === 'online') onlineMove(i);
+  }
+
+  document.addEventListener('pointerdown', () => Sound.unlock(), { capture: true, passive: true });
+  document.addEventListener('keydown', () => Sound.unlock(), { capture: true });
+
+  svg.addEventListener('pointerdown', e => { UI.ptype = e.pointerType || 'mouse'; });
+  svg.addEventListener('pointermove', e => {
+    if (e.pointerType !== 'mouse') return;
+    const i = cellAt(e);
+    if (i !== UI.hover) { UI.hover = i; UI.kbd = false; drawTop(); }
+  });
+  svg.addEventListener('pointerleave', () => { if (UI.hover !== -1) { UI.hover = -1; drawTop(); } });
+  svg.addEventListener('click', e => {
+    const bv = UI.bv;
+    if (!bv || !bv.interactive) return;
+    const i = cellAt(e);
+    if (i < 0) return;
+    if (UI.ptype === 'touch') {
+      if (UI.preview !== i) {
+        UI.preview = i; drawTop();
+        if (!UI.touchHinted) { UI.touchHinted = true; toast('같은 자리를 한 번 더 누르면 돌을 놓아요.'); }
+        return;
+      }
+    }
+    play(i);
+  });
+  svg.addEventListener('keydown', e => {
+    let dx = 0, dy = 0;
+    if (e.key === 'ArrowLeft') dx = -1; else if (e.key === 'ArrowRight') dx = 1;
+    else if (e.key === 'ArrowUp') dy = -1; else if (e.key === 'ArrowDown') dy = 1;
+    if (dx || dy) {
+      e.preventDefault();
+      UI.kbd = true;
+      const x = Math.min(N - 1, Math.max(0, (UI.kcur % N) + dx)), y = Math.min(N - 1, Math.max(0, Math.floor(UI.kcur / N) + dy));
+      UI.kcur = y * N + x;
+      drawTop();
+      return;
+    }
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      UI.kbd = true;
+      if (UI.bv && UI.bv.interactive) play(UI.kcur); else drawTop();
+    }
+  });
+  svg.addEventListener('focus', drawTop);
+  svg.addEventListener('blur', drawTop);
+
+  function sanitizeNick(v) {
+    return String(typeof v === 'string' ? v : '').replace(/[\u0000-\u001f\u007f-\u009f\u00ad\u200b-\u200f\u2028-\u202e\u2060-\u206f\ufeff]/g, '').trim().slice(0, 12);
+  }
+  function setNick(v) {
+    S.nick = sanitizeNick(v);
+    ls.set('omok.nick', S.nick);
+    if (O.active) {
+      O.me.nick = S.nick || UI.defNick;
+      clearTimeout(UI.nickT);
+      UI.nickT = setTimeout(() => { if (O.active) { publish(); render(); } }, 350);
+    } else render();
+  }
+  function saveNick() {
+    const el = $('#nickIn');
+    if (el) S.nick = sanitizeNick(el.value);
+    ls.set('omok.nick', S.nick);
+  }
+
+  function copyLink() {
+    if (!O.active) return;
+    const link = inviteLink(O.code);
+    const done = ok => {
+      if (ok) toast('링크를 복사했어요. 친구에게 보내 주세요.');
+      else {
+        toast('복사가 막혀 있어요. 링크 칸을 눌러 직접 복사해 주세요.', true);
+        const inp = $('#linkIn') || $('#linkIn2');
+        if (inp) { inp.focus(); inp.select(); }
+      }
+    };
+    try { navigator.clipboard.writeText(link).then(() => done(true), () => done(false)); } catch (e) { done(false); }
+  }
+
+  function currentGid() {
+    if (S.mode === 'local') return L.g ? L.g.id : null;
+    return O.active && O.m.g ? O.m.g.id : null;
+  }
+
+  function closeRules() { $('#rules').hidden = true; try { $('#btnRules').focus(); } catch (e) { /* ignore */ } }
+
+  document.addEventListener('click', e => {
+    const sheet = $('#rules');
+    if (!sheet.hidden && e.target === sheet) { closeRules(); return; }
+    const b = e.target.closest('[data-act]');
+    if (!b || b.disabled) return;
+    switch (b.dataset.act) {
+      case 'rules': sheet.hidden = false; $('.sheet-card .btn', sheet).focus(); break;
+      case 'closeRules': closeRules(); break;
+      case 'sound':
+        Sound.on = !Sound.on; ls.set('omok.sound', Sound.on ? '1' : '0');
+        b.setAttribute('aria-pressed', String(Sound.on));
+        if (Sound.on) { Sound.unlock(); Sound.stone(); }
+        break;
+      case 'create': saveNick(); startOnline(rid(6), true); break;
+      case 'local': saveNick(); stopOnline(); setHash(''); S.mode = 'local'; L.g = null; L.m = makeMatch(); render(); break;
+      case 'localGo': case 'localAgain': localStart(); break;
+      case 'home': goHome(); break;
+      case 'copy': copyLink(); break;
+      case 'copyDiag': {
+        const txt = diagText();
+        try { navigator.clipboard.writeText(txt).then(() => toast('연결 정보를 복사했어요.'), () => toast('복사가 막혀 있어요. 글자를 길게 눌러 직접 복사해 주세요.', true)); }
+        catch (e2) { toast('복사가 막혀 있어요.', true); }
+        break;
+      }
+      case 'ready': onlineReady(); break;
+      case 'setTl': {
+        const v = Number(b.dataset.tl);
+        if (!TL_OPTS.includes(v)) break;
+        S.tl = v; ls.set('omok.tl', String(v));
+        if (S.mode === 'online' && O.active && O.amHost) { O.me.tl = v; reconcile(); } else render();
+        break;
+      }
+      case 'retry':
+        if (O.active && O.R && typeof O.R.kick === 'function') O.R.kick();
+        toast('다시 연결해 볼게요.');
+        break;
+      case 'resign':
+        clearTimeout(UI.resignT);
+        if (UI.resignArmed) {
+          UI.resignArmed = false;
+          if (S.mode === 'local') localResign(); else onlineResign();
+        } else {
+          UI.resignArmed = true;
+          UI.resignT = setTimeout(() => { UI.resignArmed = false; render(); }, 3000);
+        }
+        render();
+        break;
+      case 'numbers': S.numbers = !S.numbers; render(); break;
+      case 'hideOver': UI.hideOverFor = currentGid(); render(); break;
+      case 'showOver': UI.hideOverFor = null; render(); break;
+      default: break;
+    }
+  });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#rules').hidden) closeRules(); });
+  document.addEventListener('toggle', e => { if (e.target && e.target.id === 'diag') updateDiag(); }, true);
+  document.addEventListener('submit', e => {
+    if (!e.target || e.target.id !== 'joinForm') return;
+    e.preventDefault();
+    const typed = ($('#codeIn').value || '').trim().toLowerCase();
+    const inLink = /(?:#om-|[?&]r=)([a-z0-9]{4,12})(?![a-z0-9])/.exec(typed);
+    const raw = inLink ? inLink[1] : typed.replace(/.*#/, '').replace(/^om-/, '');
+    if (!CODE_RE.test(raw)) { toast('방 코드를 확인해 주세요. 영문과 숫자 6자리예요.', true); return; }
+    saveNick();
+    startOnline(raw, false);
+  });
+  document.addEventListener('input', e => {
+    const id = e.target && e.target.id;
+    if (id === 'nickIn2') setNick(e.target.value);
+    else if (id === 'nickIn') { S.nick = sanitizeNick(e.target.value); ls.set('omok.nick', S.nick); renderCard($('#pBot'), homeVM().bot); }
+  });
+  window.addEventListener('hashchange', () => {
+    const h = location.hash.replace(/^#/, '');
+    if (h === UI.ownHash) return;
+    const mm = /^om-([a-z0-9]{4,12})$/.exec(h);
+    if (mm && (!O.active || O.code !== mm[1])) startOnline(mm[1], false);
+  });
+
+  function lowTimeTick(t) {
+    const m = S.mode === 'local' ? L.m : (S.mode === 'online' && O.active ? O.m : null);
+    if (!m || !m.st || m.end || t < m.T0) { UI.lastTickSec = -1; return; }
+    const mine = S.mode === 'local' || myColorOnline() === m.st.turn;
+    if (!mine) { UI.lastTickSec = -1; return; }
+    const left = rawLeft(m, t);
+    if (left > 0 && left <= 5000) {
+      const s = Math.ceil(left / 1000);
+      if (s !== UI.lastTickSec) { UI.lastTickSec = s; Sound.tick(); }
+    } else UI.lastTickSec = -1;
+  }
+
+  let lastMaint = 0;
+  function tick() {
+    const t = now();
+    if (S.mode === 'online' && O.active) {
+      onlineTick(t);
+      if (t - lastMaint >= 1000) { lastMaint = t; maintain(t); updateDiag(); }
+    } else if (S.mode === 'local') localTick(t);
+    if (phaseKey(t) !== UI.phase) render(); else renderClocks(t);
+    lowTimeTick(t);
+  }
+  setInterval(tick, 100);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) tick(); });
+
+  if (window.__omokDebug) window.__omok = { O: () => O, UI, L, S, STANDALONE };
+
+  // ---------------------------------------------------------------- boot
+  let booted = false;
+  function boot(data) {
+    if (booted) return;
+    booted = true;
+    UI.bootAt = now();
+    UI.defNick = '손님 ' + (10 + Math.floor(Math.random() * 90));
+    S.nick = sanitizeNick(ls.get('omok.nick') || '');
+    const savedTl = Number(ls.get('omok.tl'));
+    if (TL_OPTS.includes(savedTl)) S.tl = savedTl;
+    $('#btnSound').setAttribute('aria-pressed', String(Sound.on));
+    buildStatic();
+    const mm = /^om-([a-z0-9]{4,12})$/.exec(location.hash.replace(/^#/, ''));
+    let code0 = mm ? mm[1] : null;
+    if (!code0) {
+      try { const q = (new URLSearchParams(location.search).get('r') || '').toLowerCase(); if (CODE_RE.test(q)) code0 = q; } catch (e) { /* no query string */ }
+    }
+    if (STANDALONE) { const dd = $('#ddLink'); if (dd) dd.textContent = RULES_LINK_SA; }
+    if (code0) startOnline(code0, false);
+    else if (data && data.mode === 'local' && data.g && typeof data.g.r === 'string') {
+      S.mode = 'local';
+      L.g = { id: String(data.g.id || rid(6)), b: 'L1', w: 'L2', r: data.g.r, e: data.g.e || null };
+      L.m = makeMatch(); localUpdate(); render();
+    } else { S.mode = 'home'; render(); }
+    getUser().then(u => (u && typeof u.me === 'function' ? u.me() : null)).then(v => {
+      if (v && v.name && !S.nick && !ls.get('omok.nick')) {
+        S.nick = sanitizeNick(v.name);
+        const el = $('#nickIn');
+        if (el && !el.value) el.value = S.nick;
+        if (O.active) { O.me.nick = S.nick || UI.defNick; publish(); }
+        render();
+      }
+    }).catch(() => {});
+    getRoom();
+  }
+  let hot = null;
+  try { hot = window.claude && window.claude.hot; } catch (e) { hot = null; }
+  if (hot && typeof hot.snapshot === 'function') {
+    try { hot.snapshot(() => ({ mode: S.mode, g: S.mode === 'local' && L.g ? { id: L.g.id, r: L.g.r, e: L.g.e } : null })); } catch (e) { /* ignore */ }
+  }
+  if (hot && typeof hot.ready === 'function') {
+    try { hot.ready(d => boot(d || {})); } catch (e) { boot({}); }
+    setTimeout(() => boot({}), 1500);
+  } else boot((hot && hot.data) || {});
+})();
+
+</script>
+</body>
+</html>
