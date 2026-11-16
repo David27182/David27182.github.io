@@ -15,11 +15,12 @@
 :root {
   --bg: #0b110e; --panel: #131d19; --panel2: #1a2721; --sunk: #0d1512;
   --ink: #eeeadf; --ink2: #b5beb7; --ink3: #7f8b84; --line: rgba(238, 234, 223, .12);
-  --felt0: #2b7a5c; --felt1: #1e5f47; --felt2: #113a2b; --rail: #3b2718; --rail2: #22160d;
+  --felt0: #2d7d5e; --felt1: #1e5f47; --felt2: #103828; --rail: #3d2819; --rail2: #20140c;
   --gold: #e6c068; --jade: #47b98e; --amber: #e9a23b; --alarm: #e5533d;
   --card: #fbf8f1; --cink: #1c1c1c; --red: #c92f29; --blue: #2a62c6; --green: #1d8a52;
   --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   --sans: 'IBM Plex Sans KR', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  --col: clamp(204px, 28vw, 340px);
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-text-size-adjust: 100%; }
@@ -28,9 +29,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 [hidden] { display: none !important; }
 
-#app { position: fixed; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
-#stage { position: relative; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
-#table { position: relative; min-height: 0; overflow: hidden; container-type: size; }
+/* ---------------- layout: top bar / table / my dock; players on a sideways screen get a control column */
+#app { position: fixed; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; grid-template-columns: minmax(0, 1fr); }
+#top { grid-row: 1; grid-column: 1; min-width: 0; }
+#stage { grid-row: 2; grid-column: 1; position: relative; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr);
+  background: radial-gradient(ellipse at 50% 45%, #14211b 0%, var(--bg) 72%); }
+#dock { grid-row: 3; grid-column: 1; }
+#table { position: relative; min-height: 0; overflow: hidden; container-type: size;
+  --sw: clamp(86px, 25cqmin, 224px); --ph: clamp(34px, 10cqmin, 82px); --cw: clamp(24px, 7.6cqmin, 62px); --ch: clamp(34px, 10.6cqmin, 87px); }
+#table.narrow { --sw: clamp(74px, 22cqmin, 200px); --ph: clamp(31px, 9.2cqmin, 76px); --cw: clamp(22px, 7cqmin, 58px); --ch: clamp(31px, 9.8cqmin, 81px); }
 #feed { display: none; }
 body.is-dealer.scr-table #stage { grid-template-columns: minmax(0, 1fr) minmax(250px, 23vw); }
 body.is-dealer.scr-table #feed { display: block; }
@@ -38,110 +45,180 @@ body.is-dealer.scr-table #feed { display: block; }
   body.is-dealer.scr-table #stage { grid-template-columns: minmax(0, 1fr); }
   body.is-dealer.scr-table #feed { display: none; }
 }
+body.is-player.scr-table.lay-land #app { grid-template-rows: minmax(0, 1fr); padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+body.is-player.scr-table.lay-land.seated #app { grid-template-columns: minmax(0, 1fr) var(--col); }
+body.is-player.scr-table.lay-land #stage { grid-row: 1; }
+body.is-player.scr-table.lay-land #top { position: absolute; z-index: 6; top: 0; left: env(safe-area-inset-left); right: env(safe-area-inset-right); pointer-events: none; }
+body.is-player.scr-table.lay-land.seated #top { right: calc(var(--col) + env(safe-area-inset-right)); }
+body.is-player.scr-table.lay-land #dock { grid-row: 1; grid-column: 2; display: flex; flex-direction: column; min-height: 0; overflow-y: auto;
+  border-top: 0; border-left: 1px solid var(--line); padding: max(10px, env(safe-area-inset-top)) 10px max(10px, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, #111b17, #0a100d); }
+body.is-player.scr-table.lay-land:not(.seated) #dock { display: none; }
 
 /* ---------------- felt */
 .felt {
   position: absolute; left: 8%; right: 8%; top: 10%; bottom: 10%; border-radius: 50%;
-  background: radial-gradient(ellipse at 50% 40%, var(--felt0) 0%, var(--felt1) 46%, var(--felt2) 100%);
+  background: radial-gradient(ellipse at 50% 38%, var(--felt0) 0%, var(--felt1) 48%, var(--felt2) 100%);
   box-shadow: 0 0 0 10px var(--rail), 0 0 0 14px var(--rail2), 0 18px 50px rgba(0, 0, 0, .65), inset 0 0 50px rgba(0, 0, 0, .45);
   box-shadow: 0 0 0 1.7cqmin var(--rail), 0 0 0 2.4cqmin var(--rail2), 0 2.4cqmin 7cqmin rgba(0, 0, 0, .65), inset 0 0 7cqmin rgba(0, 0, 0, .45);
 }
-.felt::after {
-  content: ''; position: absolute; inset: 7%; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .07);
-}
+.felt::after { content: ''; position: absolute; inset: 7%; border-radius: 50%; border: 1px solid rgba(230, 192, 104, .1); }
 body.scr-home .felt, body.scr-connecting .felt, body.scr-lobby .felt, body.scr-dlobby .felt, body.scr-yield .felt { opacity: .35; }
+.slot { display: contents; }
 
-/* ---------------- seats */
-.seat {
-  position: absolute; transform: translate(-50%, -50%); z-index: 2; display: flex; flex-direction: column; align-items: center;
-  width: 96px; width: clamp(68px, 21cqmin, 176px); transition: opacity .3s;
+/* ---------------- seats: a pill with an avatar; the timer runs round the avatar */
+.seat { position: absolute; z-index: 3; transform: translate(-50%, -50%); width: var(--sw); height: var(--ph); }
+.plate {
+  position: absolute; inset: 0; display: flex; align-items: center; gap: clamp(4px, 1.3cqmin, 12px);
+  padding: 0 clamp(8px, 2.6cqmin, 22px) 0 2px; border-radius: 999px;
+  background: linear-gradient(180deg, rgba(25, 35, 31, .97), rgba(9, 14, 12, .97)); border: 1px solid rgba(255, 255, 255, .14);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .45);
 }
-.seat .mini { display: flex; gap: 2px; gap: .6cqmin; height: 44px; height: 10cqmin; margin-bottom: -9px; margin-bottom: -2.1cqmin; z-index: 1; }
-.seat .plate {
-  position: relative; z-index: 2; width: 100%; overflow: hidden; text-align: center;
-  background: rgba(8, 13, 11, .9); border: 1px solid rgba(255, 255, 255, .15); border-radius: 10px; border-radius: 2.3cqmin;
-  padding: 5px 4px 7px; padding: 1.2cqmin .9cqmin 1.5cqmin;
+.av {
+  position: relative; flex: none; width: calc(var(--ph) - 4px); height: calc(var(--ph) - 4px); border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 35% 30%, hsl(var(--h) 46% 48%), hsl(var(--h) 42% 25%)); color: #fff;
+  font-weight: 700; font-size: calc(var(--ph) * .4); box-shadow: inset 0 0 0 1.5px hsla(var(--h), 60%, 70%, .35);
 }
-.seat .plate:has(.dbtn) .nm, .seat .plate:has(.dbtn) .stk { padding-left: 14px; padding-left: clamp(10px, 3.6cqmin, 28px); }
-.seat .nm { font-size: 13px; font-size: clamp(10px, 3.1cqmin, 22px); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.seat .stk { font-family: var(--mono); font-weight: 600; color: var(--gold); font-size: 13px; font-size: clamp(10px, 3.2cqmin, 23px); }
-.seat.turn .plate { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(230, 192, 104, .3), 0 0 18px rgba(230, 192, 104, .35); }
-.seat.me .plate { background: rgba(13, 34, 26, .96); }
-.seat.fold { opacity: .45; }
-.seat.idle { opacity: .5; }
-.seat.out { opacity: .3; filter: grayscale(1); }
-.seat.win .plate { border-color: var(--gold); }
-.bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; height: .9cqmin; background: rgba(255, 255, 255, .08); }
-.bar .bar-i { position: absolute; inset: 0; background: var(--jade); transform-origin: left center; transition: transform .2s linear; }
-.bar.low .bar-i { background: var(--amber); }
-.bar.crit .bar-i { background: var(--alarm); }
-.secs { position: absolute; right: 4px; top: 3px; font: 600 11px var(--mono); font-size: clamp(9px, 2.5cqmin, 18px); color: var(--gold); }
-.tag, .flag, .hn, .tcn {
-  margin-top: 3px; margin-top: .7cqmin; border-radius: 9px; padding: 1px 7px; padding: .25cqmin 1.5cqmin; white-space: nowrap;
-  font-size: 11px; font-size: clamp(9px, 2.6cqmin, 18px); background: rgba(0, 0, 0, .55); color: var(--ink2);
+.av.sm { width: 22px; height: 22px; font-size: 11px; }
+.ring { position: absolute; inset: -3px; width: calc(100% + 6px); height: calc(100% + 6px); transform: rotate(-90deg); pointer-events: none; }
+.ring circle { fill: none; stroke-width: 3.8; }
+.ring .rt { stroke: rgba(0, 0, 0, .45); }
+.ring .rg { stroke: var(--jade); stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 0; transition: stroke-dashoffset .25s linear, stroke .3s; }
+.ring.low .rg { stroke: var(--amber); }
+.ring.crit .rg { stroke: var(--alarm); }
+.av .sec { font: 700 calc(var(--ph) * .36) var(--mono); color: var(--gold); }
+.info { flex: 1; min-width: 0; line-height: 1.12; }
+.seat .nm { font-size: calc(var(--ph) * .3); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seat .stk { font: 600 calc(var(--ph) * .31) var(--mono); color: var(--gold); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seat .dbtn {
+  position: absolute; right: -5px; top: -7px; width: calc(var(--ph) * .44); height: calc(var(--ph) * .44); border-radius: 50%; display: grid; place-items: center;
+  background: radial-gradient(circle at 40% 35%, #fffdf6, #e4ddcb); color: #1b1b1b; font: 700 calc(var(--ph) * .24) var(--sans); font-style: normal;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, .55), inset 0 0 0 1.5px rgba(0, 0, 0, .12);
 }
-.flag { background: rgba(120, 40, 30, .7); color: #ffd4cc; }
+.dbtn.in { position: static; display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: #f8f5ec; color: #1b1b1b; font-weight: 700; font-size: 12px; }
+.seat.turn .plate { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(230, 192, 104, .35), 0 0 22px rgba(230, 192, 104, .3); animation: glow 1.6s ease-in-out infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 0 2px rgba(230, 192, 104, .6), 0 0 32px rgba(230, 192, 104, .5); } }
+.seat.me .plate { border-color: rgba(71, 185, 142, .6); }
+.seat.win .plate { border-color: var(--gold); background: linear-gradient(180deg, rgba(66, 52, 17, .97), rgba(27, 21, 8, .97)); }
+.seat.fold .plate { opacity: .55; }
+.seat.fold .av { filter: grayscale(.85); }
+.seat.idle { opacity: .55; }
+.seat.out { opacity: .4; filter: grayscale(1); }
+.tag {
+  position: absolute; left: 50%; z-index: 5; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+  font: 700 calc(var(--ph) * .27) var(--sans); padding: 1px 9px; border-radius: 99px; background: #2c3632; color: var(--ink);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .45); animation: pop .25s ease-out;
+}
+.seat.lo .tag, .seat.mid .tag, .seat.sl .tag, .seat.sr .tag { top: calc(100% - 2px); }
+.seat.hi .tag { bottom: calc(100% - 2px); }
+.tag.t-fold { background: #3b403e; color: #b8bfbb; }
+.tag.t-check { background: #24496b; color: #dceaff; }
+.tag.t-call { background: #1d6a4e; color: #e0f6ec; }
+.tag.t-bet { background: #8b6416; color: #fff2d2; }
+.tag.t-allin { background: #b3372a; color: #fff; }
+.tag.t-blind { background: #2c3531; color: var(--ink2); }
+.tag.t-time { background: #3b3220; color: var(--gold); }
+.sub { position: absolute; left: 50%; z-index: 5; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 3px; white-space: nowrap; pointer-events: none; }
+.seat.lo .sub { bottom: calc(100% + var(--ch) - 2px); }
+.seat.hi .sub { top: calc(100% + var(--ch) - 2px); }
+.seat.mid .sub { top: calc(100% + 16px); }
+.seat.si-l .sub { left: calc(100% + 6px); right: auto; top: 50%; bottom: auto; transform: translateY(-50%); align-items: flex-start; }
+.seat.si-r .sub { left: auto; right: calc(100% + 6px); top: 50%; bottom: auto; transform: translateY(-50%); align-items: flex-end; }
+.seat.sl.si-l .sub { left: calc(100% + var(--cw) * 1.85 + 2px); }
+.seat.sr.si-r .sub { right: calc(100% + var(--cw) * 1.85 + 2px); }
+.flag, .hn, .tcn { border-radius: 9px; padding: 1px 8px; font-size: calc(var(--ph) * .26); background: rgba(0, 0, 0, .6); color: var(--ink2); }
+.flag { background: rgba(120, 40, 30, .8); color: #ffd4cc; }
 .hn { color: var(--ink); }
-.tcn { background: rgba(230, 192, 104, .16); color: var(--gold); }
+.seat .stk .hnm { font: 600 calc(var(--ph) * .26) var(--sans); color: var(--ink); }
+.tcn { background: rgba(230, 192, 104, .18); color: var(--gold); }
 .wonb {
-  margin-top: 3px; margin-top: .7cqmin; text-align: center; border-radius: 6px; border-radius: 1.3cqmin; padding: 2px 8px; padding: .4cqmin 1.4cqmin;
-  background: var(--gold); color: #1d1607; font: 700 12px var(--mono); font-size: clamp(10px, 3cqmin, 22px); animation: pop .35s ease-out;
+  text-align: center; border-radius: 8px; padding: 2px 10px; background: var(--gold); color: #1d1607;
+  font: 700 calc(var(--ph) * .32) var(--mono); box-shadow: 0 4px 14px rgba(230, 192, 104, .35); animation: pop .4s cubic-bezier(.2, 1.6, .4, 1) both .25s;
 }
-.wonb small { display: block; font: 600 10px var(--sans); font-size: clamp(9px, 2.3cqmin, 17px); }
-@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.wonb small { display: block; font: 600 calc(var(--ph) * .24) var(--sans); }
+@keyframes pop { from { transform: scale(.5); opacity: 0; } }
 
+/* hole cards sit on the table side of each seat */
+.hand-w { position: absolute; z-index: 2; pointer-events: none; }
+.hand-w.lo, .hand-w.mid { transform: translate(-50%, calc(-100% - var(--ph) * .5 + 5px)); }
+.hand-w.hi { transform: translate(-50%, calc(var(--ph) * .5 - 5px)); }
+.hand-w.sl { transform: translate(calc(var(--sw) * .5 - 8px), -50%); }
+.hand-w.sr { transform: translate(calc(-100% - var(--sw) * .5 + 8px), -50%); }
+.hand-w.gone { opacity: .5; }
+.hand { display: flex; perspective: 500px; }
+.hand .cd + .cd { margin-left: calc(var(--cw) * -.22); }
+
+/* ---------------- chips */
 .bet {
-  position: absolute; transform: translate(-50%, -50%); z-index: 1; display: flex; align-items: center; gap: 4px; gap: .8cqmin; white-space: nowrap;
-  font: 600 12px var(--mono); font-size: clamp(10px, 3cqmin, 22px); background: rgba(0, 0, 0, .42); border-radius: 99px; padding: 2px 8px 2px 3px; padding: .35cqmin 1.5cqmin .35cqmin .5cqmin;
+  position: absolute; z-index: 2; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 4px; white-space: nowrap;
+  padding: 2px 9px 2px 3px; border-radius: 99px; background: rgba(0, 0, 0, .45); font: 600 calc(var(--ph) * .3) var(--mono);
 }
+.bet.push { animation: push .4s cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes push { from { transform: translate(-50%, -50%) translate(calc(var(--fx) * 1cqw), calc(var(--fy) * 1cqh)) scale(.6); opacity: .15; } }
 .cp {
-  display: inline-block; width: 14px; height: 14px; width: 3.3cqmin; height: 3.3cqmin; border-radius: 50%; flex: none;
-  background: radial-gradient(circle, #f4efe2 0 33%, #c8402f 34% 60%, #f4efe2 61% 69%, #c8402f 70%);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .5);
+  display: inline-block; flex: none; width: calc(var(--ph) * .36); height: calc(var(--ph) * .36); border-radius: 50%;
+  background: radial-gradient(circle, #f4efe2 0 30%, #c8402f 31% 58%, #f4efe2 59% 66%, #c8402f 67%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .55), inset 0 0 0 1px rgba(0, 0, 0, .15);
 }
-.dbtn {
-  position: absolute; left: 4px; top: 50%; transform: translateY(-50%); z-index: 3; display: grid; place-items: center; border-radius: 50%;
-  width: 18px; height: 18px; width: clamp(15px, 4.4cqmin, 34px); height: clamp(15px, 4.4cqmin, 34px); background: #f8f5ec; color: #1b1b1b;
-  font: 700 10px var(--sans); font-size: clamp(9px, 2.4cqmin, 18px); font-style: normal; box-shadow: 0 1px 4px rgba(0, 0, 0, .55);
+.panel .cp, #dock .cp { width: 14px; height: 14px; }
+.winfly { position: absolute; z-index: 4; transform: translate(-50%, -50%); display: flex; gap: 2px; pointer-events: none; animation: winfly .8s cubic-bezier(.3, .7, .3, 1) .2s both; }
+.winfly .cp:nth-child(2) { margin-top: -6px; } .winfly .cp:nth-child(3) { margin-top: 4px; }
+@keyframes winfly {
+  from { transform: translate(-50%, -50%) translate(calc(var(--fx) * 1cqw), calc(var(--fy) * 1cqh)); opacity: 1; }
+  75% { opacity: 1; }
+  to { opacity: 0; }
 }
-.seat.out .dbtn { filter: none; }
-.dbtn.in { position: static; transform: none; width: 22px; height: 22px; font-size: 12px; }
 
-/* ---------------- center */
-.center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; text-align: center; width: 64cqmin; max-width: 92%; }
-.pot { height: 22px; height: 5cqmin; color: var(--ink2); font-size: 14px; font-size: clamp(11px, 3.4cqmin, 26px); }
+/* ---------------- centre: pot, board, what is happening */
+.center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; text-align: center; width: 66cqmin; max-width: 92%; pointer-events: none; }
+.potrow { height: calc(var(--ph) * .66); margin-bottom: 1.2cqmin; display: flex; align-items: center; justify-content: center; }
+.pot { display: inline-flex; align-items: center; gap: 6px; padding: 2px 12px 2px 4px; border-radius: 99px; background: rgba(0, 0, 0, .38); font-size: calc(var(--ph) * .3); color: var(--ink2); }
 .pot b { font-family: var(--mono); color: var(--ink); }
-.board { display: flex; justify-content: center; gap: 5px; gap: 1.2cqmin; }
-.note { margin-top: 6px; margin-top: 1.6cqmin; min-height: 20px; min-height: 4.5cqmin; font-size: 13px; font-size: clamp(11px, 3.1cqmin, 24px); line-height: 1.45; }
+.pot.bump { animation: bump .5s ease-out; }
+@keyframes bump { 30% { transform: scale(1.14); background: rgba(230, 192, 104, .28); } }
+.board { display: flex; justify-content: center; gap: 1.2cqmin; perspective: 800px; }
+.note { margin-top: 1.4cqmin; min-height: 4.4cqmin; font-size: calc(var(--ph) * .3); line-height: 1.4; }
 .note b, .note .who { color: var(--gold); font-weight: 600; }
-.hno { margin-top: 2px; font: 500 10px var(--mono); font-size: clamp(9px, 2.3cqmin, 16px); color: rgba(238, 234, 223, .38); }
+.hno { margin-top: 2px; font: 500 calc(var(--ph) * .22) var(--mono); color: rgba(238, 234, 223, .35); }
 
 /* ---------------- cards */
 .cd {
-  position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
-  background: var(--card); color: var(--cink); border-radius: 5px; box-shadow: 0 1px 4px rgba(0, 0, 0, .45); line-height: 1; user-select: none;
+  position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; flex: none;
+  background: linear-gradient(170deg, #fffdf7, var(--card) 60%, #efe9dc); color: var(--cink); border-radius: 5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .45); line-height: 1; user-select: none; backface-visibility: hidden;
 }
 .cd b { font-weight: 700; letter-spacing: -.05em; }
 .cd svg { fill: currentColor; display: block; }
 .cd.sh, .cd.sd { color: var(--red); }
 body.four .cd.sd { color: var(--blue); }
 body.four .cd.sc { color: var(--green); }
-.cd.back { background: repeating-linear-gradient(45deg, #8f2c24 0 3px, #a7372d 3px 6px); border: 2px solid #f3eee2; }
+.cd.back {
+  background: repeating-linear-gradient(45deg, #8f2c24 0 3px, #a7372d 3px 6px); border: 2px solid #f3eee2;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(0, 0, 0, .2);
+}
 .cd.slot { background: rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .13); }
-.cd.hl { box-shadow: 0 0 0 2px var(--gold), 0 2px 8px rgba(0, 0, 0, .5); }
+.cd.hl { box-shadow: 0 0 0 2px var(--gold), 0 0 14px rgba(230, 192, 104, .45); }
 .cd.dim { filter: brightness(.5); }
-.cd.xs { width: 31px; height: 43px; width: 7.2cqmin; height: 10cqmin; border-radius: 4px; border-radius: 1cqmin; }
-.cd.xs b { font-size: 18px; font-size: 4.5cqmin; }
-.cd.xs svg { width: 14px; height: 14px; width: 3.5cqmin; height: 3.5cqmin; }
-.cd.md { width: 46px; height: 64px; width: 11cqmin; height: 15.4cqmin; border-radius: 6px; border-radius: 1.4cqmin; }
-.cd.md b { font-size: 27px; font-size: 6.6cqmin; }
-.cd.md svg { width: 22px; height: 22px; width: 5.2cqmin; height: 5.2cqmin; }
+.cd.xs { width: var(--cw); height: var(--ch); border-radius: calc(var(--cw) * .13); }
+.cd.xs b { font-size: calc(var(--cw) * .58); }
+.cd.xs svg { width: calc(var(--cw) * .46); height: calc(var(--cw) * .46); }
+.cd.xs.back { border-width: calc(var(--cw) * .07); }
+.cd.md { width: clamp(30px, 11cqmin, 98px); height: clamp(42px, 15.4cqmin, 137px); border-radius: clamp(4px, 1.4cqmin, 12px); }
+.cd.md b { font-size: clamp(17px, 6.6cqmin, 58px); }
+.cd.md svg { width: clamp(13px, 5.2cqmin, 46px); height: clamp(13px, 5.2cqmin, 46px); }
 .cd.sm { width: 34px; height: 47px; }
 .cd.sm b { font-size: 19px; }
 .cd.sm svg { width: 15px; height: 15px; }
-.cd.lg { width: 56px; height: 78px; width: clamp(50px, 14vw, 78px); height: clamp(70px, 19.6vw, 109px); border-radius: 8px; }
-.cd.lg b { font-size: 27px; font-size: clamp(24px, 6.7vw, 38px); }
-.cd.lg svg { width: 21px; height: 21px; width: clamp(19px, 5.2vw, 30px); height: clamp(19px, 5.2vw, 30px); }
+.cd.lg { width: var(--lw); height: calc(var(--lw) * 1.4); border-radius: calc(var(--lw) * .12); }
+.cd.lg b { font-size: calc(var(--lw) * .5); }
+.cd.lg svg { width: calc(var(--lw) * .38); height: calc(var(--lw) * .38); }
+.cd.deal { animation: dealfly .45s cubic-bezier(.18, .8, .3, 1) both; }
+@keyframes dealfly {
+  from { transform: translate(calc(var(--fx) * 1cqw), calc(var(--fy) * 1cqh)) rotate(-28deg) scale(.55); opacity: 0; }
+  12% { opacity: 1; }
+}
+.cd.flip { animation: flipin .5s cubic-bezier(.2, .7, .3, 1) both; }
+@keyframes flipin { from { transform: rotateY(95deg) scale(.9); filter: brightness(.55); } }
 .ci {
   display: inline-flex; align-items: center; margin: 0 2px; padding: 0 3px; border-radius: 3px; line-height: 1.35;
   background: var(--card); color: var(--cink); font-weight: 700; font-size: .92em;
@@ -151,31 +228,61 @@ body.four .cd.sc { color: var(--green); }
 body.four .ci.sd { color: var(--blue); }
 body.four .ci.sc { color: var(--green); }
 
-/* ---------------- top bar */
-.tb {
-  display: flex; align-items: center; gap: 14px; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top));
-  background: linear-gradient(#101915, #0b110e); border-bottom: 1px solid var(--line); font-size: 13px;
+/* ---------------- level, blinds, tools */
+.hud {
+  display: flex; align-items: center; gap: 12px; padding: 7px 12px; padding-top: max(7px, env(safe-area-inset-top));
+  background: linear-gradient(#111a16, #0b110e); border-bottom: 1px solid var(--line);
 }
-.tb .lv b { color: var(--gold); font-family: var(--mono); margin-right: 4px; }
-.tb .lv span { color: var(--ink); }
-.tb .nx { color: var(--ink2); }
-.tb .nx b { font-family: var(--mono); color: var(--ink); }
-.tb .ct { color: var(--ink3); margin-left: auto; }
-.tb .tools { display: flex; gap: 6px; }
+.hud-l { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; min-width: 0; }
+.hl1, .hl2, .hl3 { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-width: 0; }
+.lvchip { font: 700 11.5px var(--mono); color: #1d1607; background: var(--gold); border-radius: 6px; padding: 2px 7px; }
+.bl { font: 600 13.5px var(--mono); color: var(--ink); white-space: nowrap; }
+.bl small { font: 500 11.5px var(--sans); color: var(--ink2); margin-left: 3px; }
+.nxt { display: inline-flex; align-items: center; gap: 6px; color: var(--ink2); font-size: 12.5px; white-space: nowrap; }
+.nxt b { font-family: var(--mono); color: var(--ink); }
+.nxt.up b { color: var(--gold); }
+.lvbar { display: inline-block; width: 44px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+.lvbar i { display: block; height: 100%; width: 0; background: var(--gold); transition: width 1s linear; }
+.cnt { color: var(--ink3); font-size: 12.5px; white-space: nowrap; }
+.watch { font-size: 11.5px; color: var(--ink2); border: 1px dashed rgba(238, 234, 223, .25); border-radius: 99px; padding: 1px 8px; }
+.hud-r { margin-left: auto; display: flex; gap: 6px; flex: none; }
 .ic { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 5px 10px; font-size: 12.5px; color: var(--ink2); }
 .ic:hover { color: var(--ink); border-color: rgba(238, 234, 223, .3); }
-.mn { font-size: 12.5px; color: var(--ink2); border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; white-space: nowrap; }
+.ic.snd { color: var(--gold); border-color: rgba(230, 192, 104, .4); }
+.mn { font-size: 12px; color: var(--ink2); border: 1px solid var(--line); border-radius: 99px; padding: 2px 9px; white-space: nowrap; }
 .mn.bubble { color: #1d1607; background: var(--amber); border-color: transparent; font-weight: 600; }
 .mn.itm { color: #04140d; background: var(--jade); border-color: transparent; font-weight: 600; }
-body.is-dealer .mn { font-size: clamp(12.5px, 1.05vw, 18px); }
-.warn { background: #5b1f17; color: #ffdcd5; font-size: 13px; padding: 6px 12px; text-align: center; }
-body.is-dealer .tb { font-size: clamp(13px, 1.25vw, 22px); padding: 10px 18px; }
+.warn { background: #5b1f17; color: #ffdcd5; font-size: 13px; padding: 6px 12px; text-align: center; pointer-events: auto; }
+.rotate { display: flex; align-items: center; gap: 8px; padding: 6px 12px; background: rgba(230, 192, 104, .1); border-bottom: 1px solid rgba(230, 192, 104, .22); color: var(--gold); font-size: 12.5px; }
+.rot-ic { flex: none; width: 10px; height: 16px; border: 2px solid currentColor; border-radius: 3px; animation: rot 2.6s ease-in-out infinite; }
+@keyframes rot { 0%, 25% { transform: rotate(0); } 45%, 75% { transform: rotate(90deg); } 95%, 100% { transform: rotate(0); } }
+.rot-b { margin-left: auto; border: 1px solid rgba(230, 192, 104, .5); background: transparent; color: var(--gold); border-radius: 8px; padding: 4px 9px; font-size: 12px; }
+.rot-x { border: 0; background: none; color: var(--ink3); font-size: 14px; padding: 2px 6px; }
+.rotate span + .rot-x { margin-left: auto; }
+body.is-dealer .hud { padding: 10px 18px; gap: 18px; }
+body.is-dealer .lvchip { font-size: clamp(12px, 1.05vw, 18px); }
+body.is-dealer .bl { font-size: clamp(14px, 1.45vw, 26px); }
+body.is-dealer .bl small, body.is-dealer .nxt, body.is-dealer .cnt, body.is-dealer .mn { font-size: clamp(12.5px, 1.05vw, 18px); }
+body.is-dealer .lvbar { width: clamp(44px, 5vw, 90px); height: 5px; }
 body.is-dealer .ic { font-size: clamp(12px, .95vw, 16px); }
+/* a sideways phone: the level box and tools float over the table corners */
+body.is-player.scr-table.lay-land .hud { background: none; border: 0; padding: max(6px, env(safe-area-inset-top)) 8px 0; align-items: flex-start; }
+body.is-player.scr-table.lay-land .hud-l {
+  flex-direction: column; align-items: flex-start; gap: 3px; padding: 6px 10px; pointer-events: auto;
+  background: rgba(8, 13, 11, .72); border: 1px solid var(--line); border-radius: 12px; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+body.is-player.scr-table.lay-land .hud-r { pointer-events: auto; }
+body.is-player.scr-table.lay-land .lvchip { font-size: 10.5px; padding: 1px 6px; }
+body.is-player.scr-table.lay-land .bl { font-size: 12.5px; }
+body.is-player.scr-table.lay-land .bl small, body.is-player.scr-table.lay-land .nxt, body.is-player.scr-table.lay-land .cnt { font-size: 11.5px; }
+body.is-player.scr-table.lay-land .lvbar { width: 34px; }
+body.is-player.scr-table.lay-land.seated .hl3 { display: none; }
+body.is-player.scr-table.lay-land .hud-r .ic { padding: 4px 9px; font-size: 12px; }
+body.is-player.scr-table.lay-land .hud-r .ic { background: rgba(8, 13, 11, .72); }
+body.is-player.scr-table.lay-land .warn { margin: 6px auto 0; width: fit-content; max-width: 92%; border-radius: 10px; }
 @media (max-width: 600px) {
-  .mn { font-size: 11.5px; padding: 2px 8px; }
-  .tb { flex-wrap: wrap; gap: 4px 10px; font-size: 12px; padding: 6px 10px; padding-top: max(6px, env(safe-area-inset-top)); }
-  .tb .ct { display: none; }
-  .tb .tools { margin-left: auto; }
+  .hud { gap: 8px; padding: 6px 10px; padding-top: max(6px, env(safe-area-inset-top)); }
+  .hud-l { gap: 3px 10px; }
   .ic { padding: 4px 8px; font-size: 12px; }
 }
 
@@ -188,53 +295,97 @@ body.is-dealer .ic { font-size: clamp(12px, .95vw, 16px); }
 #feed li.sd { color: var(--ink); margin-top: 6px; }
 #feed li.res { color: var(--ink); font-weight: 600; }
 
-/* ---------------- dock (player) */
-#dock { background: #0d1512; border-top: 1px solid var(--line); padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+/* ---------------- my cards and controls */
+#dock { background: linear-gradient(180deg, #0f1814, #0b110e); border-top: 1px solid var(--line); padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
 #dock:empty { display: none; }
-.dock-in { display: flex; gap: 14px; align-items: center; max-width: 780px; margin: 0 auto; min-height: 96px; }
+.dock-in { display: flex; gap: 12px; align-items: center; max-width: 780px; margin: 0 auto; min-height: 100px; }
 .dock-in.viewer { min-height: 44px; justify-content: center; }
-.mine { display: flex; flex-direction: column; align-items: center; gap: 6px; }
-.mine .cards { display: flex; gap: 6px; }
-.hs { min-height: 16px; font-size: 12.5px; color: var(--gold); text-align: center; max-width: 170px; }
-.acts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.arow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
-.arow2 { display: flex; align-items: center; gap: 10px; }
-.mytime { font: 600 14px var(--mono); color: var(--gold); min-width: 38px; }
+.mine { --lw: clamp(50px, 14vw, 78px); display: flex; flex-direction: column; align-items: center; gap: 5px; flex: none; }
+.mine .cards { display: flex; gap: 6px; perspective: 600px; }
+.mine.folded .cards { opacity: .4; }
+.hs { min-height: 16px; font-size: 12.5px; font-weight: 600; color: var(--gold); text-align: center; max-width: 180px; }
+.me-stk, .tinfo { display: none; }
+.ctl { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .status { color: var(--ink2); font-size: 14.5px; line-height: 1.5; }
 .status b { color: var(--ink); }
 .status .up, .hnet.up { color: var(--jade); }
 .status .dn, .hnet.dn { color: #f08a7a; }
+.myturn { display: flex; align-items: center; gap: 8px; }
+.mt-l { font-weight: 700; color: var(--gold); font-size: 14px; white-space: nowrap; }
+.mt-bar { position: relative; flex: 1; height: 6px; border-radius: 4px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.mt-bar .bar-i { position: absolute; inset: 0; background: var(--jade); transform-origin: left center; transition: transform .2s linear; }
+.mt-bar.low .bar-i { background: var(--amber); }
+.mt-bar.crit .bar-i { background: var(--alarm); }
+.mt-t { font: 600 14px var(--mono); min-width: 34px; text-align: right; }
+.aux { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.abtns { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.abtns .fold { order: 1; }
+.abtns .call { order: 2; }
+.abtns .raise { order: 3; }
 .btn {
-  border: 1px solid var(--line); background: var(--panel2); border-radius: 12px; padding: 12px 10px; font-size: 15px; font-weight: 600;
-  min-height: 46px; transition: transform .06s, filter .15s;
+  border: 1px solid var(--line); background: var(--panel2); border-radius: 12px; padding: 10px 8px; font-size: 15px; font-weight: 700;
+  min-height: 48px; line-height: 1.15; transition: transform .06s, filter .15s;
 }
+.btn small { display: block; margin-top: 2px; font: 600 12px var(--mono); opacity: .85; }
 .btn:active { transform: scale(.97); }
 .btn:disabled { opacity: .5; cursor: default; }
 .btn.primary { background: var(--jade); border-color: transparent; color: #04140d; }
 .btn.ghost { background: transparent; }
-.btn.small { min-height: 38px; padding: 8px 12px; font-size: 14px; }
+.btn.small { min-height: 38px; padding: 8px 12px; font-size: 14px; font-weight: 600; }
 .btn.big { width: 100%; padding: 15px; font-size: 16.5px; margin-top: 10px; }
-.btn.fold { background: #2b1714; border-color: #5c2b22; color: #f3b9ad; }
-.btn.call { background: #133429; border-color: #2c6c55; color: #d9f3e8; }
-.btn.raise { background: #3a2c10; border-color: #7b5e22; color: #f7dd9d; }
-.btn.raise.on { background: #5a4415; }
-.btn.go { background: var(--gold); border-color: transparent; color: #1d1607; }
-.rpanel { display: flex; flex-direction: column; gap: 8px; background: rgba(255, 255, 255, .03); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
-.presets { display: flex; gap: 6px; }
-.presets button { flex: 1; border: 1px solid var(--line); background: var(--panel2); border-radius: 9px; padding: 8px 2px; font-size: 12.5px; }
+.btn.fold { background: linear-gradient(180deg, #3a1d18, #2a1512); border-color: #6a3026; color: #f6c0b4; }
+.btn.call { background: linear-gradient(180deg, #1b4a3a, #133429); border-color: #2f7a60; color: #e2f7ee; }
+.btn.raise { background: linear-gradient(180deg, #5b4314, #3d2d0f); border-color: #8a6a26; color: #fbe3a7; }
+.btn.go { background: linear-gradient(180deg, #f1d07e, var(--gold)); border-color: transparent; color: #1d1607; }
+.pre { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pre-h { grid-column: 1 / -1; font-size: 11.5px; color: var(--ink3); }
+.pchip {
+  display: flex; align-items: center; gap: 7px; min-height: 42px; text-align: left; border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .03); border-radius: 10px; padding: 8px 10px; font-size: 13.5px; color: var(--ink2);
+}
+.pchip i { flex: none; width: 15px; height: 15px; border-radius: 4px; border: 1.5px solid var(--ink3); }
+.pchip.on { border-color: var(--jade); color: var(--ink); background: rgba(71, 185, 142, .12); }
+.pchip.on i { background: var(--jade); border-color: var(--jade); box-shadow: inset 0 0 0 2.5px #0d1512; }
+.rpanel { display: flex; flex-direction: column; gap: 8px; background: rgba(255, 255, 255, .03); border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px 10px; }
+.rp-top { display: flex; align-items: center; justify-content: space-between; font-size: 12.5px; color: var(--ink2); }
+.rp-x { border: 0; background: none; color: var(--ink3); font-size: 15px; padding: 2px 4px; }
+.rp-amt { display: flex; align-items: center; gap: 6px; }
+.stepb { flex: none; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--panel2); font-size: 20px; font-weight: 700; }
+.rp-cur { font: 700 20px var(--mono); color: var(--gold); margin-left: 4px; }
+input#ramt {
+  flex: 1; min-width: 0; width: 100%; padding: 4px 0; text-align: left; font: 700 22px var(--mono); color: var(--gold); background: transparent;
+  border: 0; border-bottom: 1px dashed rgba(230, 192, 104, .4); border-radius: 0;
+}
+input#rng { width: 100%; accent-color: var(--gold); margin: 2px 0; }
+.presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+.presets button { border: 1px solid var(--line); background: var(--panel2); border-radius: 9px; padding: 7px 2px; font-size: 12.5px; }
 .presets button.on { border-color: var(--gold); color: var(--gold); }
-.rrow { display: flex; gap: 8px; align-items: center; }
-.rrow input[type=range] { flex: 1; accent-color: var(--gold); min-width: 0; }
-#ramt { width: 92px; font-family: var(--mono); text-align: right; }
 .tcard { border: 1px dashed rgba(230, 192, 104, .55); background: transparent; color: var(--gold); border-radius: 10px; padding: 7px 11px; font-size: 13px; }
 .tcard small { color: var(--ink3); margin-left: 4px; }
 .tcard.none { border-color: var(--line); color: var(--ink3); }
-.tog { align-self: flex-start; border: 1px solid var(--line); background: transparent; border-radius: 9px; padding: 6px 10px; font-size: 12.5px; color: var(--ink3); }
+.tog { border: 1px solid var(--line); background: transparent; border-radius: 9px; padding: 6px 10px; font-size: 12.5px; color: var(--ink3); }
 .tog.on { border-color: var(--amber); color: var(--amber); }
 @media (max-width: 420px) {
   .dock-in { gap: 10px; }
-  .btn { font-size: 14px; padding: 11px 6px; }
+  .btn { font-size: 14px; padding: 9px 4px; }
 }
+/* sideways: everything stacks in the right-hand column, buttons at thumb height */
+body.lay-land .dock-in { flex-direction: column; align-items: stretch; flex: 1; min-height: 0; max-width: none; margin: 0; gap: 8px; }
+body.lay-land .mine { --lw: clamp(52px, calc((var(--col) - 46px) / 2.45), 104px); }
+body.lay-land .me-stk { display: flex; align-items: center; gap: 7px; width: 100%; font-size: 12.5px; color: var(--ink2); }
+body.lay-land .me-stk .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+body.lay-land .me-stk b { margin-left: auto; font-family: var(--mono); color: var(--gold); }
+body.lay-land .tinfo { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; width: 100%; }
+body.lay-land .tinfo .cnt { font-size: 11.5px; }
+body.lay-land .tinfo .mn { font-size: 11px; padding: 1px 8px; }
+body.lay-land .ctl { flex: 1; }
+body.lay-land .abtns { margin-top: auto; grid-auto-flow: row; grid-template-columns: 1fr 1fr; grid-auto-columns: auto; }
+body.lay-land .abtns .raise { order: 0; grid-column: 1 / -1; }
+body.lay-land .abtns.nofold .call, body.lay-land .abtns.noraise .call:only-child { grid-column: 1 / -1; }
+body.lay-land .pre { margin-top: auto; grid-template-columns: 1fr; }
+body.lay-land .presets { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.lay-land .dock-in.raising .mine { display: none; }
+body.lay-land .status { font-size: 13.5px; }
 
 /* ---------------- overlays, panels */
 #overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; overflow: auto; background: rgba(5, 9, 7, .7); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
@@ -257,7 +408,7 @@ body.is-dealer .ic { font-size: clamp(12px, .95vw, 16px); }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { border: 1px solid var(--line); background: var(--panel2); border-radius: 999px; padding: 8px 13px; font-size: 14px; }
 .chip.on { background: var(--gold); color: #1d1607; border-color: transparent; font-weight: 600; }
-input#nickIn, input#stackIn, input#linkIn, input#ramt {
+input#nickIn, input#stackIn, input#linkIn {
   background: var(--sunk); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 15px; min-width: 0;
 }
 input#stackIn { width: 120px; padding: 7px 12px; border-radius: 999px; font-size: 14px; }
@@ -303,9 +454,20 @@ body.is-dealer .panel.dl h2 { font-size: clamp(24px, 2.6vw, 40px); }
 body.is-dealer .panel.dl .cfg { font-size: clamp(13px, 1.2vw, 18px); }
 body.is-dealer .panel.dl .plist li { font-size: clamp(14px, 1.3vw, 20px); padding: 11px 14px; }
 body.is-dealer .panel.end, body.is-dealer .panel.draw { width: min(760px, 100%); }
-@media (min-width: 900px) {
-  body.is-dealer .panel.dl .plist { grid-template-columns: 1fr 1fr; }
-  body.is-dealer .panel.dl .plist li.empty { grid-column: 1 / -1; }
+/* lobby and results side by side when the screen lies on its side */
+.panel.split .lcol, .panel.split .rcol { min-width: 0; }
+body.lay-land .panel.split { width: min(900px, 100%); display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 0 26px; align-items: start; }
+body.lay-land .panel.split .rcol h3:first-child { margin-top: 2px; }
+body.lay-land .panel.end.split .rcol { padding-top: 4px; }
+body.is-dealer.lay-land .panel.split { width: min(1040px, 100%); }
+@media (max-height: 500px) {
+  #overlay { padding: 8px; }
+  .panel { padding: 14px 16px; max-height: calc(100dvh - 16px); }
+  .panel h2 { font-size: 19px; }
+  .panel h3 { margin: 6px 0 6px; }
+  .plist li { padding: 6px 10px; }
+  .btn.big { padding: 11px; margin-top: 6px; }
+  .go { margin: 8px 0 2px; }
 }
 
 /* ---------------- sheet */
@@ -344,6 +506,8 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
   background: rgba(20, 31, 26, .97); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 14px; text-align: center; transition: .25s;
 }
 #toast.on { opacity: 1; transform: translate(-50%, 0); }
+body.is-player.scr-table.lay-land.seated #toast { left: calc((100% - var(--col)) / 2); bottom: 24px; }
+body.is-player.scr-table.lay-port #toast { bottom: 170px; }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
@@ -1545,7 +1709,8 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     want: 0, rdy: 0, away: 0, q: [], qseq: 0, pending: null, turnKey: '', warned: {}, tcKey: '', tcUsed: 0,
     raiseOpen: false, raiseTo: 0, endShown: false, endHidden: false, recorded: {}, lastLvl: -1,
     yielded: false, reclaimDone: false, sheet: '', histOpen: '', form: null, nickDraft: null, stackDraft: '',
-    leaveArmed: 0, busy: false, sound: LS.get('hd.snd', true), four: LS.get('hd.4c', false), toastT: 0, connDrawn: 0
+    leaveArmed: 0, busy: false, sound: LS.get('hd.snd', true), four: LS.get('hd.4c', false), toastT: 0, connDrawn: 0,
+    lay: 'land', rotOk: !!SS.get('hd.rotok', false), pre: null, snd: null, handKey: '', dealFrom: 0
   };
   var D = {
     ready: false, waitFrom: 0, S: null, cfg: CFG0, round: 1, v: 0, lobby: [], wait: [], joinAt: {}, go: 0, sig: '',
@@ -1935,10 +2100,23 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     if (!T) return;
     var h = T.hand, me = mySeat();
     if (O.pending && (!h || h.no !== O.pending.h || h.n !== O.pending.n)) O.pending = null;
-    if (h && me >= 0 && h.actor === me) {
-      var key = T.tid + ':' + h.no + ':' + h.n;
-      if (O.turnKey !== key) { O.turnKey = key; O.raiseOpen = false; O.raiseTo = 0; O.warned = {}; chime(); }
+    if (O.pre && (!h || me < 0)) O.pre = null;
+    if (O.pre && h && me >= 0) {           // a choice made in advance only holds while it still means the same thing
+      var toCall = Math.min(Math.max(0, h.cur - h.bet[me]), T.seats[me].stack);
+      if (O.pre.key !== T.tid + ':' + h.no + ':' + h.street || h.fold[me] || h.allin[me] || h.done ||
+        (O.pre.k === 'k' && toCall > 0) || (O.pre.k === 'c' && toCall !== O.pre.amt)) O.pre = null;
     }
+    if (h && me >= 0 && h.actor === me && !h.next) {
+      var key = T.tid + ':' + h.no + ':' + h.n;
+      if (O.turnKey !== key) {
+        O.turnKey = key; O.raiseOpen = false; O.raiseTo = 0; O.warned = {};
+        var pa = O.pre ? preAction(T, h, me) : null;
+        O.pre = null;
+        if (pa) { toast(pa === 'f' ? '미리 고른 대로 폴드했어요' : pa === 'k' ? '미리 고른 대로 체크했어요' : '미리 고른 대로 콜했어요'); setTimeout(function () { doAct(pa); }, 60); }
+        else chime();
+      }
+    }
+    sfxFor(T);
     if (!O.dealer) refreshCards();
     if (T.st === 'run' || T.st === 'end') {
       if (h && h.done && h.res) recordHand(T);
@@ -1953,6 +2131,25 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
       O.moneyKey = mk;
     } else { O.lastLvl = -1; }
     if (T.st !== 'end') { O.endShown = false; O.endHidden = false; }
+  }
+
+  function preAction(T, h, me) {
+    var L = HD.legal(h, T.seats, me);
+    if (!L || !O.pre) return null;
+    if (O.pre.k === 'cf') return L.canCheck ? 'k' : 'f';
+    if (O.pre.k === 'k') return L.canCheck ? 'k' : null;
+    if (O.pre.k === 'c') return !L.canCheck && L.toCall === O.pre.amt ? 'c' : null;
+    return null;
+  }
+  function canLockLand() {
+    return !!(window.screen && screen.orientation && screen.orientation.lock && document.documentElement.requestFullscreen);
+  }
+  function goLandscape() {
+    try {
+      document.documentElement.requestFullscreen({ navigationUI: 'hide' }).then(function () {
+        return screen.orientation.lock('landscape');
+      }).catch(function () { toast('이 기기에서는 휴대폰을 직접 가로로 돌려 주세요'); });
+    } catch (e) { toast('이 기기에서는 휴대폰을 직접 가로로 돌려 주세요'); }
   }
 
   // ------------------------------------------------------------ hand history
@@ -2121,14 +2318,18 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
   }
   function draw() {
     var scr = screen(), T = curT(), ov, table = scr === 'table';
-    document.body.className = 'scr-' + scr + (O.dealer ? ' is-dealer' : ' is-player') + (O.four ? ' four' : '');
+    O.lay = window.innerWidth >= window.innerHeight * 1.08 ? 'land' : 'port';
+    var seated = table && !O.dealer && mySeat() >= 0;
+    document.body.className = 'scr-' + scr + (O.dealer ? ' is-dealer' : ' is-player') + ' lay-' + O.lay + (seated ? ' seated' : '') + (O.four ? ' four' : '');
     ov = overlayHtml(scr, T);
     setHTML($('#overlay'), ov);
     $('#overlay').hidden = !ov;
     setHTML($('#top'), table ? topHtml(T) : '');
-    setHTML($('#table'), table ? tableHtml(T) : '<div class="felt"></div>');
+    if (table) drawTable(T);
+    else { $('#table')._sig = ''; setHTML($('#table'), '<div class="felt"></div>'); }
     setHTML($('#feed'), table && O.dealer ? feedHtml(T) : '');
-    setHTML($('#dock'), table && !O.dealer ? dockHtml(T) : '');
+    if (table && !O.dealer) drawDock(T);
+    else { $('#dock')._sig = ''; setHTML($('#dock'), ''); }
     var sc = $('#sheet .sheet-in'), top = sc ? sc.scrollTop : 0;
     if (O.sheet !== O.sheetShown) { O.sheetShown = O.sheet; O.sheetAt = Date.now(); }
     setHTML($('#sheet'), O.sheet ? sheetHtml(Date.now() - O.sheetAt < 250) : '');
@@ -2142,7 +2343,7 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     return '<span class="cd ' + size + ' s' + SUITC.charAt(c & 3) + (extra ? ' ' + extra : '') + '"><b>' + HD.RN[c >> 2] +
       '</b><svg viewBox="0 0 100 100"><use href="#su-' + SUITC.charAt(c & 3) + '"/></svg></span>';
   }
-  function backHtml(size) { return '<span class="cd ' + size + ' back"></span>'; }
+  function backHtml(size, extra) { return '<span class="cd ' + size + ' back' + (extra ? ' ' + extra : '') + '"></span>'; }
   function cardsInline(cs) {
     return (cs || []).map(function (c) {
       return '<span class="ci s' + SUITC.charAt(c & 3) + '">' + HD.RN[c >> 2] + '<svg viewBox="0 0 100 100"><use href="#su-' + SUITC.charAt(c & 3) + '"/></svg></span>';
@@ -2240,11 +2441,11 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     }
     var nIn = Math.min(T.lobby.length, MAX_SEATS);
     var pz = nIn >= 2 ? '<p class="prize">상금 풀 ' + money(nIn * T.cfg.stack) + ' · ' + prizeLine(HD.prizes(nIn, nIn * T.cfg.stack)) + '</p>' : '';
-    return panel(head + (dealerView ? ctl : '') + '<h3>참가자 ' + T.lobby.length + '/' + MAX_SEATS + '</h3><ol class="plist">' + list + '</ol>' + pz +
-      (T.wait.length ? '<p class="hint">대기: ' + T.wait.map(function (x) { return esc(x.nick); }).join(', ') + '</p>' : '') +
-      (dealerView ? '' : ctl) + go + lastHtml(T.last) +
-      '<div class="row"><button class="link" data-act="rules">규칙·블라인드 구조</button>' + (dealerView ? '' : '<button class="link" data-act="hist">기록</button>') + '</div>',
-    dealerView ? 'lobby dl' : 'lobby');
+    return panel('<div class="lcol">' + head + ctl + go + lastHtml(T.last) +
+      '<div class="row"><button class="link" data-act="rules">규칙·블라인드 구조</button>' + (dealerView ? '' : '<button class="link" data-act="hist">기록</button>') + '</div></div>' +
+      '<div class="rcol"><h3>참가자 ' + T.lobby.length + '/' + MAX_SEATS + '</h3><ol class="plist">' + list + '</ol>' + pz +
+      (T.wait.length ? '<p class="hint">대기: ' + T.wait.map(function (x) { return esc(x.nick); }).join(', ') + '</p>' : '') + '</div>',
+    dealerView ? 'lobby dl split' : 'lobby split');
   }
 
   function drawHtml(T) {
@@ -2264,30 +2465,47 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     }).join('');
     var ctl = O.dealer ? '<p class="hint">참가자가 자기 폰에서 \'다시 하기\'를 누르면 같은 설정으로 새 토너먼트를 준비해요.</p>'
       : '<button class="btn primary big" data-act="again">다시 하기</button><div class="row"><button class="btn ghost" data-act="hist">기록 보기</button></div>';
-    return panel('<h2>토너먼트 끝</h2><p class="cfg">' + T.handNo + '핸드 · ' + cfgLine(T.cfg) + ' · 상금 풀 ' + money(T.pool) + '</p><ol class="plist places">' + rows + '</ol>' + ctl +
-      '<div class="row"><button class="link" data-act="hideEnd">테이블 보기</button></div>', 'end');
+    return panel('<div class="lcol"><h2>토너먼트 끝</h2><p class="cfg">' + T.handNo + '핸드 · ' + cfgLine(T.cfg) + ' · 상금 풀 ' + money(T.pool) + '</p>' + ctl +
+      '<div class="row"><button class="link" data-act="hideEnd">테이블 보기</button></div></div><div class="rcol"><ol class="plist places">' + rows + '</ol></div>', 'end split');
   }
 
   function topHtml(T) {
-    var h = T.hand, lv = h ? h.lvl : T.lvl, live = 0;
+    var h = T.hand, lv = h ? h.lvl : T.lvl, live = 0, L = HD.level(lv), me = mySeat();
     T.seats.forEach(function (p) { if (!p.out) live++; });
-    var avg = Math.round(T.cfg.stack * T.seats.length / Math.max(1, live)), next = '';
-    if (T.st === 'run') next = T.lvl > lv ? '다음 핸드부터 <b>Lv ' + (T.lvl + 1) + '</b>' : '다음 레벨 <b data-lvl="' + T.lvlEnd + '">' + mmss(T.lvlLeft) + '</b>';
+    var next = '';
+    if (T.st === 'run') {
+      next = T.lvl > lv ? '<span class="nxt up">다음 핸드부터 <b>Lv ' + (T.lvl + 1) + '</b></span>'
+        : '<span class="nxt">다음 레벨 <b data-lvl="' + T.lvlEnd + '">' + mmss(T.lvlLeft) + '</b><i class="lvbar"><i data-lvp="' + T.lvlEnd +
+          '" data-lvms="' + (T.cfg.lvlMin * 60000) + '"></i></i></span>';
+    }
     var warn = '';
     if (!O.conn) warn = '<div class="warn">연결이 끊겼어요 — 다시 연결하는 중…</div>';
     else if (!O.dealer && !O.dealerHere) warn = '<div class="warn">딜러 화면과 연결이 끊겼어요 — 딜러 화면이 다시 켜지면 이어서 진행돼요</div>';
-    return '<div class="tb"><div class="lv"><b>Lv ' + (lv + 1) + '</b> <span>' + blinds(lv) + '</span></div><div class="nx">' + next + '</div>' +
-      '<div class="ct">' + live + '/' + T.seats.length + '명 · 평균 ' + money(avg) + '</div>' + moneyTag(T) + '<div class="tools">' +
-      (T.st === 'end' ? '<button class="ic" data-act="showEnd">결과</button>' : '') +
-      '<button class="ic" data-act="hist">기록</button><button class="ic" data-act="rules">규칙</button><button class="ic" data-act="menu">메뉴</button></div></div>' + warn;
+    var rot = '';
+    if (!O.dealer && me >= 0 && O.lay === 'port' && !O.rotOk) {
+      rot = '<div class="rotate"><span class="rot-ic" aria-hidden="true"></span><span>가로로 돌리면 테이블이 넓어져요</span>' +
+        (canLockLand() ? '<button class="rot-b" data-act="land">가로 모드</button>' : '') +
+        '<button class="rot-x" data-act="rotOk" aria-label="닫기">✕</button></div>';
+    }
+    var mute = O.sound && O.code && (!AC || AC.state !== 'running') ? '<button class="ic snd" data-act="unmute">🔈 소리 켜기</button>' : '';
+    return '<div class="hud"><div class="hud-l"><div class="hl1"><span class="lvchip">Lv ' + (lv + 1) + '</span><span class="bl">' + money(L.sb) + '/' + money(L.bb) +
+      ' <small>앤티 ' + money(L.ante) + '</small></span></div>' + (next ? '<div class="hl2">' + next + '</div>' : '') + '<div class="hl3">' + tableInfo(T) +
+      (me < 0 && !O.dealer ? '<span class="watch">관전 중</span>' : '') + '</div></div><div class="hud-r">' + mute + (T.st === 'end' ? '<button class="ic" data-act="showEnd">결과</button>' : '') +
+      '<button class="ic" data-act="hist">기록</button><button class="ic" data-act="rules">규칙</button><button class="ic" data-act="menu">메뉴</button></div></div>' + warn + rot;
   }
 
+  function tableInfo(T) {
+    var live = 0;
+    T.seats.forEach(function (p) { if (!p.out) live++; });
+    return '<span class="cnt">' + live + '/' + T.seats.length + '명' + (O.dealer ? ' · 평균 ' + money(Math.round(T.cfg.stack * T.seats.length / Math.max(1, live))) : '') +
+      '</span>' + moneyTag(T);
+  }
   function moneyTag(T) {
     var m = moneyState(T);
     if (!m.k) return '';
-    if (m.k === 'itm') return '<div class="mn itm" title="' + esc(prizeLine(T.prizes)) + '">머니 인</div>';
-    if (m.k === 'bubble') return '<div class="mn bubble" title="' + esc(prizeLine(T.prizes)) + '">버블 · 한 명 더 떨어지면 모두 상금</div>';
-    return '<div class="mn" title="' + esc(prizeLine(T.prizes)) + '">' + (m.k === 'wta' ? '상금 우승자 독식' : '상금 ' + m.paid + '위까지') + '</div>';
+    if (m.k === 'itm') return '<span class="mn itm" title="' + esc(prizeLine(T.prizes)) + '">머니 인</span>';
+    if (m.k === 'bubble') return '<span class="mn bubble" title="' + esc(prizeLine(T.prizes)) + '">버블 · 한 명 더 떨어지면 모두 상금</span>';
+    return '<span class="mn" title="' + esc(prizeLine(T.prizes)) + '">' + (m.k === 'wta' ? '상금 우승자 독식' : '상금 ' + m.paid + '위까지') + '</span>';
   }
   function present(pid) {
     for (var i = 0; i < O.peers.length; i++) if (O.peers[i].pid === pid) return O.peers[i];
@@ -2300,6 +2518,7 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     if (!p) return '연결 끊김';
     return p.away ? '자리 비움' : '';
   }
+  // the last thing this seat did on the current street: [label, colour key]
   function actionTag(T, s) {
     var h = T.hand;
     for (var i = h.log.length - 1; i >= 0; i--) {
@@ -2307,62 +2526,167 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
       if (e.d) break;
       if (e.s !== s) continue;
       if (e.a === 'N' || e.a === 'R') continue;
-      if (e.ai) return '올인';
-      return { S: 'SB', B: 'BB', f: '폴드', k: '체크', c: '콜', b: '벳', r: '레이즈', T: '타임 카드' }[e.a] || '';
+      if (e.ai) return ['올인', 'allin'];
+      switch (e.a) {
+        case 'S': return ['SB', 'blind'];
+        case 'B': return ['BB', 'blind'];
+        case 'f': return ['폴드', 'fold'];
+        case 'k': return ['체크', 'check'];
+        case 'c': return ['콜', 'call'];
+        case 'b': return ['벳', 'bet'];
+        case 'r': return ['레이즈', 'bet'];
+        case 'T': return ['타임 카드', 'time'];
+      }
     }
-    return '';
+    return null;
+  }
+  function hueOf(pid) {
+    var x = 0;
+    for (var i = 0; i < pid.length; i++) x = (x * 31 + pid.charCodeAt(i)) >>> 0;
+    return (x % 12) * 30;
+  }
+  function initial(nick) {
+    var c = Array.from(String(nick || '?').trim())[0] || '?';
+    return /[a-z]/.test(c) ? c.toUpperCase() : c;
   }
 
-  function tableHtml(T) {
-    var n = T.seats.length, h = T.hand, me = mySeat(), bottom = me >= 0 ? me : 0, el = $('#table');
+  // ---- the table: persistent slots per seat so one change never restarts another seat's animation
+  var DEAL_BASE = 150, DEAL_GAP = 75;
+  function dealOrder(T) {
+    var h = T.hand, n = T.seats.length, order = {}, k = 0, j, s;
+    for (j = 1; j <= n; j++) { s = (h.btn + j) % n; if (h.live[s]) order[s] = k++; }
+    return { order: order, live: k, total: DEAL_BASE + 2 * k * DEAL_GAP + 450 };
+  }
+  function geometry(el) {
     var wide = el.clientWidth > el.clientHeight * 1.05;
-    var rx = wide ? 41 : 37, ry = wide ? 35 : 37, cy = wide ? 49 : 47, out = '<div class="felt"></div>', s;
+    return { wide: wide, rx: wide ? 42 : 38, ry: wide ? 37 : 41, cy: wide ? 50 : 48 };
+  }
+  // where a seat's cards and labels go: toward the middle of the table
+  function zoneOf(G, cx, sy) {
+    if (!G.wide) return { z: sy > 0.3 ? 'lo' : sy < -0.3 ? 'hi' : 'mid', si: '' };
+    var z = sy > 0.45 ? 'lo' : sy < -0.45 ? 'hi' : (cx < 0 ? 'sl' : 'sr');
+    return { z: z, si: z === 'sl' ? 'si-l' : z === 'sr' ? 'si-r' : '' };
+  }
+  function drawTable(T) {
+    var el = $('#table'), n = T.seats.length, h = T.hand, me = mySeat(), bottom = me >= 0 ? me : 0, G = geometry(el), now = Date.now(), s;
+    var sig = n + '|' + bottom + '|' + (G.wide ? 'w' : 'n');
+    if (el._sig !== sig) {
+      var html = '<div class="felt"></div>';
+      for (s = 0; s < n; s++) html += '<div class="slot" id="sc' + s + '"></div><div class="slot" id="sp' + s + '"></div>';
+      html += '<div class="slot" id="bets"></div><div class="center" style="top:' + G.cy + '%"><div class="potrow" id="cpot"></div><div class="board" id="cboard"></div>' +
+        '<div class="note" id="cnote"></div><div class="hno" id="chno"></div></div>';
+      el.innerHTML = html; el._sig = sig; el._h = null;
+      el.classList.toggle('narrow', !G.wide);
+    }
+    var pos = [];
     for (s = 0; s < n; s++) {
       var k = (s - bottom + n) % n, th = (90 + k * 360 / n) * Math.PI / 180, cx = Math.cos(th), sy = Math.sin(th);
-      out += seatHtml(T, s, 50 + rx * cx, cy + ry * sy, me);
-      if (h && h.bet[s] > 0) out += '<div class="bet" style="left:' + f2(50 + rx * 0.6 * cx) + '%;top:' + f2(cy + ry * 0.55 * sy) + '%"><i class="cp"></i>' + money(h.bet[s]) + '</div>';
+      var zn = zoneOf(G, cx, sy);
+      pos.push({ x: 50 + G.rx * cx, y: G.cy + G.ry * sy, cx: cx, sy: sy, zone: zn.z, si: zn.si });
     }
-    return out + centerHtml(T, cy);
+    // dealing: animate only hands this page sees start
+    var deal = null;
+    if (!h && T.st === 'run') O.handKey = T.tid + ':0';
+    if (h) {
+      var hk = T.tid + ':' + h.no;
+      if (O.handKey !== hk) { O.dealFrom = O.handKey ? now : 0; O.handKey = hk; }
+      var info = dealOrder(T);
+      if (O.dealFrom && now - O.dealFrom < info.total) deal = info;
+    }
+    for (s = 0; s < n; s++) {
+      setHTML($('#sc' + s), seatCardsHtml(T, s, pos[s], G, me, deal));
+      setHTML($('#sp' + s), seatHtml(T, s, pos[s], me));
+    }
+    setHTML($('#bets'), betsHtml(T, pos, G, now));
+    drawCenter(T, now);
   }
-  function seatHtml(T, s, x, y, me) {
-    var p = T.seats[s], h = T.hand, cls = ['seat'], cards = '', show = null;
+  function seatCardsHtml(T, s, P, G, me, deal) {
+    var h = T.hand;
+    if (!h || !h.live[s]) return '';
+    var shownRes = h.res && h.res.show && h.res.show[s], won = h.res && h.res.won && h.res.won[s] > 0;
+    if (h.fold[s] && !shownRes) return '';
+    var show = shownRes || (h.reveal && h.reveal[s]) || (s === me ? myCards(T) : null);
+    var d0 = '', d1 = '';
+    if (deal && deal.order[s] !== undefined) {
+      d0 = ' deal" style="animation-delay:' + (DEAL_BASE + deal.order[s] * DEAL_GAP) + 'ms';
+      d1 = ' deal" style="animation-delay:' + (DEAL_BASE + (deal.live + deal.order[s]) * DEAL_GAP) + 'ms';
+    }
+    var inner;
+    if (show) {
+      var best = won && h.res.best && h.res.best[s];
+      inner = cardHtml(show[0], 'xs', (best && best.indexOf(show[0]) >= 0 ? 'hl' : '') + (d0 || ' flip')) +
+        cardHtml(show[1], 'xs', (best && best.indexOf(show[1]) >= 0 ? 'hl' : '') + (d1 || ' flip" style="animation-delay:.07s'));
+    } else inner = backHtml('xs', d0.trim()) + backHtml('xs', d1.trim());
+    return '<div class="hand-w ' + P.zone + (h.fold[s] ? ' gone' : '') + '" style="left:' + f2(P.x) + '%;top:' + f2(P.y) + '%;--fx:' + f2(50 - P.x) +
+      ';--fy:' + f2(G.cy - P.y) + '"><div class="hand">' + inner + '</div></div>';
+  }
+  function seatHtml(T, s, P, me) {
+    var p = T.seats[s], h = T.hand, cls = ['seat', P.zone];
+    if (P.si) cls.push(P.si);
     var live = !!(h && h.live[s]), folded = live && h.fold[s];
-    var won = !!(h && h.res && h.res.won && h.res.won[s] > 0);
+    var won = !!(h && h.res && h.res.won && h.res.won[s] > 0), acting = !!(h && h.actor === s && h.dl && !h.next);
     if (p.out) cls.push('out'); else if (h && !live) cls.push('idle');
     if (folded) cls.push('fold');
-    if (h && h.actor === s) cls.push('turn');
+    if (acting) cls.push('turn');
     if (s === me) cls.push('me');
     if (won) cls.push('win');
-    if (live) show = (h.res && h.res.show && h.res.show[s]) || (h.reveal && h.reveal[s]) || null;
-    if (live && !show && s === me) show = myCards(T);
-    if (show && (!folded || (h.res && h.res.show && h.res.show[s]))) {
-      var best = won && h.res.best && h.res.best[s];
-      cards = cardHtml(show[0], 'xs', best && best.indexOf(show[0]) >= 0 ? 'hl' : '') + cardHtml(show[1], 'xs', best && best.indexOf(show[1]) >= 0 ? 'hl' : '');
-    } else if (live && !folded) cards = backHtml('xs') + backHtml('xs');
-    var timer = '';
-    if (h && h.actor === s && h.dl) {
-      timer = '<div class="bar"><i class="bar-i" data-dl="' + h.dl + '" data-tot="' + (T.cfg.act * 1000 + h.tcu * HD.TC_MS) + '"></i></div>' +
-        '<span class="secs" data-dl="' + h.dl + '"></span>';
-    }
-    var tag = p.out ? p.place + '위' + (p.prize ? ' · ' + money(p.prize) : '') : (h && !won ? actionTag(T, s) : '');
-    var flag = p.out ? '' : flagFor(T, p.pid);
-    var extra = '';
-    if (won) extra = '<div class="wonb">+' + money(h.res.won[s]) + (h.res.names && h.res.names[s] ? '<small>' + esc(h.res.names[s]) + '</small>' : '') + '</div>';
-    else if (h && h.res && h.res.names && h.res.names[s]) extra = '<div class="hn">' + esc(h.res.names[s]) + '</div>';
-    if (h && h.actor === s && p.tc > 0 && s !== me) extra += '<div class="tcn">타임 카드 ' + p.tc + '</div>';
-    return '<div class="' + cls.join(' ') + '" style="left:' + f2(x) + '%;top:' + f2(y) + '%" data-seat="' + s + '">' +
-      '<div class="mini">' + cards + '</div>' +
-      '<div class="plate">' + (h && h.btn === s ? '<i class="dbtn" title="딜러 버튼">D</i>' : '') + '<div class="nm">' + esc(p.nick) + '</div><div class="stk">' + (live && h.allin[s] && !h.done ? '올인' : money(p.stack)) + '</div>' + timer + '</div>' +
-      (tag ? '<div class="tag">' + tag + '</div>' : '') + (flag ? '<div class="flag">' + flag + '</div>' : '') + extra + '</div>';
+    var av = '<div class="av" style="--h:' + hueOf(p.pid) + '">' + (acting
+      ? '<svg class="ring" viewBox="0 0 48 48" aria-hidden="true"><circle class="rt" cx="24" cy="24" r="21"/><circle class="rg" cx="24" cy="24" r="21" pathLength="100" data-dl="' +
+        h.dl + '" data-tot="' + (T.cfg.act * 1000 + h.tcu * HD.TC_MS) + '"/></svg><span class="sec" data-dl="' + h.dl + '"></span>'
+      : '<span class="ini">' + esc(initial(p.nick)) + '</span>') + '</div>';
+    var shownName = !won && h && h.res && h.res.names && h.res.names[s];
+    var stk = p.out ? p.place + '위' + (p.prize ? ' · ' + money(p.prize) : '') : shownName ? '<span class="hnm">' + esc(shownName) + '</span>'
+      : (live && h.allin[s] && !h.done ? '올인' : money(p.stack));
+    var tag = !p.out && h && !won && !shownName ? actionTag(T, s) : null, sub = '', flag = p.out ? '' : flagFor(T, p.pid);
+    if (won) sub = '<div class="wonb">+' + money(h.res.won[s]) + (h.res.names && h.res.names[s] ? '<small>' + esc(h.res.names[s]) + '</small>' : '') + '</div>';
+    if (flag) sub += '<div class="flag">' + flag + '</div>';
+    if (acting && p.tc > 0 && s !== me) sub += '<div class="tcn">⏱ 타임 카드 ' + p.tc + '</div>';
+    return '<div class="' + cls.join(' ') + '" style="left:' + f2(P.x) + '%;top:' + f2(P.y) + '%" data-seat="' + s + '">' +
+      '<div class="plate">' + av + '<div class="info"><div class="nm">' + esc(p.nick) + '</div><div class="stk">' + stk + '</div></div>' +
+      (h && h.btn === s ? '<i class="dbtn" title="딜러 버튼">D</i>' : '') + '</div>' +
+      (tag ? '<div class="tag t-' + tag[1] + '">' + tag[0] + '</div>' : '') + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
   }
-  function centerHtml(T, cy) {
-    var h = T.hand, i, slots = '', best = null, note, pos = ' style="top:' + (cy || 50) + '%"';
-    if (!h) return '<div class="center"' + pos + '></div>';
-    var r = h.res;
+  function betsHtml(T, pos, G, now) {
+    var h = T.hand, out = '', s;
+    if (!h) return '';
+    var key = T.tid + ':' + h.no + ':' + h.street;
+    if (!O.bets || O.bets.k !== key) O.bets = { k: key, b: h.bet.map(function () { return 0; }), at: [] };
+    for (s = 0; s < T.seats.length; s++) {
+      if (h.bet[s] > O.bets.b[s]) { O.bets.at[s] = now; O.bets.b[s] = h.bet[s]; }
+      if (!(h.bet[s] > 0)) continue;
+      var P = pos[s], kf = P.zone === 'mid' ? 0.62 : P.zone === 'sl' || P.zone === 'sr' ? 0.47 : 0.5, bx = 50 + G.rx * kf * P.cx, by = G.cy + G.ry * kf * P.sy;
+      var push = O.bets.at[s] && now - O.bets.at[s] < 450;
+      out += '<div class="bet' + (push ? ' push' : '') + '" style="left:' + f2(bx) + '%;top:' + f2(by) + '%;--fx:' + f2(P.x - bx) + ';--fy:' + f2(P.y - by) +
+        '"><i class="cp"></i><b>' + money(h.bet[s]) + '</b></div>';
+    }
+    if (h.res && h.res.won) {
+      h.res.won.forEach(function (w, s2) {
+        if (!(w > 0)) return;
+        var P = pos[s2];
+        out += '<div class="winfly" style="left:' + f2(P.x) + '%;top:' + f2(P.y) + '%;--fx:' + f2(50 - P.x) + ';--fy:' + f2(G.cy - P.y) + '">' +
+          '<i class="cp"></i><i class="cp"></i><i class="cp"></i><i class="cp"></i></div>';
+      });
+    }
+    return out;
+  }
+  function drawCenter(T, now) {
+    var h = T.hand, i, slots = '', best = null, note;
+    if (!h) { setHTML($('#cpot'), ''); setHTML($('#cboard'), ''); setHTML($('#cnote'), ''); setHTML($('#chno'), ''); return; }
+    var r = h.res, hk = T.tid + ':' + h.no, potNow = h.pot + sum(h.bet);
+    if (!O.potSeen || O.potSeen.k !== hk) O.potSeen = { k: hk, v: h.pot, at: 0 };
+    if (h.pot > O.potSeen.v) { O.potSeen.v = h.pot; O.potSeen.at = now; }
+    setHTML($('#cpot'), r ? '' : '<span class="pot' + (now - O.potSeen.at < 500 ? ' bump' : '') + '"><i class="cp"></i>팟 <b>' + money(potNow) + '</b></span>');
+    if (!O.boardSeen || O.boardSeen.k !== hk) O.boardSeen = { k: hk, n: 0, from: 0, at: 0 };
+    if (h.board.length > O.boardSeen.n) { O.boardSeen.from = O.boardSeen.n; O.boardSeen.n = h.board.length; O.boardSeen.at = now; }
+    var flipping = now - O.boardSeen.at < 900;
     if (r && !r.fold && r.pots[0] && r.pots[0].w.length === 1 && r.best) best = r.best[r.pots[0].w[0]] || null;
     for (i = 0; i < 5; i++) {
-      slots += h.board[i] !== undefined ? cardHtml(h.board[i], 'md', best ? (best.indexOf(h.board[i]) >= 0 ? 'hl' : 'dim') : '') : '<span class="cd md slot"></span>';
+      if (h.board[i] === undefined) { slots += '<span class="cd md slot"></span>'; continue; }
+      var cls = best ? (best.indexOf(h.board[i]) >= 0 ? 'hl' : 'dim') : '';
+      if (flipping && i >= O.boardSeen.from) cls += ' flip" style="animation-delay:' + ((i - O.boardSeen.from) * 110) + 'ms';
+      slots += cardHtml(h.board[i], 'md', cls);
     }
+    setHTML($('#cboard'), slots);
     if (r) {
       note = r.pots.map(function (pt, k) {
         var who = pt.w.map(function (s) { return esc(T.seats[s].nick); }).join(', ');
@@ -2372,8 +2696,8 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     } else if (h.actor >= 0) note = '<span class="who">' + esc(T.seats[h.actor].nick) + '</span> 차례 · <span data-dl="' + h.dl + '"></span>초';
     else if (h.reveal) note = '올인 — 카드를 펼쳐요';
     else note = STREET[h.street] || '';
-    return '<div class="center"' + pos + '><div class="pot">' + (r ? '' : '팟 <b>' + money(h.pot + sum(h.bet)) + '</b>') + '</div><div class="board">' + slots +
-      '</div><div class="note">' + note + '</div><div class="hno">핸드 #' + h.no + '</div></div>';
+    setHTML($('#cnote'), note);
+    setHTML($('#chno'), '핸드 #' + h.no + ' · ' + (h.done ? '결과' : STREET[h.street] || ''));
   }
 
   function feedHtml(T) {
@@ -2408,57 +2732,200 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     function to(fr) { return Math.max(L.minTo, Math.min(L.maxTo, Math.round(base + fr * (potNow + L.toCall)))); }
     return [['최소', L.minTo], ['½ 팟', to(0.5)], ['¾ 팟', to(0.75)], ['팟', to(1)], ['올인', L.maxTo]];
   }
-  function dockHtml(T) {
-    var me = mySeat(), h = T.hand;
+
+  // ---- my side: cards, hand strength, controls (bottom dock in portrait, right column in landscape)
+  function drawDock(T) {
+    var el = $('#dock'), me = mySeat(), h = T.hand;
     if (me < 0) {
-      return '<div class="dock-in viewer"><div class="status"><b>관전 중</b> — 이번 토너먼트가 끝나면 \'다시 하기\'로 참가할 수 있어요.</div></div>';
+      if (el._sig !== 'viewer') {
+        el.innerHTML = '<div class="dock-in viewer"><div class="status"><b>관전 중</b> — 이번 토너먼트가 끝나면 \'다시 하기\'로 참가할 수 있어요.</div></div>';
+        el._sig = 'viewer'; el._h = null;
+      }
+      return;
     }
-    var p = T.seats[me], cards = myCards(T), live = h && h.live[me] && !h.fold[me];
-    var mine = cards ? cardHtml(cards[0], 'lg') + cardHtml(cards[1], 'lg') : (live ? backHtml('lg') + backHtml('lg') : '<span class="cd lg slot"></span><span class="cd lg slot"></span>');
-    var left = '<div class="mine"><div class="cards">' + mine + '</div><div class="hs">' + (cards && h && h.live[me] ? esc(strength(cards, h.board)) : '') + '</div></div>';
-    return '<div class="dock-in">' + left + '<div class="acts">' + actsHtml(T, me, p) + '</div></div>';
+    if (el._sig !== 'seat') {
+      el.innerHTML = '<div class="dock-in" id="din"><div class="mine" id="dmine"><div class="cards" id="dcards"></div><div class="hs" id="dhs"></div>' +
+        '<div class="me-stk" id="dme"></div><div class="tinfo" id="dinfo"></div></div><div class="ctl" id="dctl"></div></div>';
+      el._sig = 'seat'; el._h = null;
+    }
+    var p = T.seats[me], cards = myCards(T), live = h && h.live[me] && !h.fold[me], c;
+    var raising = O.raiseOpen && h && h.actor === me && !h.next;
+    $('#din').className = 'dock-in' + (raising ? ' raising' : '');
+    $('#dmine').className = 'mine' + (h && h.fold[me] ? ' folded' : '');
+    if (cards) {
+      // turn my cards over once the dealer has reached me
+      var hk = T.tid + ':' + h.no;
+      if (!O.mineFlip || O.mineFlip.k !== hk) {
+        var wait = 0;
+        if (O.dealFrom && O.handKey === hk) {
+          var info = dealOrder(T), mine = info.order[me];
+          if (mine !== undefined) wait = Math.max(0, O.dealFrom + DEAL_BASE + (info.live + mine + 1) * DEAL_GAP + 250 - Date.now());
+        }
+        O.mineFlip = { k: hk, d: Math.round(wait) };
+      }
+      c = cardHtml(cards[0], 'lg', 'flip" style="animation-delay:' + O.mineFlip.d + 'ms') +
+        cardHtml(cards[1], 'lg', 'flip" style="animation-delay:' + (O.mineFlip.d + 90) + 'ms');
+    } else c = live ? backHtml('lg') + backHtml('lg') : '<span class="cd lg slot"></span><span class="cd lg slot"></span>';
+    setHTML($('#dcards'), c);
+    setHTML($('#dhs'), cards && h && h.live[me] ? esc(strength(cards, h.board)) : '');
+    setHTML($('#dme'), '<span class="av sm" style="--h:' + hueOf(p.pid) + '"><span class="ini">' + esc(initial(p.nick)) + '</span></span><span class="nm">' + esc(p.nick) +
+      '</span><b>' + (p.out ? p.place + '위' : money(p.stack)) + '</b>');
+    setHTML($('#dinfo'), tableInfo(T));
+    setHTML($('#dctl'), ctlHtml(T, me, p));
   }
   function status(html) { return '<div class="status">' + html + '</div>'; }
-  function actsHtml(T, me, p) {
+  function ctlHtml(T, me, p) {
     var h = T.hand;
     if (p.out) return status('탈락 · <b>' + p.place + '위</b>' + (p.prize ? ' · 상금 <b class="up">' + money(p.prize) + '</b>' : ''));
     if (T.st === 'end') return status('우승! 🏆 상금 <b class="up">' + money(p.prize) + '</b>');
     if (!h) return status('곧 첫 핸드를 시작해요');
+    var aux = '<div class="aux"><button class="tog' + (O.away ? ' on' : '') + '" data-act="away">' + (O.away ? '자리 비움 끄기' : '자리 비움') + '</button></div>';
     if (h.done) {
       var delta = p.stack - h.start[me], canShow = h.live[me] && !(h.res.show && h.res.show[me]) && myCards(T);
       return status('이번 핸드 <b class="' + (delta > 0 ? 'up' : delta < 0 ? 'dn' : '') + '">' + signed(delta) + '</b>') +
         (canShow ? '<button class="btn ghost small" data-act="show">내 카드 보여주기</button>' : '');
     }
-    var away = '<button class="tog' + (O.away ? ' on' : '') + '" data-act="away">' + (O.away ? '자리 비움 켜짐 — 돌아왔어요' : '자리 비움') + '</button>';
-    if (!h.live[me]) return status('다음 핸드부터 함께해요') + away;
-    if (h.fold[me]) return status('폴드했어요 — 다음 핸드를 기다려요') + away;
+    if (!h.live[me]) return status('다음 핸드부터 함께해요') + aux;
+    if (h.fold[me]) return status('폴드 — 다음 핸드를 기다려요') + aux;
     if (h.allin[me]) return status('<b>올인</b> — 결과를 기다려요');
     var L = HD.legal(h, T.seats, me);
-    if (!L) {
-      var who = h.actor >= 0 ? '<b>' + esc(T.seats[h.actor].nick) + '</b> 차례 · <span data-dl="' + h.dl + '"></span>초'
-        : h.reveal ? '올인 — 카드를 펼쳐요' : h.next === 'show' ? '쇼다운…' : '다음 카드를 펼쳐요…';
-      return status(who) + away;
-    }
+    if (!L) return waitHtml(T, h, me, p) + aux;
     if (O.pending && O.pending.h === h.no && O.pending.n === h.n) return status('보내는 중…');
-    var callLbl = L.canCheck ? '체크' : (L.toCall >= p.stack ? '콜 올인 ' : '콜 ') + money(L.toCall);
-    var row = '<div class="arow">' + (L.canCheck ? '' : '<button class="btn fold" data-act="fold">폴드</button>') +
-      '<button class="btn call" data-act="' + (L.canCheck ? 'check' : 'call') + '">' + callLbl + '</button>' +
-      (L.canRaise ? '<button class="btn raise' + (O.raiseOpen ? ' on' : '') + '" data-act="raise">' + (L.isBet ? '벳' : '레이즈') + '</button>' : '') + '</div>';
-    var rp = '';
-    if (O.raiseOpen && L.canRaise) {
-      if (!O.raiseTo || O.raiseTo < L.minTo || O.raiseTo > L.maxTo) O.raiseTo = L.minTo;
-      var fixed = L.minTo === L.maxTo;
-      rp = '<div class="rpanel"><div class="presets">' + presets(h, L).map(function (x) {
+    return turnHtml(T, h, me, p, L);
+  }
+  // someone else is acting: pick what to do in advance
+  function waitHtml(T, h, me, p) {
+    var who = h.actor >= 0 ? '<b>' + esc(T.seats[h.actor].nick) + '</b> 차례 · <span data-dl="' + h.dl + '"></span>초'
+      : h.reveal ? '올인 — 카드를 펼쳐요' : h.next === 'show' ? '쇼다운…' : '다음 카드를 펼쳐요…';
+    var html = status(who);
+    if (h.actor >= 0 && !h.next) {
+      var toCall = Math.min(Math.max(0, h.cur - h.bet[me]), p.stack);
+      var opts = [['cf', toCall > 0 ? '폴드' : '체크/폴드'], toCall > 0 ? ['c', '콜 ' + money(toCall)] : ['k', '체크']];
+      html += '<div class="pre"><span class="pre-h">미리 선택</span>' + opts.map(function (o) {
+        return '<button class="pchip' + (O.pre && O.pre.k === o[0] ? ' on' : '') + '" data-act="pre" data-pre="' + o[0] + '"><i></i>' + o[1] + '</button>';
+      }).join('') + '</div>';
+    }
+    return html;
+  }
+  function turnHtml(T, h, me, p, L) {
+    var tot = T.cfg.act * 1000 + h.tcu * HD.TC_MS;
+    var head = '<div class="myturn"><span class="mt-l">내 차례</span><i class="mt-bar"><i class="bar-i" data-dl="' + h.dl + '" data-tot="' + tot + '"></i></i>' +
+      '<span class="mt-t"><span data-dl="' + h.dl + '"></span>초</span></div>';
+    var tc = p.tc > 0 ? '<button class="tcard" data-act="tc">⏱ +30초 <small>타임 카드 ' + p.tc + '장</small></button>' : '<span class="tcard none">타임 카드 없음</span>';
+    if (O.raiseOpen && L.canRaise) return head + raiseHtml(h, L) + '<div class="aux">' + tc + '</div>';
+    var callLbl = L.canCheck ? '체크' : (L.toCall >= p.stack ? '콜 올인' : '콜');
+    var btns = '<div class="abtns' + (L.canCheck ? ' nofold' : '') + (L.canRaise ? '' : ' noraise') + '">' +
+      (L.canRaise ? '<button class="btn raise" data-act="raise">' + (L.isBet ? '벳' : '레이즈') + '<small>' + (L.minTo >= L.maxTo ? '올인 ' : '최소 ') + money(L.minTo) + '</small></button>' : '') +
+      (L.canCheck ? '' : '<button class="btn fold" data-act="fold">폴드</button>') +
+      '<button class="btn call" data-act="' + (L.canCheck ? 'check' : 'call') + '">' + callLbl + (L.canCheck ? '' : '<small>' + money(L.toCall) + '</small>') + '</button></div>';
+    return head + '<div class="aux">' + tc + '</div>' + btns;
+  }
+  function raiseHtml(h, L) {
+    if (!O.raiseTo || O.raiseTo < L.minTo || O.raiseTo > L.maxTo) O.raiseTo = L.minTo;
+    var fixed = L.minTo >= L.maxTo;
+    return '<div class="rpanel"><div class="rp-top"><span>' + (L.isBet ? '벳' : '레이즈') + ' 금액</span><button class="rp-x" data-act="raise" aria-label="닫기">✕</button></div>' +
+      '<div class="rp-amt">' + (fixed ? '' : '<button class="stepb" data-act="step" data-d="-1" aria-label="줄이기">−</button>') +
+      '<span class="rp-cur">$</span><input id="ramt" inputmode="numeric" value="' + O.raiseTo + '"' + (fixed ? ' readonly' : '') + '>' +
+      (fixed ? '' : '<button class="stepb" data-act="step" data-d="1" aria-label="늘리기">+</button>') + '</div>' +
+      (fixed ? '' : '<input type="range" id="rng" min="' + L.minTo + '" max="' + L.maxTo + '" step="1" value="' + O.raiseTo + '">') +
+      '<div class="presets">' + presets(h, L).map(function (x) {
         return '<button class="' + (O.raiseTo === x[1] ? 'on' : '') + '" data-amt="' + x[1] + '">' + x[0] + '</button>';
       }).join('') + '</div>' +
-        (fixed ? '' : '<div class="rrow"><input type="range" id="rng" min="' + L.minTo + '" max="' + L.maxTo + '" step="1" value="' + O.raiseTo + '">' +
-          '<input id="ramt" inputmode="numeric" value="' + O.raiseTo + '"></div>') +
-        '<button class="btn go" data-act="raiseGo">' + raiseLabel(L, O.raiseTo) + '</button></div>';
-    }
-    var tc = p.tc > 0 ? '<button class="tcard" data-act="tc">⏱ 타임 카드 +30초 <small>' + p.tc + '장 남음</small></button>' : '<span class="tcard none">타임 카드 없음</span>';
-    return row + rp + '<div class="arow2"><span class="mytime"><span data-dl="' + h.dl + '"></span>초</span>' + tc + '</div>';
+      '<button class="btn go" data-act="raiseGo">' + raiseLabel(L, O.raiseTo) + '</button></div>';
   }
   function raiseLabel(L, v) { return (v >= L.maxTo ? '올인 ' : (L.isBet ? '벳 ' : '레이즈 ')) + money(v); }
+
+  // ---- sound effects, made on the spot (no files): chips, knocks, card swishes
+  var NB = null;
+  function noiseBuf() {
+    if (!NB && AC) {
+      NB = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
+      var d = NB.getChannelData(0);
+      for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    return NB;
+  }
+  function sfxReady() { return O.sound && AC && AC.state === 'running'; }
+  function burst(at, dur, type, freq, q, vol, sweep) {
+    var t = AC.currentTime + at, src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+    src.buffer = noiseBuf();
+    f.type = type; f.Q.value = q;
+    f.frequency.setValueAtTime(freq, t);
+    if (sweep) f.frequency.exponentialRampToValueAtTime(sweep, t + dur);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    src.connect(f); f.connect(g); g.connect(AC.destination);
+    src.start(t, Math.random() * 0.6, dur + 0.05);
+  }
+  function tone(at, freq, dur, vol, type) {
+    var t = AC.currentTime + at, o = AC.createOscillator(), g = AC.createGain();
+    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.005);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(AC.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  var SFX = {
+    chips: function (n, at) {             // clay chips landing on each other
+      for (var i = 0; i < n; i++) {
+        var t = (at || 0) + i * 0.05 + Math.random() * 0.018;
+        burst(t, 0.05, 'bandpass', 2600 + Math.random() * 1800, 5, 0.32);
+        tone(t, 3900 + Math.random() * 900, 0.035, 0.022, 'triangle');
+      }
+    },
+    check: function (at) {                 // two knuckle taps on the felt
+      [0, 0.12].forEach(function (d) {
+        var t = AC.currentTime + (at || 0) + d, o = AC.createOscillator(), g = AC.createGain();
+        o.type = 'sine'; o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.09);
+        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.28, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+        o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + 0.14);
+        burst((at || 0) + d, 0.05, 'lowpass', 700, 0.7, 0.14);
+      });
+    },
+    fold: function (at) { burst(at || 0, 0.18, 'bandpass', 2600, 1.1, 0.13, 650); },
+    deal: function (at) { burst(at || 0, 0.06, 'highpass', 3200, 0.7, 0.09); burst((at || 0) + 0.02, 0.05, 'bandpass', 1200, 1, 0.05); },
+    flip: function (at) { burst(at || 0, 0.08, 'bandpass', 1600, 1, 0.12, 3800); tone((at || 0) + 0.05, 220, 0.05, 0.05); },
+    win: function (at) {
+      for (var i = 0; i < 9; i++) SFX.chips(1, (at || 0) + i * 0.055 + Math.random() * 0.03);
+      tone((at || 0) + 0.12, 1046.5, 0.2, 0.045); tone((at || 0) + 0.24, 1318.5, 0.28, 0.045);
+    },
+    ding: function (at) { tone(at || 0, 1568, 0.3, 0.06); tone((at || 0) + 0.02, 3136, 0.15, 0.015); }
+  };
+  function sfxEntry(e, at) {
+    if (e.d) { for (var i = 0; i < e.c.length; i++) SFX.flip(at + i * 0.11); return at + 0.11 * e.c.length; }
+    switch (e.a) {
+      case 'f': SFX.fold(at); break;
+      case 'k': SFX.check(at); break;
+      case 'c': SFX.chips(e.ai ? 6 : 2, at); break;
+      case 'b': case 'r': SFX.chips(e.ai ? 7 : 4, at); break;
+      case 'S': case 'B': case 'N': case 'R': SFX.chips(1, at); break;
+      case 'T': SFX.ding(at); break;
+      default: return at;
+    }
+    return at + 0.14;
+  }
+  // play what changed since the last table state this page saw
+  function sfxFor(T) {
+    var h = T.hand, prev = O.snd;
+    if (!h) return;
+    var k = T.tid + ':' + h.no, cur = { k: k, tid: T.tid, len: h.log.length, res: !!h.res };
+    O.snd = cur;
+    if (!prev || prev.tid !== T.tid || !sfxReady()) return;           // first look: no noise
+    try {
+      if (prev.k !== k) {                                               // blinds go in, then the deal
+        var live = 0;
+        h.live.forEach(function (x) { if (x) live++; });
+        SFX.chips(2, 0);
+        for (var i = 0; i < live * 2; i++) SFX.deal(DEAL_BASE / 1000 + i * DEAL_GAP / 1000);
+        return;
+      }
+      var at = 0, fresh = h.log.slice(prev.len).slice(-4);
+      fresh.forEach(function (e) { at = sfxEntry(e, at); });
+      if (h.res && !prev.res) SFX.win(at + 0.1);
+    } catch (e) { /* sound is a nicety */ }
+  }
 
   function sheetHtml(anim) {
     var body = O.sheet === 'hist' ? histHtml() : O.sheet === 'rules' ? rulesHtml() : menuHtml();
@@ -2512,6 +2979,7 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
       '<button class="mi' + (O.sound ? ' on' : '') + '" data-tog="sound">소리</button>' +
       '<button class="mi' + (O.four ? ' on' : '') + '" data-tog="four">4색 카드 (♦ 파랑 · ♣ 초록)</button>' +
       (!O.dealer && me >= 0 && T && T.st === 'run' ? '<button class="mi' + (O.away ? ' on' : '') + '" data-tog="away">자리 비움 — 내 차례에 자동 체크/폴드</button>' : '') +
+      (!O.dealer && canLockLand() ? '<button class="mi" data-act="land">가로 모드 (전체 화면)</button>' : '') +
       '<button class="mi" data-act="copy">참가 링크 복사</button>' +
       (O.dealer && document.documentElement.requestFullscreen ? '<button class="mi" data-act="fullscreen">전체 화면</button>' : '') +
       '<button class="mi danger" data-act="leave">' + (O.leaveArmed && Date.now() - O.leaveArmed < 4000 ? '한 번 더 누르면 나가요' : (O.dealer ? '딜러 화면 닫기 (게임이 멈춰요)' : '방 나가기')) + '</button>' +
@@ -2524,14 +2992,23 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     if (scr === 'connecting' && now - O.connDrawn > 1000) { O.connDrawn = now; $('#overlay')._h = ''; render(); }
     if (!T) return;
     $$('[data-dl]').forEach(function (el) {
-      var left = Math.max(0, +el.getAttribute('data-dl') - off - now);
-      if (el.classList.contains('bar-i')) {
-        var tot = +el.getAttribute('data-tot') || 30000;
-        el.style.transform = 'scaleX(' + Math.max(0, Math.min(1, left / tot)).toFixed(3) + ')';
-        el.parentNode.className = 'bar' + (left < 5000 ? ' crit' : left < 10000 ? ' low' : '');
+      var left = Math.max(0, +el.getAttribute('data-dl') - off - now), tot = +el.getAttribute('data-tot') || 30000;
+      var frac = Math.max(0, Math.min(1, left / tot)), par = el.parentNode;
+      if (el.classList.contains('rg')) {
+        el.style.strokeDashoffset = (100 - frac * 100).toFixed(1);
+        par.classList.toggle('low', left < 10000 && left >= 5000);
+        par.classList.toggle('crit', left < 5000);
+      } else if (el.classList.contains('bar-i')) {
+        el.style.transform = 'scaleX(' + frac.toFixed(3) + ')';
+        par.classList.toggle('low', left < 10000 && left >= 5000);
+        par.classList.toggle('crit', left < 5000);
       } else el.textContent = String(Math.ceil(left / 1000));
     });
     $$('[data-lvl]').forEach(function (el) { el.textContent = mmss(+el.getAttribute('data-lvl') - off - now); });
+    $$('[data-lvp]').forEach(function (el) {
+      var ms = +el.getAttribute('data-lvms') || 1, left = +el.getAttribute('data-lvp') - off - now;
+      el.style.width = (Math.max(0, Math.min(1, 1 - left / ms)) * 100).toFixed(1) + '%';
+    });
     $$('[data-go]').forEach(function (el) { el.textContent = String(Math.max(0, Math.ceil((+el.getAttribute('data-go') - off - now) / 1000))); });
     var h = T.hand, me = mySeat();
     if (h && me >= 0 && h.actor === me && h.dl && !h.next) {
@@ -2683,6 +3160,25 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
         break;
       }
       case 'tc': doTimeCard(); break;
+      case 'pre': {
+        var pk = t.getAttribute('data-pre'), me2 = mySeat();
+        if (!h || me2 < 0) break;
+        if (O.pre && O.pre.k === pk) O.pre = null;
+        else O.pre = { k: pk, key: T.tid + ':' + h.no + ':' + h.street, amt: Math.min(Math.max(0, h.cur - h.bet[me2]), T.seats[me2].stack) };
+        render();
+        break;
+      }
+      case 'step': {
+        var L2 = h && HD.legal(h, T.seats, mySeat());
+        if (!L2) break;
+        var stp = Math.max(1, h.bb), nv = (O.raiseTo || L2.minTo) + (+t.getAttribute('data-d') || 0) * stp;
+        O.raiseTo = Math.max(L2.minTo, Math.min(L2.maxTo, nv));
+        render();
+        break;
+      }
+      case 'land': goLandscape(); break;
+      case 'rotOk': O.rotOk = true; SS.set('hd.rotok', true); render(); break;
+      case 'unmute': audio(); setTimeout(render, 120); break;
       case 'away': setAway(!O.away); break;
       case 'show': if (h && h.done) sendReq({ k: 'show', h: h.no }).then(function (ok) { if (ok) toast('카드를 보여 줬어요'); }); break;
       case 'export': download('holdem-' + O.code + '.txt', exportText()); break;
@@ -2710,7 +3206,10 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
       if (!L) return;
       var v = Math.floor(+String(t.value).replace(/[^0-9]/g, '')) || 0;
       if (t.id === 'rng') { O.raiseTo = v; var ra = $('#ramt'); if (ra) ra.value = v; }
-      else { if (v >= L.minTo && v <= L.maxTo) { O.raiseTo = v; var rg = $('#rng'); if (rg) rg.value = v; } }
+      else {
+        if (t.value !== String(v || '')) t.value = v || '';
+        if (v >= L.minTo && v <= L.maxTo) { O.raiseTo = v; var rg = $('#rng'); if (rg) rg.value = v; }
+      }
       var go = $('[data-act=raiseGo]');
       if (go && O.raiseTo >= L.minTo && O.raiseTo <= L.maxTo) go.textContent = raiseLabel(L, O.raiseTo);
       $$('.presets button').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-amt') === O.raiseTo); });
@@ -2727,7 +3226,7 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     document.addEventListener('click', onClick);
     document.addEventListener('input', onInput);
     document.addEventListener('keydown', onKey);
-    window.addEventListener('resize', function () { $('#table')._h = ''; render(); });
+    window.addEventListener('resize', function () { $('#table')._sig = ''; render(); });
     document.addEventListener('visibilitychange', function () { keepAwake(); if (O.dealer) dealerKick(); render(); });
     window.addEventListener('hashchange', function () { location.reload(); });
     setInterval(uiTick, 200);
