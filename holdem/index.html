@@ -1532,6 +1532,7 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     var left = 0, paid = (T.prizes || []).length;
     T.seats.forEach(function (p) { if (!p.out) left++; });
     if (!paid || T.st !== 'run') return { k: '', left: left, paid: paid };
+    if (paid === 1) return { k: 'wta', left: left, paid: paid };     // winner takes all: no bubble to speak of
     return { k: left <= paid ? 'itm' : left === paid + 1 ? 'bubble' : 'pre', left: left, paid: paid };
   }
 
@@ -2286,7 +2287,7 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     if (!m.k) return '';
     if (m.k === 'itm') return '<div class="mn itm" title="' + esc(prizeLine(T.prizes)) + '">머니 인</div>';
     if (m.k === 'bubble') return '<div class="mn bubble" title="' + esc(prizeLine(T.prizes)) + '">버블 · 한 명 더 떨어지면 모두 상금</div>';
-    return '<div class="mn" title="' + esc(prizeLine(T.prizes)) + '">상금 ' + (m.paid === 1 ? '우승자' : m.paid + '위까지') + '</div>';
+    return '<div class="mn" title="' + esc(prizeLine(T.prizes)) + '">' + (m.k === 'wta' ? '상금 우승자 독식' : '상금 ' + m.paid + '위까지') + '</div>';
   }
   function present(pid) {
     for (var i = 0; i < O.peers.length; i++) if (O.peers[i].pid === pid) return O.peers[i];
@@ -2434,7 +2435,8 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
     if (h.allin[me]) return status('<b>올인</b> — 결과를 기다려요');
     var L = HD.legal(h, T.seats, me);
     if (!L) {
-      var who = h.actor >= 0 ? '<b>' + esc(T.seats[h.actor].nick) + '</b> 차례 · <span data-dl="' + h.dl + '"></span>초' : (h.reveal ? '올인 — 카드를 펼쳐요' : '…');
+      var who = h.actor >= 0 ? '<b>' + esc(T.seats[h.actor].nick) + '</b> 차례 · <span data-dl="' + h.dl + '"></span>초'
+        : h.reveal ? '올인 — 카드를 펼쳐요' : h.next === 'show' ? '쇼다운…' : '다음 카드를 펼쳐요…';
       return status(who) + away;
     }
     if (O.pending && O.pending.h === h.no && O.pending.n === h.n) return status('보내는 중…');
