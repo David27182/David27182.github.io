@@ -1,0 +1,2743 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>홀덤 토너먼트</title>
+<meta name="description" content="링크만 보내면 친구들과 바로 하는 노리밋 텍사스 홀덤 토너먼트. 빅 블라인드 앤티, 마지막 한 명까지.">
+<meta property="og:title" content="홀덤 토너먼트">
+<meta property="og:description" content="링크로 들어와서 같이 해요 — 노리밋 텍사스 홀덤, 빅 블라인드 앤티, 마지막 한 명까지.">
+<meta name="theme-color" content="#0b110e">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0b110e; --panel: #131d19; --panel2: #1a2721; --sunk: #0d1512;
+  --ink: #eeeadf; --ink2: #b5beb7; --ink3: #7f8b84; --line: rgba(238, 234, 223, .12);
+  --felt0: #2b7a5c; --felt1: #1e5f47; --felt2: #113a2b; --rail: #3b2718; --rail2: #22160d;
+  --gold: #e6c068; --jade: #47b98e; --amber: #e9a23b; --alarm: #e5533d;
+  --card: #fbf8f1; --cink: #1c1c1c; --red: #c92f29; --blue: #2a62c6; --green: #1d8a52;
+  --mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'IBM Plex Sans KR', system-ui, -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: var(--sans); -webkit-text-size-adjust: 100%; }
+body { overflow: hidden; -webkit-tap-highlight-color: transparent; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+#app { position: fixed; inset: 0; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+#stage { position: relative; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+#table { position: relative; min-height: 0; overflow: hidden; container-type: size; }
+#feed { display: none; }
+body.is-dealer.scr-table #stage { grid-template-columns: minmax(0, 1fr) minmax(250px, 23vw); }
+body.is-dealer.scr-table #feed { display: block; }
+@media (max-aspect-ratio: 1/1) {
+  body.is-dealer.scr-table #stage { grid-template-columns: minmax(0, 1fr); }
+  body.is-dealer.scr-table #feed { display: none; }
+}
+
+/* ---------------- felt */
+.felt {
+  position: absolute; left: 8%; right: 8%; top: 10%; bottom: 10%; border-radius: 50%;
+  background: radial-gradient(ellipse at 50% 40%, var(--felt0) 0%, var(--felt1) 46%, var(--felt2) 100%);
+  box-shadow: 0 0 0 10px var(--rail), 0 0 0 14px var(--rail2), 0 18px 50px rgba(0, 0, 0, .65), inset 0 0 50px rgba(0, 0, 0, .45);
+  box-shadow: 0 0 0 1.7cqmin var(--rail), 0 0 0 2.4cqmin var(--rail2), 0 2.4cqmin 7cqmin rgba(0, 0, 0, .65), inset 0 0 7cqmin rgba(0, 0, 0, .45);
+}
+.felt::after {
+  content: ''; position: absolute; inset: 7%; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .07);
+}
+body.scr-home .felt, body.scr-connecting .felt, body.scr-lobby .felt, body.scr-dlobby .felt, body.scr-yield .felt { opacity: .35; }
+
+/* ---------------- seats */
+.seat {
+  position: absolute; transform: translate(-50%, -50%); z-index: 2; display: flex; flex-direction: column; align-items: center;
+  width: 96px; width: clamp(68px, 21cqmin, 176px); transition: opacity .3s;
+}
+.seat .mini { display: flex; gap: 2px; gap: .6cqmin; height: 44px; height: 10cqmin; margin-bottom: -9px; margin-bottom: -2.1cqmin; z-index: 1; }
+.seat .plate {
+  position: relative; z-index: 2; width: 100%; overflow: hidden; text-align: center;
+  background: rgba(8, 13, 11, .9); border: 1px solid rgba(255, 255, 255, .15); border-radius: 10px; border-radius: 2.3cqmin;
+  padding: 5px 4px 7px; padding: 1.2cqmin .9cqmin 1.5cqmin;
+}
+.seat .plate:has(.dbtn) .nm, .seat .plate:has(.dbtn) .stk { padding-left: 14px; padding-left: clamp(10px, 3.6cqmin, 28px); }
+.seat .nm { font-size: 13px; font-size: clamp(10px, 3.1cqmin, 22px); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seat .stk { font-family: var(--mono); font-weight: 600; color: var(--gold); font-size: 13px; font-size: clamp(10px, 3.2cqmin, 23px); }
+.seat.turn .plate { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(230, 192, 104, .3), 0 0 18px rgba(230, 192, 104, .35); }
+.seat.me .plate { background: rgba(13, 34, 26, .96); }
+.seat.fold { opacity: .45; }
+.seat.idle { opacity: .5; }
+.seat.out { opacity: .3; filter: grayscale(1); }
+.seat.win .plate { border-color: var(--gold); }
+.bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; height: .9cqmin; background: rgba(255, 255, 255, .08); }
+.bar .bar-i { position: absolute; inset: 0; background: var(--jade); transform-origin: left center; transition: transform .2s linear; }
+.bar.low .bar-i { background: var(--amber); }
+.bar.crit .bar-i { background: var(--alarm); }
+.secs { position: absolute; right: 4px; top: 3px; font: 600 11px var(--mono); font-size: clamp(9px, 2.5cqmin, 18px); color: var(--gold); }
+.tag, .flag, .hn, .tcn {
+  margin-top: 3px; margin-top: .7cqmin; border-radius: 9px; padding: 1px 7px; padding: .25cqmin 1.5cqmin; white-space: nowrap;
+  font-size: 11px; font-size: clamp(9px, 2.6cqmin, 18px); background: rgba(0, 0, 0, .55); color: var(--ink2);
+}
+.flag { background: rgba(120, 40, 30, .7); color: #ffd4cc; }
+.hn { color: var(--ink); }
+.tcn { background: rgba(230, 192, 104, .16); color: var(--gold); }
+.wonb {
+  margin-top: 3px; margin-top: .7cqmin; text-align: center; border-radius: 6px; border-radius: 1.3cqmin; padding: 2px 8px; padding: .4cqmin 1.4cqmin;
+  background: var(--gold); color: #1d1607; font: 700 12px var(--mono); font-size: clamp(10px, 3cqmin, 22px); animation: pop .35s ease-out;
+}
+.wonb small { display: block; font: 600 10px var(--sans); font-size: clamp(9px, 2.3cqmin, 17px); }
+@keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+.bet {
+  position: absolute; transform: translate(-50%, -50%); z-index: 1; display: flex; align-items: center; gap: 4px; gap: .8cqmin; white-space: nowrap;
+  font: 600 12px var(--mono); font-size: clamp(10px, 3cqmin, 22px); background: rgba(0, 0, 0, .42); border-radius: 99px; padding: 2px 8px 2px 3px; padding: .35cqmin 1.5cqmin .35cqmin .5cqmin;
+}
+.cp {
+  display: inline-block; width: 14px; height: 14px; width: 3.3cqmin; height: 3.3cqmin; border-radius: 50%; flex: none;
+  background: radial-gradient(circle, #f4efe2 0 33%, #c8402f 34% 60%, #f4efe2 61% 69%, #c8402f 70%);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .5);
+}
+.dbtn {
+  position: absolute; left: 4px; top: 50%; transform: translateY(-50%); z-index: 3; display: grid; place-items: center; border-radius: 50%;
+  width: 18px; height: 18px; width: clamp(15px, 4.4cqmin, 34px); height: clamp(15px, 4.4cqmin, 34px); background: #f8f5ec; color: #1b1b1b;
+  font: 700 10px var(--sans); font-size: clamp(9px, 2.4cqmin, 18px); font-style: normal; box-shadow: 0 1px 4px rgba(0, 0, 0, .55);
+}
+.seat.out .dbtn { filter: none; }
+.dbtn.in { position: static; transform: none; width: 22px; height: 22px; font-size: 12px; }
+
+/* ---------------- center */
+.center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; text-align: center; width: 64cqmin; max-width: 92%; }
+.pot { height: 22px; height: 5cqmin; color: var(--ink2); font-size: 14px; font-size: clamp(11px, 3.4cqmin, 26px); }
+.pot b { font-family: var(--mono); color: var(--ink); }
+.board { display: flex; justify-content: center; gap: 5px; gap: 1.2cqmin; }
+.note { margin-top: 6px; margin-top: 1.6cqmin; min-height: 20px; min-height: 4.5cqmin; font-size: 13px; font-size: clamp(11px, 3.1cqmin, 24px); line-height: 1.45; }
+.note b, .note .who { color: var(--gold); font-weight: 600; }
+.hno { margin-top: 2px; font: 500 10px var(--mono); font-size: clamp(9px, 2.3cqmin, 16px); color: rgba(238, 234, 223, .38); }
+
+/* ---------------- cards */
+.cd {
+  position: relative; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; gap: 0;
+  background: var(--card); color: var(--cink); border-radius: 5px; box-shadow: 0 1px 4px rgba(0, 0, 0, .45); line-height: 1; user-select: none;
+}
+.cd b { font-weight: 700; letter-spacing: -.05em; }
+.cd svg { fill: currentColor; display: block; }
+.cd.sh, .cd.sd { color: var(--red); }
+body.four .cd.sd { color: var(--blue); }
+body.four .cd.sc { color: var(--green); }
+.cd.back { background: repeating-linear-gradient(45deg, #8f2c24 0 3px, #a7372d 3px 6px); border: 2px solid #f3eee2; }
+.cd.slot { background: rgba(255, 255, 255, .05); box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .13); }
+.cd.hl { box-shadow: 0 0 0 2px var(--gold), 0 2px 8px rgba(0, 0, 0, .5); }
+.cd.dim { filter: brightness(.5); }
+.cd.xs { width: 31px; height: 43px; width: 7.2cqmin; height: 10cqmin; border-radius: 4px; border-radius: 1cqmin; }
+.cd.xs b { font-size: 18px; font-size: 4.5cqmin; }
+.cd.xs svg { width: 14px; height: 14px; width: 3.5cqmin; height: 3.5cqmin; }
+.cd.md { width: 46px; height: 64px; width: 11cqmin; height: 15.4cqmin; border-radius: 6px; border-radius: 1.4cqmin; }
+.cd.md b { font-size: 27px; font-size: 6.6cqmin; }
+.cd.md svg { width: 22px; height: 22px; width: 5.2cqmin; height: 5.2cqmin; }
+.cd.sm { width: 34px; height: 47px; }
+.cd.sm b { font-size: 19px; }
+.cd.sm svg { width: 15px; height: 15px; }
+.cd.lg { width: 56px; height: 78px; width: clamp(50px, 14vw, 78px); height: clamp(70px, 19.6vw, 109px); border-radius: 8px; }
+.cd.lg b { font-size: 27px; font-size: clamp(24px, 6.7vw, 38px); }
+.cd.lg svg { width: 21px; height: 21px; width: clamp(19px, 5.2vw, 30px); height: clamp(19px, 5.2vw, 30px); }
+.ci {
+  display: inline-flex; align-items: center; margin: 0 2px; padding: 0 3px; border-radius: 3px; line-height: 1.35;
+  background: var(--card); color: var(--cink); font-weight: 700; font-size: .92em;
+}
+.ci svg { width: .82em; height: .82em; fill: currentColor; margin-left: 1px; }
+.ci.sh, .ci.sd { color: var(--red); }
+body.four .ci.sd { color: var(--blue); }
+body.four .ci.sc { color: var(--green); }
+
+/* ---------------- top bar */
+.tb {
+  display: flex; align-items: center; gap: 14px; padding: 8px 12px; padding-top: max(8px, env(safe-area-inset-top));
+  background: linear-gradient(#101915, #0b110e); border-bottom: 1px solid var(--line); font-size: 13px;
+}
+.tb .lv b { color: var(--gold); font-family: var(--mono); margin-right: 4px; }
+.tb .lv span { color: var(--ink); }
+.tb .nx { color: var(--ink2); }
+.tb .nx b { font-family: var(--mono); color: var(--ink); }
+.tb .ct { color: var(--ink3); margin-left: auto; }
+.tb .tools { display: flex; gap: 6px; }
+.ic { border: 1px solid var(--line); background: transparent; border-radius: 8px; padding: 5px 10px; font-size: 12.5px; color: var(--ink2); }
+.ic:hover { color: var(--ink); border-color: rgba(238, 234, 223, .3); }
+.mn { font-size: 12.5px; color: var(--ink2); border: 1px solid var(--line); border-radius: 99px; padding: 3px 10px; white-space: nowrap; }
+.mn.bubble { color: #1d1607; background: var(--amber); border-color: transparent; font-weight: 600; }
+.mn.itm { color: #04140d; background: var(--jade); border-color: transparent; font-weight: 600; }
+body.is-dealer .mn { font-size: clamp(12.5px, 1.05vw, 18px); }
+.warn { background: #5b1f17; color: #ffdcd5; font-size: 13px; padding: 6px 12px; text-align: center; }
+body.is-dealer .tb { font-size: clamp(13px, 1.25vw, 22px); padding: 10px 18px; }
+body.is-dealer .ic { font-size: clamp(12px, .95vw, 16px); }
+@media (max-width: 600px) {
+  .mn { font-size: 11.5px; padding: 2px 8px; }
+  .tb { flex-wrap: wrap; gap: 4px 10px; font-size: 12px; padding: 6px 10px; padding-top: max(6px, env(safe-area-inset-top)); }
+  .tb .ct { display: none; }
+  .tb .tools { margin-left: auto; }
+  .ic { padding: 4px 8px; font-size: 12px; }
+}
+
+/* ---------------- dealer feed */
+#feed { overflow: auto; border-left: 1px solid var(--line); background: var(--sunk); padding: 16px; font-size: clamp(13px, 1.05vw, 18px); }
+.feed-h { color: var(--ink3); font: 600 .9em var(--mono); margin-bottom: 10px; }
+#feed ol { list-style: none; padding: 0; margin: 0; display: grid; gap: 5px; }
+#feed li { color: var(--ink2); line-height: 1.4; }
+#feed li.st { color: var(--gold); margin-top: 8px; }
+#feed li.sd { color: var(--ink); margin-top: 6px; }
+#feed li.res { color: var(--ink); font-weight: 600; }
+
+/* ---------------- dock (player) */
+#dock { background: #0d1512; border-top: 1px solid var(--line); padding: 10px 12px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+#dock:empty { display: none; }
+.dock-in { display: flex; gap: 14px; align-items: center; max-width: 780px; margin: 0 auto; min-height: 96px; }
+.dock-in.viewer { min-height: 44px; justify-content: center; }
+.mine { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.mine .cards { display: flex; gap: 6px; }
+.hs { min-height: 16px; font-size: 12.5px; color: var(--gold); text-align: center; max-width: 170px; }
+.acts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.arow { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
+.arow2 { display: flex; align-items: center; gap: 10px; }
+.mytime { font: 600 14px var(--mono); color: var(--gold); min-width: 38px; }
+.status { color: var(--ink2); font-size: 14.5px; line-height: 1.5; }
+.status b { color: var(--ink); }
+.status .up, .hnet.up { color: var(--jade); }
+.status .dn, .hnet.dn { color: #f08a7a; }
+.btn {
+  border: 1px solid var(--line); background: var(--panel2); border-radius: 12px; padding: 12px 10px; font-size: 15px; font-weight: 600;
+  min-height: 46px; transition: transform .06s, filter .15s;
+}
+.btn:active { transform: scale(.97); }
+.btn:disabled { opacity: .5; cursor: default; }
+.btn.primary { background: var(--jade); border-color: transparent; color: #04140d; }
+.btn.ghost { background: transparent; }
+.btn.small { min-height: 38px; padding: 8px 12px; font-size: 14px; }
+.btn.big { width: 100%; padding: 15px; font-size: 16.5px; margin-top: 10px; }
+.btn.fold { background: #2b1714; border-color: #5c2b22; color: #f3b9ad; }
+.btn.call { background: #133429; border-color: #2c6c55; color: #d9f3e8; }
+.btn.raise { background: #3a2c10; border-color: #7b5e22; color: #f7dd9d; }
+.btn.raise.on { background: #5a4415; }
+.btn.go { background: var(--gold); border-color: transparent; color: #1d1607; }
+.rpanel { display: flex; flex-direction: column; gap: 8px; background: rgba(255, 255, 255, .03); border: 1px solid var(--line); border-radius: 12px; padding: 8px; }
+.presets { display: flex; gap: 6px; }
+.presets button { flex: 1; border: 1px solid var(--line); background: var(--panel2); border-radius: 9px; padding: 8px 2px; font-size: 12.5px; }
+.presets button.on { border-color: var(--gold); color: var(--gold); }
+.rrow { display: flex; gap: 8px; align-items: center; }
+.rrow input[type=range] { flex: 1; accent-color: var(--gold); min-width: 0; }
+#ramt { width: 92px; font-family: var(--mono); text-align: right; }
+.tcard { border: 1px dashed rgba(230, 192, 104, .55); background: transparent; color: var(--gold); border-radius: 10px; padding: 7px 11px; font-size: 13px; }
+.tcard small { color: var(--ink3); margin-left: 4px; }
+.tcard.none { border-color: var(--line); color: var(--ink3); }
+.tog { align-self: flex-start; border: 1px solid var(--line); background: transparent; border-radius: 9px; padding: 6px 10px; font-size: 12.5px; color: var(--ink3); }
+.tog.on { border-color: var(--amber); color: var(--amber); }
+@media (max-width: 420px) {
+  .dock-in { gap: 10px; }
+  .btn { font-size: 14px; padding: 11px 6px; }
+}
+
+/* ---------------- overlays, panels */
+#overlay { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 16px; overflow: auto; background: rgba(5, 9, 7, .7); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.panel {
+  width: min(560px, 100%); background: var(--panel); border: 1px solid var(--line); border-radius: 18px; padding: 22px 20px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .55); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow: auto;
+}
+.panel h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: -.01em; }
+.panel h3 { margin: 18px 0 8px; font-size: 13.5px; color: var(--ink2); font-weight: 600; }
+.panel p { color: var(--ink2); font-size: 14px; line-height: 1.6; margin: 8px 0; }
+.panel .hint, .sheet-in .hint { font-size: 12.8px; color: var(--ink3); line-height: 1.55; }
+.panel .cfg { font-size: 13px; color: var(--gold); margin: 2px 0 6px; }
+.brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.brand .mark { font-size: 30px; color: var(--gold); line-height: 1; }
+.brand h1 { margin: 0; font-size: 26px; letter-spacing: -.02em; }
+.lead { font-size: 14.5px !important; }
+.lead b { color: var(--ink); }
+.field { margin: 14px 0; }
+.field label { display: block; font-size: 13px; color: var(--ink2); margin-bottom: 7px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--line); background: var(--panel2); border-radius: 999px; padding: 8px 13px; font-size: 14px; }
+.chip.on { background: var(--gold); color: #1d1607; border-color: transparent; font-weight: 600; }
+input#nickIn, input#stackIn, input#linkIn, input#ramt {
+  background: var(--sunk); border: 1px solid var(--line); color: var(--ink); border-radius: 10px; padding: 10px 12px; font: inherit; font-size: 15px; min-width: 0;
+}
+input#stackIn { width: 120px; padding: 7px 12px; border-radius: 999px; font-size: 14px; }
+input#stackIn.on { border-color: var(--gold); color: var(--gold); }
+.join, .linkbox { display: flex; gap: 8px; margin-top: 14px; }
+.join input, .linkbox input { flex: 1; }
+.linkbox input { font-family: var(--mono); font-size: 13px; }
+.badge { display: inline-block; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: #1d1607; background: var(--gold); border-radius: 6px; padding: 2px 8px; margin-bottom: 8px; }
+.plist { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+.plist li { display: flex; align-items: center; gap: 10px; background: var(--panel2); border-radius: 10px; padding: 9px 12px; }
+.plist li.empty { color: var(--ink3); justify-content: center; }
+.plist .no { font: 600 13px var(--mono); color: var(--ink3); min-width: 24px; }
+.plist .nm { flex: 1; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.plist .nm em, .drawlist em { font-style: normal; font-size: 11px; color: var(--gold); border: 1px solid rgba(230, 192, 104, .5); border-radius: 5px; padding: 0 4px; margin-left: 4px; }
+.plist .st { font-size: 13px; color: var(--ink3); }
+.plist li.rdy .st { color: var(--jade); }
+.plist .pz { font: 600 14px var(--mono); color: var(--gold); min-width: 64px; text-align: right; }
+.plist .pz.none { color: var(--ink3); }
+.panel .prize { text-align: center; color: var(--gold) !important; font-size: 13.5px; margin: 12px 0 0 !important; }
+body.is-dealer .panel .prize { font-size: clamp(13.5px, 1.2vw, 19px); }
+.plist li.me { box-shadow: inset 0 0 0 1px rgba(230, 192, 104, .35); }
+.places li.champ { background: rgba(230, 192, 104, .14); }
+.places li.champ .no { color: var(--gold); }
+.go { text-align: center; margin: 16px 0 4px; font-size: 16px; }
+.go b { font: 600 24px var(--mono); color: var(--gold); }
+.go.dim { color: var(--ink3); font-size: 13.5px; }
+.link { background: none; border: 0; color: var(--ink2); text-decoration: underline; text-underline-offset: 3px; padding: 8px; font-size: 13.5px; }
+.row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-top: 10px; }
+.row.left { justify-content: flex-start; }
+.spin { width: 30px; height: 30px; margin: 4px auto 14px; border-radius: 50%; border: 3px solid rgba(255, 255, 255, .14); border-top-color: var(--gold); animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.panel.connecting { text-align: center; }
+.diag { font-family: var(--mono); font-size: 11.5px !important; }
+.drawlist { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.drawlist li { display: flex; align-items: center; gap: 10px; background: var(--panel2); border-radius: 10px; padding: 8px 10px; }
+.drawlist li.win { box-shadow: inset 0 0 0 1px var(--gold); }
+.drawlist .nm { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.last { margin-top: 12px !important; text-align: center; }
+
+/* the dealer screen is read from across a room */
+body.is-dealer .panel.dl { width: min(820px, 100%); padding: 28px 30px; }
+body.is-dealer .panel.dl h2 { font-size: clamp(24px, 2.6vw, 40px); }
+body.is-dealer .panel.dl .cfg { font-size: clamp(13px, 1.2vw, 18px); }
+body.is-dealer .panel.dl .plist li { font-size: clamp(14px, 1.3vw, 20px); padding: 11px 14px; }
+body.is-dealer .panel.end, body.is-dealer .panel.draw { width: min(760px, 100%); }
+@media (min-width: 900px) {
+  body.is-dealer .panel.dl .plist { grid-template-columns: 1fr 1fr; }
+  body.is-dealer .panel.dl .plist li.empty { grid-column: 1 / -1; }
+}
+
+/* ---------------- sheet */
+#sheet { position: fixed; inset: 0; z-index: 30; }
+.sheet-bg { position: absolute; inset: 0; background: rgba(0, 0, 0, .5); }
+.sheet-in {
+  position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); width: min(700px, 100%); max-height: 86vh; max-height: 86dvh; overflow: auto;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 18px 18px 0 0; padding: 18px 18px max(18px, env(safe-area-inset-bottom));
+}
+.sheet-in.anim { animation: up .2s ease-out; }
+@keyframes up { from { transform: translate(-50%, 30px); opacity: .4; } to { transform: translate(-50%, 0); opacity: 1; } }
+.sheet-in h2 { font-size: 19px; margin: 4px 0 8px; }
+.sheet-in .x { position: absolute; right: 8px; top: 8px; width: 38px; height: 38px; background: none; border: 0; font-size: 18px; color: var(--ink2); }
+.hlist { list-style: none; padding: 0; margin: 12px 0 0; }
+.hlist .empty { color: var(--ink3); text-align: center; padding: 18px; }
+.hrow { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: var(--panel2); border: 0; border-radius: 10px; padding: 10px 12px; margin-bottom: 6px; }
+.hrow .hno2 { font: 600 13px var(--mono); color: var(--ink3); min-width: 40px; }
+.hrow .hc { min-width: 64px; }
+.hrow .hw { flex: 1; min-width: 0; font-size: 13px; color: var(--ink2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hnet { font: 600 13px var(--mono); }
+.hlist pre { white-space: pre-wrap; word-break: keep-all; font: 12.8px/1.65 var(--sans); background: var(--sunk); border-radius: 10px; padding: 10px 12px; margin: -2px 0 10px; color: var(--ink2); }
+table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-top: 6px; }
+.struct th, .struct td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.struct th { color: var(--ink3); font-weight: 600; }
+.struct td { font-family: var(--mono); }
+.struct tr.now td { color: var(--gold); }
+.rules { padding-left: 18px; color: var(--ink2); font-size: 14px; line-height: 1.6; margin: 6px 0 14px; }
+.rules li { margin: 5px 0; }
+.menu { display: grid; gap: 6px; }
+.mi { text-align: left; background: var(--panel2); border: 0; border-radius: 10px; padding: 13px 14px; font-size: 14.5px; }
+.mi.on::after { content: '켜짐'; float: right; color: var(--jade); font-size: 13px; }
+.mi.danger { color: #f08a7a; }
+
+#toast {
+  position: fixed; left: 50%; bottom: 130px; z-index: 40; max-width: 90vw; transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
+  background: rgba(20, 31, 26, .97); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 14px; text-align: center; transition: .25s;
+}
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="su-s" viewBox="0 0 100 100"><path d="M50 5C62 22 94 40 94 62c0 16-12 26-25 26-8 0-14-4-17-10 1 9 5 15 14 18H34c9-3 13-9 14-18-3 6-9 10-17 10C18 88 6 78 6 62 6 40 38 22 50 5Z"/></symbol>
+    <symbol id="su-h" viewBox="0 0 100 100"><path d="M50 93C38 81 5 61 5 34 5 18 17 7 31 7c9 0 16 5 19 13 3-8 10-13 19-13 14 0 26 11 26 27 0 27-33 47-45 59Z"/></symbol>
+    <symbol id="su-d" viewBox="0 0 100 100"><path d="M50 3c10 17 24 33 39 47-15 14-29 30-39 47C40 80 26 64 11 50 26 36 40 20 50 3Z"/></symbol>
+    <symbol id="su-c" viewBox="0 0 100 100"><circle cx="50" cy="28" r="21"/><circle cx="27" cy="58" r="21"/><circle cx="73" cy="58" r="21"/><circle cx="50" cy="52" r="13"/><path d="M47 60c0 18-5 28-14 35h34c-9-7-14-17-14-35Z"/></symbol>
+  </defs>
+</svg>
+<div id="app">
+  <header id="top"></header>
+  <main id="stage"><div id="table"></div><aside id="feed" aria-label="진행 기록"></aside></main>
+  <section id="dock" aria-label="내 카드와 액션"></section>
+</div>
+<div id="overlay" hidden></div>
+<div id="sheet" hidden></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script></script>
+<script>
+/* Holdem — no-limit Texas hold'em tournament rules, pure and deterministic.
+ *
+ * The dealer page keeps the whole state S, deck and hole cards included; pub(S) is the part any
+ * page may see. Rules follow Poker TDA / WSOP practice: a big blind ante equal to the big blind,
+ * with the big blind filled first when the player is short; dead button; heads-up the button posts
+ * the small blind; minimum bet = big blind, minimum raise = the last full bet or raise; a short
+ * all-in does not reopen the betting; uncalled chips go back; side pots; the odd chip goes to the
+ * first winner left of the button; all hands are tabled once someone is all-in and the betting is
+ * over, otherwise the last aggressor shows first and beaten hands are mucked; players who bust in
+ * the same hand are ranked by their stacks at the start of it.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.Holdem = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  var RANKS = '23456789TJQKA', SUITS = 'cdhs';
+  var RN = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+  // pauses the dealer makes so everybody can see what just happened
+  var DELAY = { street: 1000, runout: 1800, show: 800, fold: 2500, result: 6000, first: 4500 };
+  var TC_MS = 30000;      // one time card
+  var GRACE_MS = 800;     // an action already on its way when the clock runs out still counts
+  var LEVELS = [[1, 2], [2, 4], [3, 6], [5, 10], [10, 20], [15, 30], [20, 40], [30, 60], [50, 100], [75, 150],
+    [100, 200], [150, 300], [200, 400], [300, 600], [500, 1000], [750, 1500], [1000, 2000], [1500, 3000],
+    [2000, 4000], [3000, 6000], [5000, 10000]];
+
+  function level(i) {
+    var L = LEVELS[Math.min(i, LEVELS.length - 1)];
+    var m = i < LEVELS.length ? 1 : Math.pow(2, i - LEVELS.length + 1);
+    return { sb: L[0] * m, bb: L[1] * m, ante: L[1] * m };
+  }
+
+  // ---------------------------------------------------------------- prizes
+  // The buy-in is the starting stack, so the prize pool is players x stack. Places paid and the
+  // split follow the usual single-table shape: 2-4 players winner takes all, 5-8 pay 65/35,
+  // 9 pay 50/30/20. Rounding leftovers go to first place.
+  function payTable(n) { return n <= 4 ? [100] : n <= 8 ? [65, 35] : [50, 30, 20]; }
+  function prizes(n, pool) {
+    var out = payTable(n).map(function (pc) { return Math.floor(pool * pc / 100); }), t = 0;
+    out.forEach(function (x) { t += x; });
+    out[0] += pool - t;
+    return out;
+  }
+
+  // ---------------------------------------------------------------- cards
+  // card = rank * 4 + suit; rank 0..12 = 2..A, suit 0..3 = clubs, diamonds, hearts, spades
+  function cardStr(c) { return RANKS.charAt(c >> 2) + SUITS.charAt(c & 3); }
+  function parseCard(s) { return RANKS.indexOf(s.charAt(0)) * 4 + SUITS.indexOf(s.charAt(1)); }
+  function shuffleDeck(rnd) {
+    var d = [], i, j, t;
+    for (i = 0; i < 52; i++) d.push(i);
+    for (i = 51; i > 0; i--) { j = rnd(i + 1); t = d[i]; d[i] = d[j]; d[j] = t; }
+    return d;
+  }
+
+  function straightHigh(mask) {
+    for (var hi = 12; hi >= 4; hi--) if (((mask >> (hi - 4)) & 31) === 31) return hi;
+    return (mask & 0x100F) === 0x100F ? 3 : -1;     // A-2-3-4-5
+  }
+
+  // Best five of five to seven cards. score orders hands: higher wins, equal splits.
+  function evalCards(cards) {
+    var cnt = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], sc = [0, 0, 0, 0], i, r, s, fs = -1;
+    var sorted = cards.slice().sort(function (a, b) { return b - a; }), used = [];
+    for (i = 0; i < cards.length; i++) { cnt[cards[i] >> 2]++; sc[cards[i] & 3]++; }
+    for (s = 0; s < 4; s++) if (sc[s] >= 5) fs = s;
+
+    function take(pred, k) {
+      var out = [];
+      for (var j = 0; j < sorted.length && out.length < k; j++) {
+        if (used.indexOf(sorted[j]) < 0 && pred(sorted[j])) { out.push(sorted[j]); used.push(sorted[j]); }
+      }
+      return out;
+    }
+    function ofRank(rk) { return function (c) { return (c >> 2) === rk; }; }
+    function any() { return true; }
+    function rankOf(c) { return c >> 2; }
+    function run(hi, pred) {
+      var rs = hi === 3 ? [3, 2, 1, 0, 12] : [hi, hi - 1, hi - 2, hi - 3, hi - 4], out = [];
+      rs.forEach(function (rk) { out = out.concat(take(function (c) { return (c >> 2) === rk && pred(c); }, 1)); });
+      return out;
+    }
+    function done(cat, keys, best) {
+      var score = cat;
+      for (var k = 0; k < 5; k++) score = score * 16 + (k < keys.length ? keys[k] + 1 : 0);
+      return { cat: cat, keys: keys, score: score, best: best };
+    }
+
+    if (fs >= 0) {
+      var fmask = 0;
+      for (i = 0; i < cards.length; i++) if ((cards[i] & 3) === fs) fmask |= 1 << (cards[i] >> 2);
+      var sfh = straightHigh(fmask);
+      if (sfh >= 0) return done(8, [sfh], run(sfh, function (c) { return (c & 3) === fs; }));
+    }
+    var groups = [];
+    for (r = 12; r >= 0; r--) if (cnt[r]) groups.push([cnt[r], r]);
+    groups.sort(function (a, b) { return b[0] - a[0] || b[1] - a[1]; });
+    var g0 = groups[0], g1 = groups[1], best, ks;
+    if (g0[0] === 4) {
+      best = take(ofRank(g0[1]), 4); ks = take(any, 1);
+      return done(7, [g0[1]].concat(ks.map(rankOf)), best.concat(ks));
+    }
+    if (g0[0] === 3) {
+      var pr = -1;
+      for (i = 1; i < groups.length; i++) if (groups[i][0] >= 2 && groups[i][1] > pr) pr = groups[i][1];
+      if (pr >= 0) return done(6, [g0[1], pr], take(ofRank(g0[1]), 3).concat(take(ofRank(pr), 2)));
+    }
+    if (fs >= 0) {
+      best = take(function (c) { return (c & 3) === fs; }, 5);
+      return done(5, best.map(rankOf), best);
+    }
+    var mask = 0;
+    for (r = 0; r < 13; r++) if (cnt[r]) mask |= 1 << r;
+    var sh = straightHigh(mask);
+    if (sh >= 0) return done(4, [sh], run(sh, any));
+    if (g0[0] === 3) {
+      best = take(ofRank(g0[1]), 3); ks = take(any, 2);
+      return done(3, [g0[1]].concat(ks.map(rankOf)), best.concat(ks));
+    }
+    if (g0[0] === 2 && g1 && g1[0] === 2) {
+      best = take(ofRank(g0[1]), 2).concat(take(ofRank(g1[1]), 2)); ks = take(any, 1);
+      return done(2, [g0[1], g1[1]].concat(ks.map(rankOf)), best.concat(ks));
+    }
+    if (g0[0] === 2) {
+      best = take(ofRank(g0[1]), 2); ks = take(any, 3);
+      return done(1, [g0[1]].concat(ks.map(rankOf)), best.concat(ks));
+    }
+    best = take(any, 5);
+    return done(0, best.map(rankOf), best);
+  }
+
+  var CAT = ['하이카드', '원페어', '투페어', '트리플', '스트레이트', '플러시', '풀하우스', '포카드', '스트레이트 플러시'];
+  function handName(ev) {
+    var k = ev.keys;
+    switch (ev.cat) {
+      case 8: return k[0] === 12 ? '로열 플러시' : '스트레이트 플러시 (' + RN[k[0]] + ' 탑)';
+      case 7: return '포카드 ' + RN[k[0]];
+      case 6: return '풀하우스 ' + RN[k[0]] + '·' + RN[k[1]];
+      case 5: return '플러시 (' + RN[k[0]] + ' 탑)';
+      case 4: return '스트레이트 (' + RN[k[0]] + ' 탑)';
+      case 3: return '트리플 ' + RN[k[0]];
+      case 2: return '투페어 ' + RN[k[0]] + '·' + RN[k[1]];
+      case 1: return '원페어 ' + RN[k[0]];
+      default: return '하이카드 ' + RN[k[0]];
+    }
+  }
+
+  // ---------------------------------------------------------------- clock
+  function elapsed(S, now) { return now - S.clk.t0 - S.clk.pTot; }
+  function levelAt(S, now) { return Math.max(0, Math.floor(elapsed(S, now) / (S.cfg.lvlMin * 60000))); }
+  function levelLeft(S, now) {
+    var L = S.cfg.lvlMin * 60000, e = Math.max(0, elapsed(S, now));
+    return L - (e % L);
+  }
+  // the dealer page was frozen for d ms (phone locked, tab asleep): nobody's clock runs meanwhile
+  function delay(S, d) {
+    if (!(d > 0)) return;
+    if (S.firstAt) S.firstAt += d;
+    var h = S.hand;
+    if (!h) return;
+    if (h.dl) h.dl += d;
+    if (h.next) h.next.at += d;
+  }
+
+  // ---------------------------------------------------------------- tournament
+  // players: [{pid, nick, pk}], 2..9. Random seats, then a high-card draw for the button.
+  function create(cfg, players, rnd, now) {
+    var order = players.slice(), i, j, t;
+    for (i = order.length - 1; i > 0; i--) { j = rnd(i + 1); t = order[i]; order[i] = order[j]; order[j] = t; }
+    var seats = order.map(function (p) {
+      return { pid: p.pid, nick: p.nick, pk: p.pk || '', stack: cfg.stack, tc: cfg.tc, out: false, place: 0, bust: 0, prize: 0 };
+    });
+    var deck = shuffleDeck(rnd), draw = seats.map(function (_, k) { return deck[k]; }), btn = 0;
+    for (i = 1; i < draw.length; i++) if (draw[i] > draw[btn]) btn = i;   // rank, then suit: spades high
+    var tid = '';
+    for (i = 0; i < 6; i++) tid += 'abcdefghijkmnpqrstuvwxyz23456789'.charAt(rnd(32));
+    return {
+      v: 1, tid: tid, st: 'run',
+      cfg: { stack: cfg.stack, lvlMin: cfg.lvlMin, act: cfg.act, tc: cfg.tc },
+      seats: seats, draw: draw, btn0: btn, btn: -1, sbPos: -1, bbPos: -1, handNo: 0,
+      pool: cfg.stack * seats.length, prizes: prizes(seats.length, cfg.stack * seats.length),
+      clk: { t0: now, pTot: 0 }, firstAt: now + DELAY.first, hand: null, places: [], endAt: 0
+    };
+  }
+
+  function liveCount(S) { var n = 0; S.seats.forEach(function (p) { if (!p.out) n++; }); return n; }
+  function nextLive(S, from) {
+    var n = S.seats.length;
+    for (var k = 1; k <= n; k++) { var i = ((from + k) % n + n) % n; if (!S.seats[i].out) return i; }
+    return -1;
+  }
+
+  // Dead button: the big blind always moves to the next player still in; the small blind sits where
+  // the big blind was and the button where the small blind was, even when those seats are empty.
+  // Heads-up the button posts the small blind and the other player the big blind.
+  function positions(S) {
+    var live = liveCount(S), btn, sbPos, bbPos;
+    if (S.handNo === 0) {
+      btn = S.btn0;
+      if (live === 2) { sbPos = btn; bbPos = nextLive(S, btn); }
+      else { sbPos = nextLive(S, btn); bbPos = nextLive(S, sbPos); }
+    } else {
+      bbPos = nextLive(S, S.bbPos);
+      if (live === 2) { sbPos = nextLive(S, bbPos); btn = sbPos; }
+      else { sbPos = S.bbPos; btn = S.sbPos; }
+    }
+    return { btn: btn, sbPos: sbPos, bbPos: bbPos };
+  }
+
+  function post(S, h, seat, amt, code) {
+    var p = S.seats[seat], x = Math.min(amt, p.stack);
+    p.stack -= x; h.bet[seat] += x; h.tot[seat] += x;
+    h.log.push({ s: seat, a: code, x: x });
+  }
+
+  function setActor(S, h, seat, now) {
+    h.actor = seat; h.turnAt = now; h.dl = now + S.cfg.act * 1000; h.tcu = 0;
+  }
+
+  function startHand(S, now, rnd, deck) {
+    if (S.st !== 'run' || liveCount(S) < 2) return false;
+    var n = S.seats.length, i, pos = positions(S), lv = levelAt(S, now), L = level(lv);
+    S.handNo++; S.btn = pos.btn; S.sbPos = pos.sbPos; S.bbPos = pos.bbPos; S.firstAt = 0;
+    var h = {
+      no: S.handNo, lvl: lv, sb: L.sb, bb: L.bb, ante: L.ante,
+      btn: pos.btn, sbPos: pos.sbPos, sbSeat: S.seats[pos.sbPos].out ? -1 : pos.sbPos, bbSeat: pos.bbPos,
+      street: 0, board: [], deck: deck ? deck.slice() : shuffleDeck(rnd), dp: 0, holes: [],
+      live: [], fold: [], allin: [], bet: [], tot: [], acted: [], start: [],
+      pot: 0, anteAmt: 0, cur: L.bb, minR: L.bb, aggr: -1, actor: -1, n: 0, dl: 0, tcu: 0, turnAt: 0,
+      log: [], reveal: false, next: null, res: null, done: 0
+    };
+    for (i = 0; i < n; i++) {
+      h.live.push(!S.seats[i].out); h.fold.push(false); h.allin.push(false); h.bet.push(0); h.tot.push(0);
+      h.acted.push(null); h.start.push(S.seats[i].stack); h.holes.push(null);
+    }
+    S.hand = h;
+    // small blind (none when its seat is dead), then the big blind, then the ante from what is left
+    if (h.sbSeat >= 0) post(S, h, h.sbSeat, L.sb, 'S');
+    post(S, h, h.bbSeat, L.bb, 'B');
+    var bp = S.seats[h.bbSeat], a = Math.min(L.ante, bp.stack);
+    if (a > 0) { bp.stack -= a; h.anteAmt = a; h.pot = a; h.log.push({ s: h.bbSeat, a: 'N', x: a }); }
+    for (i = 0; i < n; i++) if (h.live[i] && S.seats[i].stack === 0) h.allin[i] = true;
+    // one card at a time to each player, starting left of the button
+    var order = [], s = nextLive(S, h.btn);
+    while (order.indexOf(s) < 0) { order.push(s); s = nextLive(S, s); }
+    order.forEach(function (x) { h.holes[x] = [h.deck[h.dp++]]; });
+    order.forEach(function (x) { h.holes[x].push(h.deck[h.dp++]); });
+    var nx = nextToAct(S, h, h.bbSeat);
+    if (nx >= 0) setActor(S, h, nx, now); else roundOver(S, h, now);
+    return true;
+  }
+
+  // the next seat (clockwise after `from`) that still has to act in this betting round, or -1
+  function nextToAct(S, h, from) {
+    var n = S.seats.length, act = [], i, k;
+    for (i = 0; i < n; i++) if (h.live[i] && !h.fold[i] && !h.allin[i]) act.push(i);
+    if (act.length === 0) return -1;
+    if (act.length === 1) {
+      var me = act[0], top = 0;
+      for (i = 0; i < n; i++) if (i !== me && h.live[i] && !h.fold[i] && h.bet[i] > top) top = h.bet[i];
+      return h.bet[me] >= top ? -1 : me;     // nobody left to bet against, unless facing an all-in
+    }
+    for (k = 1; k <= n; k++) {
+      i = ((from + k) % n + n) % n;
+      if (act.indexOf(i) >= 0 && (h.acted[i] === null || h.bet[i] < h.cur)) return i;
+    }
+    return -1;
+  }
+
+  // What `seat` may do now. Works on the dealer's state and on the public copy alike.
+  function legal(h, seats, seat) {
+    if (!h || seat < 0 || h.actor !== seat || h.next) return null;
+    var stack = seats[seat].stack, n = seats.length, others = 0, i;
+    for (i = 0; i < n; i++) if (i !== seat && h.live[i] && !h.fold[i] && !h.allin[i]) others++;
+    var toCall = Math.max(0, h.cur - h.bet[seat]);
+    var acted = h.acted[seat];
+    var reopened = acted === null || acted === undefined || h.cur - acted >= h.minR;
+    var maxTo = h.bet[seat] + stack;
+    return {
+      toCall: Math.min(toCall, stack), canCheck: toCall === 0,
+      canRaise: stack > toCall && others > 0 && reopened,
+      minTo: Math.min(h.cur + h.minR, maxTo), maxTo: maxTo, isBet: h.cur === 0
+    };
+  }
+
+  // a: 'f' fold, 'k' check, 'c' call, 'r' bet or raise to x (total this round), 'A' all-in.
+  // Returns '' when applied, otherwise why not.
+  function act(S, seat, a, x, now, how) {
+    var h = S.hand, L = legal(h, S.seats, seat);
+    if (!L) return 'turn';
+    var p = S.seats[seat], put = 0, kind = a;
+    if (a === 'A') {
+      if (L.canRaise) { a = 'r'; x = L.maxTo; }
+      else a = L.canCheck ? 'k' : 'c';
+      kind = a;
+    }
+    if (a === 'f') {
+      h.fold[seat] = true;
+    } else if (a === 'k') {
+      if (!L.canCheck) return 'check';
+    } else if (a === 'c') {
+      if (L.canCheck) return 'call';
+      put = L.toCall;
+    } else if (a === 'r') {
+      if (!L.canRaise) return 'raise';
+      x = Math.floor(Number(x));
+      if (!(x === L.maxTo || (x >= L.minTo && x <= L.maxTo))) return 'amount';
+      put = x - h.bet[seat];
+      if (x - h.cur >= h.minR) h.minR = x - h.cur;      // a full bet or raise sets the next minimum
+      h.cur = x;
+      h.aggr = seat;
+      kind = L.isBet ? 'b' : 'r';
+    } else return 'action';
+    if (put) { p.stack -= put; h.bet[seat] += put; h.tot[seat] += put; }
+    if (a !== 'f' && p.stack === 0) h.allin[seat] = true;
+    h.acted[seat] = h.cur;
+    var rec = { s: seat, a: kind, x: put, t: h.bet[seat] };
+    if (h.allin[seat] && a !== 'f') rec.ai = 1;
+    if (how) rec.auto = how;
+    h.log.push(rec);
+    h.n++;
+    progress(S, h, now);
+    return '';
+  }
+
+  function aliveSeats(h) {
+    var out = [];
+    for (var i = 0; i < h.live.length; i++) if (h.live[i] && !h.fold[i]) out.push(i);
+    return out;
+  }
+
+  function progress(S, h, now) {
+    var alive = aliveSeats(h);
+    if (alive.length === 1) {
+      h.actor = -1; h.dl = 0;
+      settleUncalled(S, h); collect(h);
+      winByFold(S, h, alive[0], now);
+      return;
+    }
+    var nx = nextToAct(S, h, h.actor);
+    if (nx >= 0) setActor(S, h, nx, now);
+    else roundOver(S, h, now);
+  }
+
+  // the part of the biggest bet nobody matched goes straight back
+  function settleUncalled(S, h) {
+    var top = -1, sec = 0, ti = -1, i;
+    for (i = 0; i < h.live.length; i++) {
+      if (!h.live[i]) continue;
+      if (h.bet[i] > top) { if (top > sec) sec = top; top = h.bet[i]; ti = i; }
+      else if (h.bet[i] > sec) sec = h.bet[i];
+    }
+    if (ti >= 0 && top > sec) {
+      var r = top - sec;
+      h.bet[ti] -= r; h.tot[ti] -= r; S.seats[ti].stack += r; h.allin[ti] = false;
+      h.log.push({ s: ti, a: 'R', x: r });
+    }
+  }
+  function collect(h) {
+    for (var i = 0; i < h.bet.length; i++) { h.pot += h.bet[i]; h.bet[i] = 0; }
+  }
+
+  function roundOver(S, h, now) {
+    h.actor = -1; h.dl = 0;
+    settleUncalled(S, h);
+    collect(h);
+    var active = 0;
+    aliveSeats(h).forEach(function (s) { if (!h.allin[s]) active++; });
+    if (active < 2) h.reveal = true;            // all-in and nothing left to bet: hands are tabled
+    if (h.street >= 3) h.next = { k: 'show', at: now + DELAY.show };
+    else h.next = { k: 'street', at: now + (active >= 2 ? DELAY.street : DELAY.runout) };
+  }
+
+  function dealStreet(S, h, now) {
+    var cs, i;
+    h.street++;
+    h.dp++;                                      // burn
+    cs = h.street === 1 ? h.deck.slice(h.dp, h.dp + 3) : h.deck.slice(h.dp, h.dp + 1);
+    h.dp += cs.length;
+    h.board = h.board.concat(cs);
+    h.log.push({ d: h.street, c: cs });
+    h.cur = 0; h.minR = h.bb; h.aggr = -1;
+    for (i = 0; i < h.acted.length; i++) h.acted[i] = null;
+    var nx = nextToAct(S, h, h.btn);
+    if (nx >= 0) setActor(S, h, nx, now); else roundOver(S, h, now);
+  }
+
+  // clockwise distance from the seat left of the button (0) — odd chips and showing order
+  function fromButton(S, h, s) { var n = S.seats.length; return ((s - h.btn - 1) % n + n) % n; }
+
+  function buildPots(h, alive) {
+    var levels = [], pots = [], prev = 0, i, extra = 0;
+    alive.forEach(function (s) { if (levels.indexOf(h.tot[s]) < 0) levels.push(h.tot[s]); });
+    levels.sort(function (a, b) { return a - b; });
+    levels.forEach(function (L) {
+      var amt = 0, e = alive.filter(function (s) { return h.tot[s] >= L; });
+      for (i = 0; i < h.live.length; i++) if (h.live[i]) amt += Math.max(0, Math.min(h.tot[i], L) - prev);
+      if (amt > 0) pots.push({ a: amt, e: e });
+      prev = L;
+    });
+    for (i = 0; i < h.live.length; i++) if (h.live[i]) extra += Math.max(0, h.tot[i] - prev);
+    if (!pots.length) pots.push({ a: 0, e: alive.slice() });
+    pots[pots.length - 1].a += extra;
+    pots[0].a += h.anteAmt;                      // the big blind ante is dead money in the main pot
+    return pots;
+  }
+
+  function winByFold(S, h, w, now) {
+    var won = h.live.map(function () { return 0; });
+    won[w] = h.pot;
+    S.seats[w].stack += h.pot;
+    h.res = { fold: 1, pots: [{ a: h.pot, e: [w], w: [w], sh: [[w, h.pot]] }], won: won, show: {}, names: {}, best: {} };
+    finishHand(S, h, now, DELAY.fold);
+  }
+
+  function showdown(S, h, now) {
+    var alive = aliveSeats(h), ev = {}, won = h.live.map(function () { return 0; });
+    alive.forEach(function (s) { ev[s] = evalCards(h.holes[s].concat(h.board)); });
+    var pots = buildPots(h, alive);
+    pots.forEach(function (pt) {
+      var top = -1, ws = [];
+      pt.e.forEach(function (s) {
+        if (ev[s].score > top) { top = ev[s].score; ws = [s]; } else if (ev[s].score === top) ws.push(s);
+      });
+      ws.sort(function (a, b) { return fromButton(S, h, a) - fromButton(S, h, b); });
+      var share = Math.floor(pt.a / ws.length), rem = pt.a - share * ws.length;
+      pt.w = ws;
+      pt.sh = ws.map(function (s, k) { var x = share + (k < rem ? 1 : 0); won[s] += x; return [s, x]; });
+    });
+    alive.forEach(function (s) { S.seats[s].stack += won[s]; });
+    var show = {}, names = {}, best = {}, anyAllin = alive.some(function (s) { return h.allin[s]; });
+    if (h.reveal || anyAllin) alive.forEach(function (s) { show[s] = h.holes[s].slice(); });
+    else {
+      var first = h.aggr >= 0 && !h.fold[h.aggr] ? h.aggr : alive.slice().sort(function (a, b) { return fromButton(S, h, a) - fromButton(S, h, b); })[0];
+      var order = alive.slice().sort(function (a, b) {
+        var n = S.seats.length;
+        return ((a - first) % n + n) % n - ((b - first) % n + n) % n;
+      }), shownTop = -1;
+      order.forEach(function (s) {                 // a hand that cannot win is mucked
+        if (ev[s].score >= shownTop) { show[s] = h.holes[s].slice(); shownTop = ev[s].score; }
+      });
+    }
+    Object.keys(show).forEach(function (s) { names[s] = handName(ev[s]); best[s] = ev[s].best.slice(); });
+    h.res = { pots: pots, won: won, show: show, names: names, best: best };
+    finishHand(S, h, now, DELAY.result);
+  }
+
+  function finishHand(S, h, now, wait) {
+    var n = S.seats.length, i, before = 0, busted = [];
+    h.actor = -1; h.dl = 0; h.done = 1; h.reveal = false;
+    for (i = 0; i < n; i++) if (!S.seats[i].out) before++;
+    for (i = 0; i < n; i++) if (h.live[i] && S.seats[i].stack === 0) busted.push(i);
+    var bestPlace = before - busted.length + 1, groups = {};
+    busted.sort(function (a, b) { return h.start[b] - h.start[a]; });
+    busted.forEach(function (s) {
+      var place = bestPlace + busted.filter(function (o) { return h.start[o] > h.start[s]; }).length;
+      (groups[place] = groups[place] || []).push(s);
+    });
+    // players tied for a place share the prizes of the places they take up between them
+    Object.keys(groups).map(Number).sort(function (a, b) { return a - b; }).forEach(function (place) {
+      var g = groups[place].sort(function (a, b) { return a - b; }), share = 0, q;
+      for (q = place; q < place + g.length; q++) share += (S.prizes && S.prizes[q - 1]) || 0;
+      var each = Math.floor(share / g.length), rem = share - each * g.length;
+      g.forEach(function (s, k) {
+        var p = S.seats[s];
+        p.out = true; p.place = place; p.bust = h.no; p.prize = each + (k < rem ? 1 : 0);
+        S.places.push({ s: s, p: place, h: h.no });
+      });
+    });
+    h.res.bust = busted;
+    if (before - busted.length <= 1) {
+      for (i = 0; i < n; i++) {
+        if (!S.seats[i].out) {
+          S.seats[i].place = 1; S.seats[i].prize = (S.prizes && S.prizes[0]) || 0;
+          S.places.push({ s: i, p: 1, h: h.no });
+        }
+      }
+      S.st = 'end'; S.endAt = now; h.next = null;
+    } else h.next = { k: 'hand', at: now + wait };
+  }
+
+  // the clock ran out: check when allowed, otherwise fold
+  function autoAct(S, now, how) {
+    var h = S.hand, L = h && legal(h, S.seats, h.actor);
+    if (!L) return false;
+    return act(S, h.actor, L.canCheck ? 'k' : 'f', 0, now, how) === '';
+  }
+  function timeout(S, now) {
+    var h = S.hand;
+    if (!h || h.actor < 0 || h.next || now < h.dl + GRACE_MS) return false;
+    return autoAct(S, now, 't');
+  }
+  function useTimeCard(S, seat, now) {
+    var h = S.hand, p = S.seats[seat];
+    if (!h || h.actor !== seat || h.next || !p || p.tc <= 0 || now > h.dl + GRACE_MS) return false;
+    p.tc--; h.tcu++;
+    h.dl = Math.max(h.dl, now) + TC_MS;
+    h.log.push({ s: seat, a: 'T' });
+    return true;
+  }
+  // after a hand, a player may show cards nobody had to see
+  function showCards(S, seat) {
+    var h = S.hand;
+    if (!h || !h.done || !h.res || !h.live[seat] || !h.holes[seat] || h.res.show[seat]) return false;
+    h.res.show[seat] = h.holes[seat].slice();
+    h.res.vol = (h.res.vol || []).concat([seat]);
+    return true;
+  }
+
+  // run whatever the dealer scheduled; returns 'hand' when the next hand is due
+  function advance(S, now) {
+    var h = S.hand;
+    if (S.st !== 'run') return false;
+    if (!h) return S.firstAt && now >= S.firstAt ? 'hand' : false;
+    if (!h.next || now < h.next.at) return false;
+    var k = h.next.k;
+    if (k === 'hand') return 'hand';
+    h.next = null;
+    if (k === 'street') dealStreet(S, h, now);
+    else if (k === 'show') showdown(S, h, now);
+    return true;
+  }
+
+  // what every page may see
+  function pub(S, now) {
+    var h = S.hand, ph = null, i;
+    if (h) {
+      ph = {
+        no: h.no, lvl: h.lvl, sb: h.sb, bb: h.bb, ante: h.ante, btn: h.btn, sbPos: h.sbPos, sbSeat: h.sbSeat,
+        bbSeat: h.bbSeat, street: h.street, board: h.board.slice(), live: h.live.slice(), fold: h.fold.slice(),
+        allin: h.allin.slice(), bet: h.bet.slice(), tot: h.tot.slice(), acted: h.acted.slice(), start: h.start.slice(),
+        pot: h.pot, anteAmt: h.anteAmt, cur: h.cur, minR: h.minR, actor: h.actor, n: h.n, dl: h.dl, tcu: h.tcu,
+        log: h.log.slice(), next: h.next ? h.next.k : '', res: h.res, done: h.done
+      };
+      if (h.reveal && !h.res) {
+        ph.reveal = {};
+        for (i = 0; i < h.live.length; i++) if (h.live[i] && !h.fold[i]) ph.reveal[i] = h.holes[i].slice();
+      }
+    }
+    return {
+      v: S.v, tid: S.tid, st: S.st, cfg: S.cfg, handNo: S.handNo,
+      seats: S.seats.map(function (p) { return { pid: p.pid, nick: p.nick, stack: p.stack, tc: p.tc, out: p.out, place: p.place, bust: p.bust, prize: p.prize || 0 }; }),
+      pool: S.pool || 0, prizes: (S.prizes || []).slice(),
+      draw: S.draw, btn0: S.btn0, firstAt: S.firstAt || 0, lvl: levelAt(S, now), lvlLeft: levelLeft(S, now),
+      places: S.places.slice(), endAt: S.endAt || 0, hand: ph
+    };
+  }
+
+  return {
+    RANKS: RANKS, SUITS: SUITS, RN: RN, CAT: CAT, LEVELS: LEVELS, DELAY: DELAY, TC_MS: TC_MS, GRACE_MS: GRACE_MS,
+    level: level, payTable: payTable, prizes: prizes, cardStr: cardStr, parseCard: parseCard, shuffleDeck: shuffleDeck, evalCards: evalCards, handName: handName,
+    create: create, positions: positions, nextLive: nextLive, liveCount: liveCount, startHand: startHand, legal: legal,
+    act: act, autoAct: autoAct, timeout: timeout, useTimeCard: useTimeCard, showCards: showCards, advance: advance,
+    delay: delay, levelAt: levelAt, levelLeft: levelLeft, pub: pub, buildPots: buildPots, fromButton: fromButton
+  };
+});
+
+</script>
+<script>
+/* HoldemCrypto — keeps hole cards and player decisions private on a public relay.
+ *
+ * Every page makes an ECDH P-256 key pair and announces only the public half. The dealer and
+ * each player derive the same AES-256-GCM key (ECDH -> HKDF-SHA-256), so a hole card sealed for
+ * one player opens on that player's page alone, and a decision sealed by a player can only come
+ * from that player. The relay brokers and the other players see random-looking text.
+ */
+(function (root) {
+  'use strict';
+  var cr = root.crypto, subtle = cr && cr.subtle;
+  var te = typeof TextEncoder === 'function' ? new TextEncoder() : null;
+  var td = typeof TextDecoder === 'function' ? new TextDecoder() : null;
+  var EC = { name: 'ECDH', namedCurve: 'P-256' };
+
+  function b64u(bytes) {
+    var s = '', i;
+    for (i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return root.btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function unb64u(str) {
+    var t = String(str).replace(/-/g, '+').replace(/_/g, '/'), bin, out, i;
+    while (t.length % 4) t += '=';
+    bin = root.atob(t);
+    out = new Uint8Array(bin.length);
+    for (i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function concat(a, b) { var o = new Uint8Array(a.length + b.length); o.set(a, 0); o.set(b, a.length); return o; }
+
+  function newKey() {
+    return subtle.generateKey(EC, true, ['deriveBits']).then(function (kp) {
+      return Promise.all([subtle.exportKey('jwk', kp.privateKey), subtle.exportKey('raw', kp.publicKey)]).then(function (r) {
+        return { priv: kp.privateKey, pk: b64u(new Uint8Array(r[1])), jwk: r[0] };
+      });
+    });
+  }
+  function loadKey(jwk) {
+    return subtle.importKey('jwk', jwk, EC, true, ['deriveBits']).then(function (priv) {
+      var raw = concat(concat(Uint8Array.of(4), unb64u(jwk.x)), unb64u(jwk.y));
+      return { priv: priv, pk: b64u(raw), jwk: jwk };
+    });
+  }
+
+  var cache = new Map();
+  // the key `me` (from newKey/loadKey) shares with the holder of public key `pk`
+  function shared(me, pk, info) {
+    var id = me.pk + '|' + pk + '|' + info;
+    if (cache.has(id)) return cache.get(id);
+    var p = subtle.importKey('raw', unb64u(pk), EC, false, []).then(function (pub) {
+      return subtle.deriveBits({ name: 'ECDH', public: pub }, me.priv, 256);
+    }).then(function (bits) {
+      return subtle.importKey('raw', bits, 'HKDF', false, ['deriveKey']);
+    }).then(function (hk) {
+      return subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: te.encode('holdem-nlt-v1'), info: te.encode(info) },
+        hk, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    });
+    cache.set(id, p);
+    p.catch(function () { cache.delete(id); });
+    return p;
+  }
+
+  function seal(key, bytes, aad) {
+    var iv = cr.getRandomValues(new Uint8Array(12));
+    return subtle.encrypt({ name: 'AES-GCM', iv: iv, additionalData: te.encode(aad) }, key, bytes).then(function (ct) {
+      return b64u(concat(iv, new Uint8Array(ct)));
+    });
+  }
+  // resolves to the plaintext bytes, or null when it was not sealed with this key and label
+  function open(key, str, aad) {
+    var all;
+    try { all = unb64u(str); } catch (e) { return Promise.resolve(null); }
+    if (all.length < 28) return Promise.resolve(null);
+    return subtle.decrypt({ name: 'AES-GCM', iv: all.subarray(0, 12), additionalData: te.encode(aad) }, key, all.subarray(12))
+      .then(function (pt) { return new Uint8Array(pt); }, function () { return null; });
+  }
+  function sealText(key, text, aad) { return seal(key, te.encode(text), aad); }
+  function openText(key, str, aad) { return open(key, str, aad).then(function (b) { return b ? td.decode(b) : null; }); }
+
+  root.HoldemCrypto = {
+    supported: !!(subtle && te && root.btoa),
+    newKey: newKey, loadKey: loadKey, shared: shared, seal: seal, open: open, sealText: sealText, openText: openText,
+    b64u: b64u, unb64u: unb64u
+  };
+})(typeof window !== 'undefined' ? window : globalThis);
+
+</script>
+<script>
+/* HoldemRelay — link-only realtime (no sign-in, no invitations), shared with the omok page.
+ *
+ * Each page connects to several free public MQTT brokers at once over secure WebSocket
+ * (MQTT 3.1.1, QoS 0, nothing retained) and offers presence(patch), peers(), onPeers(fn),
+ * onConnection(fn), leave(). Every message carries the sender's clock, so each peer entry
+ * also says how far that page's clock is ahead of ours (`clock`, latency included).
+ *
+ * One room is one topic. Every page keeps announcing its whole state and receivers keep the
+ * newest state per page, so duplicates across brokers, lost packets and reconnects heal by
+ * themselves. A game works as long as both players can reach any one broker in the list.
+ * The room code never goes on the wire (the topic is a hash of it); the payload is plain JSON.
+ */
+(function (root) {
+  'use strict';
+
+  // Free public brokers, checked from a browser on 2026-11-14. The last one listens on port 443,
+  // which gets through networks that block unusual ports; "public"/"public" is its open login.
+  var BROKERS = [
+    'wss://broker.emqx.io:8084/mqtt',
+    'wss://broker.hivemq.com:8884/mqtt',
+    'wss://test.mosquitto.org:8081/mqtt',
+    { url: 'wss://public.cloud.shiftr.io/', user: 'public', pass: 'public' }
+  ];
+  var BEAT_MS = 3000;       // heartbeat
+  var FULL_EVERY = 5;       // every 5th heartbeat carries the whole state again
+  var PEER_TTL = 10000;     // a page is gone after this long without a heartbeat
+  var RX_TTL = 12000;       // a broker connection is dead after this long without any byte
+  var CONNECT_TTL = 9000;
+  var PING_MS = 10000;
+  var MAX_MSG = 65536;
+  var ID_RE = /^[a-z0-9]{8}$/;
+  var ALPH = 'abcdefghijkmnpqrstuvwxyz23456789';
+
+  var supported = typeof root.WebSocket === 'function' && typeof root.TextEncoder === 'function' && typeof root.Map === 'function';
+  var te = supported ? new TextEncoder() : null, td = supported ? new TextDecoder() : null;
+  var debug = function () { return !!root.__hdDebug; };
+  var cut = function () { return debug() && !!root.__mockOffline; };     // tests: the network is gone
+
+  function rid(n) {
+    var a = new Uint8Array(n), s = '', i;
+    try { root.crypto.getRandomValues(a); } catch (e) { for (i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256); }
+    for (i = 0; i < n; i++) s += ALPH.charAt(a[i] % ALPH.length);
+    return s;
+  }
+
+  // cyrb53-style string hash, 16 hex chars: keeps the room code itself off the wire.
+  function hash(str) {
+    var h1 = 0xdeadbeef ^ 0x5eed, h2 = 0x41c6ce57 ^ 0x5eed, i, ch;
+    for (i = 0; i < str.length; i++) {
+      ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return ('0000000' + (h2 >>> 0).toString(16)).slice(-8) + ('0000000' + (h1 >>> 0).toString(16)).slice(-8);
+  }
+  function topicFor(code) { return 'hdnl/1/' + hash('holdem-nlt|' + code); }
+  function hostOf(url) { return url.replace(/^wss?:\/\//, '').replace(/[:/].*$/, ''); }
+
+  // ---- MQTT 3.1.1 packets ----
+  function mstr(s) {
+    var b = te.encode(s), o = new Uint8Array(b.length + 2);
+    o[0] = b.length >> 8; o[1] = b.length & 255; o.set(b, 2);
+    return o;
+  }
+  function packet(first, parts) {
+    var len = 0, i, head = [first], x, d, out, off;
+    for (i = 0; i < parts.length; i++) len += parts[i].length;
+    x = len;
+    do { d = x % 128; x = Math.floor(x / 128); if (x > 0) d |= 128; head.push(d); } while (x > 0);
+    out = new Uint8Array(head.length + len);
+    out.set(head, 0);
+    off = head.length;
+    for (i = 0; i < parts.length; i++) { out.set(parts[i], off); off += parts[i].length; }
+    return out;
+  }
+  var PING = supported ? Uint8Array.of(0xC0, 0) : null;
+
+  // ---- one broker connection: a single QoS 0 subscription, reconnecting for ever ----
+  function Conn(broker, topic, onMsg, onChange) {
+    var url = typeof broker === 'string' ? broker : broker.url;
+    var user = typeof broker === 'string' ? '' : (broker.user || ''), pass = typeof broker === 'string' ? '' : (broker.pass || '');
+    var c = { url: url, host: hostOf(url), state: 'down', rtt: null, lastRx: 0, beatKey: 0, beatAt: 0, blocked: false };
+    var ws = null, buf = null, tries = 0, timer = 0, closed = false, probeAt = 0, lastPing = 0;
+    var cid = 'hd' + rid(14);
+    var SUB = packet(0x82, [Uint8Array.of(0, 1), mstr(topic), Uint8Array.of(0)]);
+
+    function set(s) { if (c.state !== s) { c.state = s; onChange(c); } }
+    function unhook(sock) {
+      sock.onopen = sock.onmessage = sock.onclose = sock.onerror = null;
+      try { sock.close(); } catch (e) { /* already closed */ }
+    }
+
+    function open() {
+      if (closed) return;
+      clearTimeout(timer);
+      if (cut()) { set('down'); timer = setTimeout(open, 1000); return; }
+      var sock;
+      try { sock = new root.WebSocket(url, ['mqtt']); }
+      catch (e) {
+        // A page whose host forbids outside connections (app previews, sandboxed viewers) fails here.
+        if (e && (e.name === 'SecurityError' || /policy|security|refused/i.test(String(e.message)))) {
+          c.blocked = true; set('down'); clearTimeout(timer); timer = setTimeout(open, 30000); return;
+        }
+        retry(); return;
+      }
+      c.blocked = false;
+      sock.binaryType = 'arraybuffer';
+      ws = sock; buf = null; probeAt = 0;
+      set('connecting');
+      sock.onopen = function () {
+        if (ws !== sock) return;
+        // CONNECT: protocol "MQTT" level 4, clean session, keep-alive 60 s, random client id
+        var parts = [mstr('MQTT'), Uint8Array.of(4, user ? 0xC2 : 2, 0, 60), mstr(cid)];
+        if (user) { parts.push(mstr(user)); parts.push(mstr(pass)); }
+        try { sock.send(packet(0x10, parts)); } catch (e) { drop(); }
+      };
+      sock.onmessage = function (ev) {
+        if (ws !== sock || cut() || !ev.data || typeof ev.data === 'string') return;
+        c.lastRx = Date.now();
+        feed(sock, new Uint8Array(ev.data));
+      };
+      sock.onclose = sock.onerror = function () { if (ws === sock) drop(); };
+      timer = setTimeout(function () { if (ws === sock && c.state !== 'live') drop(); }, CONNECT_TTL);
+    }
+
+    function retry() {
+      set('down');
+      if (closed) return;
+      var d = Math.min(5000, 500 * Math.pow(2, tries++)) * (0.8 + Math.random() * 0.4);
+      clearTimeout(timer);
+      timer = setTimeout(open, d);
+    }
+
+    function drop() {
+      var sock = ws;
+      ws = null; buf = null;
+      if (sock) unhook(sock);
+      retry();
+    }
+
+    // MQTT packets are not aligned to WebSocket frames: collect bytes, cut whole packets.
+    function feed(sock, chunk) {
+      var b = chunk, off = 0, i, len, mul, d, done, m;
+      if (buf && buf.length) { m = new Uint8Array(buf.length + chunk.length); m.set(buf, 0); m.set(chunk, buf.length); b = m; }
+      for (;;) {
+        if (b.length - off < 2) break;
+        len = 0; mul = 1; done = false;
+        for (i = off + 1; i < b.length && i <= off + 4; i++) {
+          d = b[i]; len += (d & 127) * mul; mul *= 128;
+          if (!(d & 128)) { done = true; i++; break; }
+        }
+        if (!done) { if (i > off + 4) { drop(); return; } break; }
+        if (len > 262144) { drop(); return; }
+        if (b.length - i < len) break;
+        handle(sock, b[off], b.subarray(i, i + len));
+        if (ws !== sock) return;
+        off = i + len;
+      }
+      buf = off < b.length ? b.slice(off) : null;
+    }
+
+    function handle(sock, b0, body) {
+      var type = b0 >> 4, tl, p, qos;
+      if (type === 2) {                       // CONNACK
+        if (body.length < 2 || body[1] !== 0) { drop(); return; }
+        try { sock.send(SUB); } catch (e) { drop(); }
+      } else if (type === 9) {                // SUBACK
+        if (body.length < 3 || body[2] === 0x80) { drop(); return; }
+        tries = 0; clearTimeout(timer); lastPing = Date.now();
+        set('live');
+      } else if (type === 3) {                // PUBLISH
+        if (body.length < 2) return;
+        tl = (body[0] << 8) | body[1]; p = 2 + tl; qos = (b0 >> 1) & 3;
+        if (qos) {
+          if (body.length < p + 2) return;
+          if (qos === 1) { try { sock.send(Uint8Array.of(0x40, 2, body[p], body[p + 1])); } catch (e) { /* ignore */ } }
+          p += 2;
+        }
+        if (p > body.length) return;
+        onMsg(c, body.subarray(p));
+      }
+      // PINGRESP and anything else: receiving it already refreshed lastRx
+    }
+
+    c.start = open;
+    c.send = function (bytes) {
+      if (c.state !== 'live' || !ws || ws.readyState !== 1 || cut()) return false;
+      if (ws.bufferedAmount > 65536) return false;
+      try { ws.send(bytes); return true; } catch (e) { return false; }
+    };
+    c.tick = function (now) {
+      if (cut()) {
+        if (ws) { var s = ws; ws = null; buf = null; unhook(s); set('down'); clearTimeout(timer); timer = setTimeout(open, 1000); }
+        return;
+      }
+      if (c.state !== 'live') return;
+      if (now - c.lastRx > RX_TTL || (probeAt && now - probeAt > 3500 && c.lastRx < probeAt)) { drop(); return; }
+      if (probeAt && c.lastRx >= probeAt) probeAt = 0;
+      if (now - lastPing >= PING_MS) { lastPing = now; c.send(PING); }
+    };
+    c.kick = function () {
+      if (closed) return;
+      if (c.state === 'down') { tries = 0; open(); }
+      else if (c.state === 'live' && !probeAt) { probeAt = Date.now(); c.send(PING); }
+    };
+    c.close = function () {
+      closed = true;
+      clearTimeout(timer);
+      var s = ws;
+      ws = null; buf = null;
+      if (s) {
+        try { if (s.readyState === 1) s.send(Uint8Array.of(0xE0, 0)); } catch (e) { /* ignore */ }
+        unhook(s);
+      }
+      c.state = 'down';
+    };
+    return c;
+  }
+
+  // ---- a room ----
+  function join(code) {
+    var urls = (debug() && root.__hdBrokers) || BROKERS;
+    var topic = topicFor(code), head = mstr(topic);
+    var me = rid(8);                       // this join; a page that leaves and comes back is a new peer
+    var peers = new Map(), peerFns = [], connFns = [];
+    var mine = {}, ver = 0, key = 0, live = false, left = false, snap = null;
+    var helloAt = 0, replyT = 0, beatAt = Date.now(), beatN = 0, queued = false, timer = 0, cspBlocked = false;
+    var conns = urls.map(function (u) { return Conn(u, topic, onMsg, onConnChange); });
+
+    function wire(obj) { return packet(0x30, [head, te.encode(JSON.stringify(obj))]); }
+    function sendAll(bytes, k) {
+      var now = Date.now(), i, c;
+      for (i = 0; i < conns.length; i++) {
+        c = conns[i];
+        if (c.send(bytes) && k) { c.beatKey = k; c.beatAt = now; }
+      }
+    }
+    function nextKey() { key = (key % 1000000) + 1; return key; }
+    function pubState() {
+      if (left || !ver) return;
+      var p = {}, f;
+      for (f in mine) if (f !== 'code' && Object.prototype.hasOwnProperty.call(mine, f)) p[f] = mine[f];
+      var k = nextKey();
+      sendAll(wire({ t: 's', s: me, v: ver, k: k, w: Date.now(), p: p }), k);
+    }
+    function pubBeat() {
+      if (left || !ver) return;
+      var k = nextKey();
+      sendAll(wire({ t: 'b', s: me, v: ver, k: k, w: Date.now() }), k);
+    }
+    function pubHello() { helloAt = Date.now(); sendAll(wire({ t: 'h', s: me })); }
+    function reply() {
+      if (!replyT) replyT = setTimeout(function () { replyT = 0; pubState(); }, 50 + Math.random() * 200);
+    }
+
+    function list() {
+      if (!snap) {
+        var out = [];
+        peers.forEach(function (x, id) {
+          out.push({ peer: id, presence: x.p, updatedAt: x.at, clock: x.off });
+        });
+        snap = Object.freeze(out);
+      }
+      return snap;
+    }
+    function changed() {
+      snap = null;
+      if (queued) return;
+      queued = true;
+      Promise.resolve().then(function () {
+        queued = false;
+        if (left) return;
+        var ch = { peers: list() };
+        peerFns.slice().forEach(function (f) { try { f(ch); } catch (e) { try { console.error(e); } catch (e2) { /* ignore */ } } });
+      });
+    }
+    function keep(p) {
+      var o = {}, f;
+      for (f in p) if (Object.prototype.hasOwnProperty.call(p, f)) o[f] = p[f];
+      o.code = code;
+      return Object.freeze(o);
+    }
+
+    function onMsg(c, bytes) {
+      if (left || bytes.length > MAX_MSG) return;
+      var now = Date.now(), m, cur;
+      try { m = JSON.parse(td.decode(bytes)); } catch (e) { return; }
+      if (!m || typeof m !== 'object' || typeof m.s !== 'string' || !ID_RE.test(m.s)) return;
+      if (m.s === me) {                      // my own echo: round-trip time through this broker
+        if (m.k && m.k === c.beatKey) { c.rtt = now - c.beatAt; c.beatKey = 0; }
+        return;
+      }
+      cur = peers.get(m.s);
+      if (m.t === 'x') { if (cur) { peers.delete(m.s); changed(); } return; }
+      if (m.t === 'h') { reply(); return; }
+      if (typeof m.v !== 'number') return;
+      var skew = typeof m.w === 'number' && isFinite(m.w) ? m.w - now : null;
+      if (m.t === 's' && m.p && typeof m.p === 'object' && !Array.isArray(m.p)) {
+        if (!cur) { cur = { p: keep(m.p), v: m.v, at: now, seen: now, skews: [], off: 0 }; peers.set(m.s, cur); clock(cur, skew); changed(); }
+        else {
+          cur.seen = now;
+          var before = cur.off;
+          clock(cur, skew);
+          if (m.v > cur.v) { cur.v = m.v; cur.p = keep(m.p); cur.at = now; changed(); }
+          else if (Math.abs(cur.off - before) > 150) changed();
+        }
+      } else if (m.t === 'b') {
+        if (cur) { cur.seen = now; clock(cur, skew); }
+        if ((!cur || m.v > cur.v) && now - helloAt > 1500) pubHello();   // I missed something: ask again
+      }
+    }
+
+    // their clock minus ours: the largest recent sample is the one with the least delay in it
+    function clock(x, skew) {
+      if (skew === null) return;
+      x.skews.push(skew);
+      if (x.skews.length > 20) x.skews.shift();
+      var m = -Infinity;
+      for (var i = 0; i < x.skews.length; i++) if (x.skews[i] > m) m = x.skews[i];
+      x.off = m;
+    }
+
+    function onConnChange(c) {
+      if (left) return;
+      if (c.state === 'live') { pubHello(); pubState(); }
+      var any = false, i;
+      for (i = 0; i < conns.length; i++) if (conns[i].state === 'live') any = true;
+      if (any !== live) {
+        live = any;
+        if (live) { var t = Date.now(); peers.forEach(function (x) { x.seen = t; }); }   // fresh grace after an outage
+        connFns.slice().forEach(function (f) { try { f(live); } catch (e) { /* ignore */ } });
+      }
+    }
+
+    function tick() {
+      var now = Date.now(), gone = false;
+      conns.forEach(function (c) { c.tick(now); });
+      if (live) {
+        peers.forEach(function (x, id) { if (now - x.seen > PEER_TTL) { peers.delete(id); gone = true; } });
+        if (gone) changed();
+      }
+      if (now - beatAt >= BEAT_MS) {
+        beatAt = now; beatN++;
+        if (beatN % FULL_EVERY === 0) pubState(); else pubBeat();
+      }
+    }
+    function kick() { if (!left) conns.forEach(function (c) { c.kick(); }); }
+    function onShow() { if (!left && !root.document.hidden) { kick(); pubState(); } }
+    function onHide() { if (!left) sendAll(wire({ t: 'x', s: me })); }
+    function off(arr, fn) { var i = arr.indexOf(fn); if (i >= 0) arr.splice(i, 1); }
+    function onCsp(e) {
+      var d = String((e && (e.effectiveDirective || e.violatedDirective)) || ''), u = String((e && e.blockedURI) || '');
+      if (/connect-src|default-src/.test(d) && /^wss?:|^wss?$/.test(u)) cspBlocked = true;
+    }
+
+    var stopTick = ticker(tick, 1000);
+    root.addEventListener('online', kick);
+    root.addEventListener('pageshow', onShow);
+    root.addEventListener('pagehide', onHide);
+    root.document.addEventListener('visibilitychange', onShow);
+    root.document.addEventListener('securitypolicyviolation', onCsp);
+    conns.forEach(function (c) { c.start(); });
+
+    return {
+      name: 'holdem-' + code,
+      presence: function (patch) {
+        if (left) return Promise.reject({ code: 'invalid_argument', message: 'left' });
+        for (var f in patch) {
+          if (!Object.prototype.hasOwnProperty.call(patch, f)) continue;
+          if (patch[f] === null || patch[f] === undefined) delete mine[f]; else mine[f] = patch[f];
+        }
+        ver++;
+        pubState();
+        return Promise.resolve();
+      },
+      peers: list,
+      onPeers: function (fn) {
+        peerFns.push(fn);
+        Promise.resolve().then(function () { if (!left && peerFns.indexOf(fn) >= 0) fn({ peers: list() }); });
+        return function () { off(peerFns, fn); };
+      },
+      onConnection: function (fn) {
+        connFns.push(fn);
+        Promise.resolve().then(function () { if (!left && connFns.indexOf(fn) >= 0) fn(live); });
+        return function () { off(connFns, fn); };
+      },
+      connected: function () { return live; },
+      // true when this page's host forbids the connections outright (not a network outage)
+      blocked: function () { return !live && (cspBlocked || conns.every(function (c) { return c.blocked; })); },
+      lastRx: function () { var m = 0; conns.forEach(function (c) { if (c.lastRx > m) m = c.lastRx; }); return m; },
+      kick: kick,
+      info: function () {
+        return conns.map(function (c) { return { host: c.host, state: c.blocked ? 'blocked' : c.state, rtt: c.rtt }; });
+      },
+      leave: function () {
+        if (left) return Promise.resolve();
+        sendAll(wire({ t: 'x', s: me }));
+        left = true;
+        stopTick(); clearTimeout(replyT);
+        root.removeEventListener('online', kick);
+        root.removeEventListener('pageshow', onShow);
+        root.removeEventListener('pagehide', onHide);
+        root.document.removeEventListener('visibilitychange', onShow);
+        root.document.removeEventListener('securitypolicyviolation', onCsp);
+        conns.forEach(function (c) { c.close(); });
+        peers.clear(); snap = null;
+        return Promise.resolve();
+      }
+    };
+  }
+
+  // A steady tick that keeps going in a background tab: timers inside a small worker are not
+  // slowed down the way a hidden page's own timers are. Falls back to setInterval.
+  function ticker(fn, ms) {
+    var w = null, id = 0, url = '';
+    try {
+      url = URL.createObjectURL(new Blob(['var t=0;onmessage=function(e){clearInterval(t);if(e.data>0)t=setInterval(function(){postMessage(1)},e.data)}'], { type: 'text/javascript' }));
+      w = new Worker(url);
+      w.onmessage = function () { try { fn(); } catch (e) { try { console.error(e); } catch (e2) { /* ignore */ } } };
+      w.onerror = function () { if (w) { try { w.terminate(); } catch (e) { /* ignore */ } w = null; id = setInterval(fn, ms); } };
+      w.postMessage(ms);
+    } catch (e) { w = null; }
+    if (!w) id = setInterval(fn, ms);
+    return function () {
+      if (w) { try { w.postMessage(0); w.terminate(); } catch (e) { /* ignore */ } w = null; }
+      clearInterval(id);
+      if (url) { try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ } }
+    };
+  }
+
+  root.HoldemRelay = { join: join, supported: supported, BROKERS: BROKERS, topicFor: topicFor, ticker: ticker };
+})(window);
+
+</script>
+<script>
+/* Holdem app — a link-only online tournament.
+ *
+ * The page that makes a room is the dealer screen: it seats the players, shuffles, deals, runs the
+ * clocks and shows the table. It never shows a hidden card and needs no input once the room
+ * exists. Players join with the link on their own devices; their hole cards arrive sealed for them
+ * alone (HoldemCrypto) and their decisions go back sealed for the dealer.
+ */
+(function () {
+  'use strict';
+  var HD = window.Holdem, RL = window.HoldemRelay, HC = window.HoldemCrypto;
+  var APP = 'hd1', DEBUG = !!window.__hdDebug;
+  var SETTLE = 3500, COUNTDOWN = 5000, MAX_SEATS = 9, OFFLINE_ACT = 3000, AWAY_ACT = 700, END_SHOW = 3500;
+  var STACKS = [100, 200, 300, 500, 1000], LVLS = [5, 10, 15, 20], ACTS = [15, 20, 30, 45, 60], TCS = [3, 6, 10];
+  var CFG0 = { stack: 200, lvlMin: 10, act: 30, tc: 6 };
+  var ALPH = 'abcdefghijkmnpqrstuvwxyz23456789', SUITC = 'cdhs', SUITS = '♣♦♥♠';
+  var STREET = ['프리플랍', '플랍', '턴', '리버'];
+
+  // ------------------------------------------------------------ helpers
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  var ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ESC[c]; }); }
+  function money(x) { return '$' + Math.round(+x || 0).toLocaleString('en-US'); }
+  function signed(x) { return (x > 0 ? '+' : x < 0 ? '−' : '±') + money(Math.abs(x)); }
+  function f2(x) { return Math.round(x * 100) / 100; }
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i]; return t; }
+  function uniq(a) { var o = []; a.forEach(function (x) { if (o.indexOf(x) < 0) o.push(x); }); return o; }
+  function mmss(ms) { var s = Math.max(0, Math.ceil(ms / 1000)); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+  function stamp(t) {
+    var d = new Date(t), p = function (n) { return ('0' + n).slice(-2); };
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+  function rid(n) {
+    var a = new Uint8Array(n), s = '', i;
+    crypto.getRandomValues(a);
+    for (i = 0; i < n; i++) s += ALPH.charAt(a[i] % 32);
+    return s;
+  }
+  function cryptoInt(n) {          // unbiased 0..n-1 for the shuffle
+    var b = new Uint32Array(1), lim = Math.floor(4294967296 / n) * n;
+    do { crypto.getRandomValues(b); } while (b[0] >= lim);
+    return b[0] % n;
+  }
+  function store(area) {
+    return {
+      get: function (k, d) { try { var v = area().getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+      set: function (k, v) { try { area().setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+      del: function (k) { try { area().removeItem(k); } catch (e) { /* ignore */ } }
+    };
+  }
+  var LS = store(function () { return window.localStorage; }), SS = store(function () { return window.sessionStorage; });
+  var BADCH = new RegExp('[' + [[0, 31], [127, 159], [0x200b, 0x200f], [0x2028, 0x202e], [0x2066, 0x2069], [0xfeff, 0xfeff]]
+    .map(function (r) { return String.fromCharCode(r[0]) + '-' + String.fromCharCode(r[1]); }).join('') + ']', 'g');
+  function cleanNick(s) { return String(s || '').replace(BADCH, '').replace(/\s+/g, ' ').trim().slice(0, 12); }
+  function validCfg(c) {
+    c = c || {};
+    var st = Math.floor(+c.stack);
+    return {
+      stack: st >= 20 && st <= 1000000 ? st : CFG0.stack,
+      lvlMin: LVLS.indexOf(+c.lvlMin) >= 0 ? +c.lvlMin : CFG0.lvlMin,
+      act: ACTS.indexOf(+c.act) >= 0 ? +c.act : CFG0.act,
+      tc: TCS.indexOf(+c.tc) >= 0 ? +c.tc : CFG0.tc
+    };
+  }
+  function cfgLine(c) { return '시작 스택 ' + money(c.stack) + ' · 레벨 ' + c.lvlMin + '분 · 액션 ' + c.act + '초 · 타임 카드 ' + c.tc + '장'; }
+  function blinds(lv) { var L = HD.level(lv); return money(L.sb) + '/' + money(L.bb) + ' · 앤티 ' + money(L.ante); }
+  function prizeLine(pz) {
+    if (!pz || !pz.length) return '';
+    return pz.length === 1 ? '우승 ' + money(pz[0]) : pz.map(function (x, i) { return (i + 1) + '위 ' + money(x); }).join(' · ');
+  }
+  function payShape(n) {
+    var t = HD.payTable(n);
+    return t.length === 1 ? '우승자 독식' : t.join(' / ') + '%';
+  }
+  function moneyState(T) {           // where the table stands against the paid places
+    var left = 0, paid = (T.prizes || []).length;
+    T.seats.forEach(function (p) { if (!p.out) left++; });
+    if (!paid || T.st !== 'run') return { k: '', left: left, paid: paid };
+    return { k: left <= paid ? 'itm' : left === paid + 1 ? 'bubble' : 'pre', left: left, paid: paid };
+  }
+
+  // ------------------------------------------------------------ state
+  var O = {
+    code: '', sid: rid(8), since: Date.now(), how: '', id: null, key: null, dealer: false, unsupported: false,
+    relay: null, conn: false, liveAt: 0, openedAt: Date.now(), peers: [],
+    T: null, Tv: -1, H: null, dealerPk: '', dealerSid: '', off: 0, dealerHere: false,
+    cards: null, cardsTry: '',
+    want: 0, rdy: 0, away: 0, q: [], qseq: 0, pending: null, turnKey: '', warned: {}, tcKey: '', tcUsed: 0,
+    raiseOpen: false, raiseTo: 0, endShown: false, endHidden: false, recorded: {}, lastLvl: -1,
+    yielded: false, reclaimDone: false, sheet: '', histOpen: '', form: null, nickDraft: null, stackDraft: '',
+    leaveArmed: 0, busy: false, sound: LS.get('hd.snd', true), four: LS.get('hd.4c', false), toastT: 0, connDrawn: 0
+  };
+  var D = {
+    ready: false, waitFrom: 0, S: null, cfg: CFG0, round: 1, v: 0, lobby: [], wait: [], joinAt: {}, go: 0, sig: '',
+    last: null, seen: {}, offSince: {}, enc: null, T: null, H: null, made: 0, lastTick: 0,
+    chain: Promise.resolve(), queued: false, stopTick: null
+  };
+
+  function curT() { return O.dealer ? (D.ready ? D.T : null) : O.T; }
+  function mySeat() {
+    var T = curT();
+    if (O.dealer || !T || !T.seats || !O.id) return -1;
+    for (var i = 0; i < T.seats.length; i++) if (T.seats[i].pid === O.id.pid) return i;
+    return -1;
+  }
+  function offset() { return O.dealer ? 0 : O.off; }
+
+  // ------------------------------------------------------------ identity
+  // One identity per tab (sessionStorage), so two tabs can be two players. Identities that joined a
+  // game are also kept in localStorage: a new tab takes a seat back when its old page is gone.
+  function idList() { var x = LS.get('hd.ids.' + O.code, []); return Array.isArray(x) ? x : []; }
+  function saveId() {
+    var ids = idList().filter(function (x) { return x && x.pid !== O.id.pid; });
+    ids.unshift({ pid: O.id.pid, nick: O.id.nick, jwk: O.id.jwk, at: Date.now() });
+    LS.set('hd.ids.' + O.code, ids.slice(0, 12));
+  }
+  function saveSess() {
+    SS.set('hd.sess.' + O.code, O.dealer ? { pid: O.code } : { pid: O.id.pid, nick: O.id.nick, jwk: O.id.jwk, want: O.want });
+  }
+  function loadKeys() {
+    var p = O.id.jwk ? HC.loadKey(O.id.jwk).catch(function () { return HC.newKey(); }) : HC.newKey();
+    return p.then(function (k) { O.key = k; O.id.jwk = k.jwk; });
+  }
+
+  function enterRoom(code) {
+    O.code = code;
+    if (!HC.supported || !RL || !RL.supported) { O.unsupported = true; render(); return; }
+    var host = LS.get('hd.host.' + code, null), sess = SS.get('hd.sess.' + code, null);
+    if (sess && sess.pid === code && host && host.jwk) {
+      O.dealer = true; O.how = 'session'; O.id = { pid: code, nick: '딜러', jwk: host.jwk };
+    } else if (sess && sess.pid && sess.pid !== code && sess.jwk) {
+      O.how = 'session'; O.id = { pid: sess.pid, nick: cleanNick(sess.nick), jwk: sess.jwk }; O.want = sess.want ? 1 : 0;
+    } else {
+      O.how = 'fresh'; O.id = { pid: rid(8), nick: cleanNick(LS.get('hd.nick', '')), jwk: null };
+    }
+    render();
+    loadKeys().then(function () {
+      saveSess();
+      if (O.dealer) startDealer();
+      connect();
+      keepAwake();
+      render();
+    }, function () { O.unsupported = true; render(); });
+  }
+
+  function connect() {
+    if (O.relay) { try { O.relay.leave(); } catch (e) { /* ignore */ } }
+    var r = RL.join(O.code);
+    O.relay = r;
+    r.onConnection(function (live) {
+      if (O.relay !== r) return;
+      O.conn = live;
+      if (live) O.liveAt = Date.now();
+      render();
+    });
+    r.onPeers(function (ch) { if (O.relay === r) onPeers(ch.peers); });
+    publish();
+  }
+  function presence() {
+    var p = { app: APP, pid: O.id.pid, sid: O.sid, since: O.since, nick: O.id.nick || '', pk: O.key ? O.key.pk : '' };
+    if (O.dealer) {
+      p.role = 'd'; p.T = D.ready ? D.T : null; p.H = D.ready ? D.H : null;
+      p.want = null; p.rdy = null; p.away = null; p.q = null;
+    } else {
+      p.role = null; p.T = null; p.H = null;
+      p.want = O.want; p.rdy = O.rdy; p.away = O.away; p.q = O.q;
+    }
+    return p;
+  }
+  function publish() { if (O.relay && !O.yielded && O.key) O.relay.presence(presence()); }
+
+  function onPeers(list) {
+    var out = [];
+    list.forEach(function (x) {
+      var p = x.presence;
+      if (!p || p.app !== APP || typeof p.pid !== 'string' || !/^[a-z0-9]{6,8}$/.test(p.pid)) return;
+      out.push({
+        pid: p.pid, sid: String(p.sid || ''), since: +p.since || 0, nick: cleanNick(p.nick),
+        pk: typeof p.pk === 'string' ? p.pk : '', want: !!p.want, rdy: +p.rdy || 0, away: !!p.away,
+        q: Array.isArray(p.q) ? p.q.slice(-8) : [], dealer: p.role === 'd',
+        T: p.T && typeof p.T === 'object' ? p.T : null, H: p.H && typeof p.H === 'object' ? p.H : null,
+        clock: +x.clock || 0, at: x.updatedAt || 0
+      });
+    });
+    O.peers = out;
+    if (checkClash()) return;
+    if (O.dealer) dealerKick(); else pickDealer();
+    render();
+  }
+
+  function pickDealer() {
+    var best = null;
+    O.peers.forEach(function (p) {
+      if (p.pid !== O.code || !p.dealer || !p.T || typeof p.T.v !== 'number') return;
+      if (!best || p.since > best.since || (p.since === best.since && p.T.v > best.T.v)) best = p;
+    });
+    O.dealerHere = !!best;
+    if (!best) return;
+    O.off = best.clock; O.dealerPk = best.pk;
+    if (best.sid !== O.dealerSid || best.T.v > O.Tv || (best.T.v === O.Tv && best.H !== O.H)) {
+      O.dealerSid = best.sid; O.T = best.T; O.Tv = best.T.v; O.H = best.H;
+      onTable(O.T);
+    }
+  }
+
+  // the same identity open twice: the newer page keeps it, the older one steps aside
+  function checkClash() {
+    if (O.yielded || !O.id) return false;
+    var me = O.id.pid;
+    var newer = O.peers.some(function (p) {
+      return p.pid === me && p.sid !== O.sid && (p.since > O.since || (p.since === O.since && p.sid > O.sid));
+    });
+    if (!newer) return false;
+    O.yielded = true;
+    if (O.relay) { var r = O.relay; O.relay = null; try { r.leave(); } catch (e) { /* ignore */ } }
+    O.conn = false;
+    stopDealer();
+    render();
+    return true;
+  }
+  function takeBack() {
+    O.yielded = false; O.since = Date.now();
+    if (O.dealer) startDealer();
+    connect();
+    render();
+  }
+
+  function maintain() {
+    if (!O.relay || O.yielded || !O.conn || O.dealer || !O.key) return;
+    var now = Date.now();
+    if (now - O.liveAt < SETTLE || O.how !== 'fresh' || O.reclaimDone || O.want) return;
+    var host = LS.get('hd.host.' + O.code, null);
+    var dealerHere = O.peers.some(function (p) { return p.pid === O.code; });
+    if (host && host.jwk && !dealerHere) { becomeDealer(host); return; }
+    var T = O.T;
+    if (!T) return;                          // keep looking until the table shows up
+    O.reclaimDone = true;
+    if (T.st !== 'run' && T.st !== 'end') return;
+    var cand = idList().filter(function (x) {
+      return x && x.pid !== O.id.pid && x.jwk && T.seats.some(function (s) { return s.pid === x.pid; }) &&
+        !O.peers.some(function (p) { return p.pid === x.pid; });
+    })[0];
+    if (cand) switchTo(cand);
+  }
+  function switchTo(id) {
+    O.id = { pid: id.pid, nick: cleanNick(id.nick), jwk: id.jwk };
+    O.want = 1; O.how = 'session'; O.cards = null; O.cardsTry = ''; O.q = []; O.pending = null;
+    loadKeys().then(function () { saveSess(); saveId(); publish(); onTable(O.T); render(); toast('내 자리로 돌아왔어요'); });
+  }
+  function becomeDealer(host) {
+    O.dealer = true; O.how = 'session'; O.want = 0; O.T = null; O.Tv = -1;
+    O.id = { pid: O.code, nick: '딜러', jwk: host.jwk };
+    loadKeys().then(function () { O.since = Date.now(); saveSess(); startDealer(); publish(); render(); });
+  }
+
+  // ------------------------------------------------------------ dealer
+  function startDealer() {
+    D.ready = false; D.waitFrom = Date.now();
+    if (!D.stopTick) D.stopTick = RL.ticker(dealerKick, 250);
+    dealerKick();
+  }
+  function stopDealer() {
+    if (D.stopTick) { D.stopTick(); D.stopTick = null; }
+    D.ready = false;
+  }
+  function loadDealer() {
+    var host = LS.get('hd.host.' + O.code, null) || {};
+    D.cfg = validCfg(host.cfg); D.S = host.S || null; D.round = host.round || 1; D.v = host.v || 0;
+    D.joinAt = host.joinAt || {}; D.last = host.last || null; D.made = host.made || Date.now();
+    D.go = 0; D.sig = ''; D.enc = null; D.seen = {}; D.offSince = {};
+    if (D.S && D.S.st === 'run' && host.at) {
+      var gap = Date.now() - host.at;
+      if (gap > 1500) HD.delay(D.S, gap);        // nobody's clock ran while the dealer page was away
+    }
+    D.lastTick = Date.now(); D.ready = true;
+  }
+  function persistDealer(now) {
+    LS.set('hd.host.' + O.code, { cfg: D.cfg, S: D.S, round: D.round, v: D.v, joinAt: D.joinAt, last: D.last, at: now, jwk: O.id.jwk, made: D.made });
+  }
+  function dealerKick() {
+    if (!O.dealer || D.queued) return;
+    D.queued = true;
+    D.chain = D.chain.then(function () { D.queued = false; return dealerStep(); })
+      .catch(function (e) { D.queued = false; try { console.error(e); } catch (e2) { /* ignore */ } });
+  }
+  function linkOk(now) { return !!(O.relay && O.conn && now - O.liveAt >= 3000 && now - O.relay.lastRx() < 4500); }
+  function otherPeers() {
+    var by = {};
+    O.peers.forEach(function (p) {
+      if (p.pid === O.id.pid) return;
+      var c = by[p.pid];
+      if (!c || p.since > c.since) by[p.pid] = p;
+    });
+    return Object.keys(by).map(function (k) { return by[k]; });
+  }
+
+  async function dealerStep() {
+    if (!O.dealer || O.yielded || !O.relay || !O.key) return;
+    var now = Date.now(), dirty = false;
+    if (!D.ready) {
+      var other = O.peers.some(function (p) { return p.pid === O.code && p.sid !== O.sid; });
+      if (other && now - D.waitFrom < 4000) return;              // the older page steps aside first
+      if (!O.conn && now - D.waitFrom < 2500) return;
+      loadDealer(); dirty = true;
+    }
+    if (D.S && D.S.st === 'run' && now - D.lastTick > 4000) { HD.delay(D.S, now - D.lastTick - 250); dirty = true; }
+    D.lastTick = now;
+    var peers = otherPeers();
+    if (!D.S) dirty = lobbyStep(peers, now) || dirty;
+    else if (D.S.st === 'run') dirty = (await runStep(peers, now)) || dirty;
+    else dirty = endStep(peers) || dirty;
+    if (dirty) await dealerPublish(Date.now());
+  }
+
+  function lobbyStep(peers, now) {
+    var list = [];
+    peers.forEach(function (p) {
+      if (!p.want || !p.pk || !p.nick) return;
+      if (!D.joinAt[p.pid]) D.joinAt[p.pid] = now;
+      list.push({ pid: p.pid, nick: p.nick, pk: p.pk, rdy: p.rdy === D.round ? 1 : 0, at: D.joinAt[p.pid] });
+    });
+    list.sort(function (a, b) { return a.at - b.at || (a.pid < b.pid ? -1 : 1); });
+    var seats = list.slice(0, MAX_SEATS), wait = list.slice(MAX_SEATS);
+    var allReady = seats.length >= 2 && seats.every(function (x) { return x.rdy; });
+    var go = allReady ? (D.go || now + COUNTDOWN) : 0;
+    var sig = JSON.stringify([seats.map(function (x) { return [x.pid, x.nick, x.rdy]; }), wait.map(function (x) { return x.pid; }), go]);
+    var changed = sig !== D.sig;
+    D.sig = sig; D.lobby = seats; D.wait = wait; D.go = go;
+    if (go && now >= go) {
+      D.S = HD.create(D.cfg, seats.map(function (x) { return { pid: x.pid, nick: x.nick, pk: x.pk }; }), cryptoInt, now);
+      D.go = 0; D.sig = ''; D.enc = null; D.seen = {}; D.offSince = {};
+      var keep = {};
+      seats.forEach(function (x) { keep[x.pid] = D.joinAt[x.pid]; });
+      D.joinAt = keep;
+      return true;
+    }
+    return changed;
+  }
+
+  function applyReq(S, seat, r, now) {
+    var h = S.hand;
+    if (!h || r.h !== h.no) return false;
+    if (r.k === 'act') {
+      if (r.n !== h.n || ['f', 'k', 'c', 'r', 'A'].indexOf(r.a) < 0) return false;
+      return HD.act(S, seat, r.a, +r.x || 0, now) === '';
+    }
+    if (r.k === 'tc') {
+      if (r.n !== h.n || h.actor !== seat) return false;
+      var used = false, want = Math.min(+r.c || 0, 20);
+      while (h.tcu < want && HD.useTimeCard(S, seat, now)) used = true;
+      return used;
+    }
+    if (r.k === 'show') return HD.showCards(S, seat);
+    return false;
+  }
+  function openReq(seat, it) {
+    return HC.shared(O.key, seat.pk, 'cards|' + O.code).then(function (key) {
+      return HC.openText(key, it.e, O.code + '|q|' + seat.pid + '|' + it.s);
+    }).then(function (txt) {
+      if (!txt) return null;
+      var r = JSON.parse(txt);
+      return r && typeof r === 'object' && typeof r.h === 'number' ? r : null;
+    }).catch(function () { return null; });
+  }
+
+  async function runStep(peers, now) {
+    var S = D.S, dirty = false, byPid = {}, i, j;
+    peers.forEach(function (p) { byPid[p.pid] = p; });
+    for (i = 0; i < S.seats.length; i++) {
+      var seat = S.seats[i], p = byPid[seat.pid], last = D.seen[seat.pid] || 0;
+      if (!p || !p.q.length || !seat.pk || p.pk !== seat.pk) continue;
+      var items = p.q.filter(function (it) { return it && typeof it.s === 'number' && typeof it.e === 'string' && it.s > last; })
+        .sort(function (a, b) { return a.s - b.s; });
+      for (j = 0; j < items.length; j++) {
+        D.seen[seat.pid] = items[j].s;
+        var req = await openReq(seat, items[j]);
+        if (req && applyReq(S, i, req, Date.now())) dirty = true;
+      }
+    }
+    now = Date.now();
+    var h = S.hand;
+    if (h && h.actor >= 0 && !h.next) {
+      var who = S.seats[h.actor], pg = byPid[who.pid];
+      if (pg) delete D.offSince[who.pid];
+      else if (!D.offSince[who.pid]) D.offSince[who.pid] = now;
+      if (pg && pg.away && now - h.turnAt >= AWAY_ACT) { if (HD.autoAct(S, now, 'a')) dirty = true; }
+      else if (!pg && linkOk(now) && now - Math.max(h.turnAt, D.offSince[who.pid]) >= OFFLINE_ACT) {
+        if (HD.autoAct(S, now, 'o')) dirty = true;
+      }
+    }
+    if (HD.timeout(S, now)) dirty = true;
+    var adv = HD.advance(S, now);
+    if (adv === 'hand') { if (HD.startHand(S, now, cryptoInt)) dirty = true; }
+    else if (adv) dirty = true;
+    return dirty;
+  }
+
+  function endStep(peers) {
+    if (!peers.some(function (p) { return p.want && p.rdy === D.round + 1; })) return false;
+    var S = D.S;
+    D.last = { tid: S.tid, hands: S.handNo, places: S.seats.map(function (p) { return [p.nick, p.place, p.prize || 0]; }).sort(function (a, b) { return a[1] - b[1]; }) };
+    D.S = null; D.round++; D.go = 0; D.sig = ''; D.enc = null;
+    return true;
+  }
+
+  function cardsLabel(tid, no, seat, pid) { return O.code + '|' + tid + '|' + no + '|' + seat + '|' + pid; }
+  async function sealHoles(S) {
+    var h = S.hand, map = {}, i;
+    if (D.enc && D.enc.tid === S.tid && D.enc.no === h.no) return D.enc.map;
+    for (i = 0; i < S.seats.length; i++) {
+      var seat = S.seats[i];
+      if (!h.live[i] || !h.holes[i] || !seat.pk) continue;
+      try {
+        var key = await HC.shared(O.key, seat.pk, 'cards|' + O.code);
+        map[i] = await HC.seal(key, new Uint8Array(h.holes[i]), cardsLabel(S.tid, h.no, i, seat.pid));
+      } catch (e) { /* a broken key: that player gets no cards and will be folded by the clock */ }
+    }
+    D.enc = { tid: S.tid, no: h.no, map: map };
+    return map;
+  }
+
+  async function dealerPublish(now) {
+    var T, Hm = null;
+    D.v++;
+    if (!D.S) {
+      T = {
+        v: D.v, st: 'lobby', round: D.round, cfg: D.cfg, go: D.go, last: D.last,
+        lobby: D.lobby.map(function (x) { return { pid: x.pid, nick: x.nick, rdy: x.rdy }; }),
+        wait: D.wait.map(function (x) { return { pid: x.pid, nick: x.nick }; })
+      };
+    } else {
+      T = HD.pub(D.S, now);
+      T.v = D.v; T.round = D.round; T.lvlEnd = now + T.lvlLeft;
+      if (D.S.hand) Hm = await sealHoles(D.S);
+    }
+    T.now = now;
+    D.T = T; D.H = Hm;
+    persistDealer(now);
+    publish();
+    onTable(T);
+    render();
+  }
+
+  // ------------------------------------------------------------ player
+  function sendReq(r) {
+    if (!O.dealerPk) { toast('딜러 화면과 아직 연결되지 않았어요'); return Promise.resolve(false); }
+    var seq = Math.max(Date.now(), O.qseq + 1);
+    O.qseq = seq;
+    return HC.shared(O.key, O.dealerPk, 'cards|' + O.code).then(function (key) {
+      return HC.sealText(key, JSON.stringify(r), O.code + '|q|' + O.id.pid + '|' + seq);
+    }).then(function (e) {
+      O.q = O.q.concat([{ s: seq, e: e }]).slice(-6);
+      publish();
+      return true;
+    }, function () { toast('보내지 못했어요. 다시 눌러 주세요'); return false; });
+  }
+
+  function refreshCards() {
+    var T = O.T, h = T && T.hand, me = mySeat();
+    if (O.dealer || !h || me < 0 || !h.live[me] || !O.H || !O.H[me] || !O.dealerPk) return;
+    if (O.cards && O.cards.tid === T.tid && O.cards.no === h.no) return;
+    var blob = O.H[me], tag = T.tid + ':' + h.no + ':' + blob, tid = T.tid, no = h.no, pid = O.id.pid;
+    if (O.cardsTry === tag) return;
+    O.cardsTry = tag;
+    HC.shared(O.key, O.dealerPk, 'cards|' + O.code).then(function (key) {
+      return HC.open(key, blob, cardsLabel(tid, no, me, pid));
+    }).then(function (b) {
+      if (b && b.length === 2 && b[0] < 52 && b[1] < 52 && b[0] !== b[1]) { O.cards = { tid: tid, no: no, c: [b[0], b[1]] }; render(); }
+    }, function () { O.cardsTry = ''; });
+  }
+  function myCards(T) {
+    var h = T && T.hand;
+    if (!h || !O.cards || O.cards.tid !== T.tid || O.cards.no !== h.no) return null;
+    return O.cards.c;
+  }
+
+  function onTable(T) {
+    if (!T) return;
+    var h = T.hand, me = mySeat();
+    if (O.pending && (!h || h.no !== O.pending.h || h.n !== O.pending.n)) O.pending = null;
+    if (h && me >= 0 && h.actor === me) {
+      var key = T.tid + ':' + h.no + ':' + h.n;
+      if (O.turnKey !== key) { O.turnKey = key; O.raiseOpen = false; O.raiseTo = 0; O.warned = {}; chime(); }
+    }
+    if (!O.dealer) refreshCards();
+    if (T.st === 'run' || T.st === 'end') {
+      if (h && h.done && h.res) recordHand(T);
+      if (T.st === 'end') recordEnd(T);
+      if (T.st === 'run' && O.lastLvl >= 0 && T.lvl > O.lastLvl) toast('레벨 ' + (T.lvl + 1) + ' · ' + blinds(T.lvl) + ' — 다음 핸드부터');
+      O.lastLvl = T.lvl;
+      var ms = moneyState(T), mk = T.tid + ':' + ms.k;
+      if (ms.k && O.moneyKey && O.moneyKey.split(':')[0] === T.tid && O.moneyKey !== mk) {
+        if (ms.k === 'bubble') toast('버블이에요 — 한 명만 더 떨어지면 남은 사람 모두 상금');
+        if (ms.k === 'itm' && ms.paid > 1) toast('머니 인! 남은 ' + ms.left + '명 모두 상금을 받아요');
+      }
+      O.moneyKey = mk;
+    } else { O.lastLvl = -1; }
+    if (T.st !== 'end') { O.endShown = false; O.endHidden = false; }
+  }
+
+  // ------------------------------------------------------------ hand history
+  function histKey() { return 'hd.hist.' + O.code + '.' + O.id.pid; }
+  function loadHist() { var x = LS.get(histKey(), null); return x && Array.isArray(x.hands) && x.tours ? x : { hands: [], tours: {} }; }
+  function recordHand(T) {
+    var h = T.hand, k = T.tid + ':' + h.no, shown = Object.keys(h.res.show || {}).length;
+    if (O.recorded[k] === shown) return;
+    var X = loadHist(), me = mySeat(), i;
+    var rec = {
+      k: k, tid: T.tid, no: h.no, at: Date.now(), lvl: h.lvl, sb: h.sb, bb: h.bb, ante: h.ante, btn: h.btn,
+      sbSeat: h.sbSeat, bbSeat: h.bbSeat, names: T.seats.map(function (s) { return s.nick; }), live: h.live,
+      start: h.start, end: T.seats.map(function (s) { return s.stack; }), log: h.log, board: h.board, res: h.res,
+      prizes: T.seats.map(function (s) { return s.prize || 0; }),
+      me: me, my: myCards(T)
+    };
+    for (i = 0; i < X.hands.length; i++) if (X.hands[i].k === k) break;
+    if (i < X.hands.length) { rec.at = X.hands[i].at; if (!rec.my) rec.my = X.hands[i].my; X.hands[i] = rec; }
+    else X.hands.push(rec);
+    if (X.hands.length > 400) X.hands = X.hands.slice(-400);
+    if (!X.tours[T.tid]) X.tours[T.tid] = { at: Date.now(), cfg: T.cfg, names: rec.names };
+    LS.set(histKey(), X);
+    O.recorded[k] = shown;
+  }
+  function recordEnd(T) {
+    if (O.recorded['end:' + T.tid]) return;
+    var X = loadHist();
+    var t = X.tours[T.tid] || (X.tours[T.tid] = { at: Date.now(), cfg: T.cfg, names: T.seats.map(function (s) { return s.nick; }) });
+    t.places = T.seats.map(function (s) { return [s.nick, s.place, s.bust, s.prize || 0]; }).sort(function (a, b) { return a[1] - b[1]; });
+    t.pool = T.pool;
+    t.end = Date.now(); t.hands = T.handNo;
+    LS.set(histKey(), X);
+    O.recorded['end:' + T.tid] = 1;
+  }
+  function cardsTxt(cs) { return (cs || []).map(function (c) { return HD.RN[c >> 2] + SUITS.charAt(c & 3); }).join(' '); }
+  function actTxt(e, nick) {
+    var t;
+    switch (e.a) {
+      case 'S': t = 'SB ' + money(e.x); break;
+      case 'B': t = 'BB ' + money(e.x); break;
+      case 'N': t = 'BB 앤티 ' + money(e.x); break;
+      case 'f': t = '폴드'; break;
+      case 'k': t = '체크'; break;
+      case 'c': t = '콜 ' + money(e.x); break;
+      case 'b': t = '벳 ' + money(e.t); break;
+      case 'r': t = '레이즈 ' + money(e.t); break;
+      case 'T': t = '타임 카드 사용 (+30초)'; break;
+      case 'R': t = '콜 안 된 ' + money(e.x) + ' 돌려받음'; break;
+      default: t = e.a;
+    }
+    if (e.ai) t += ' (올인)';
+    if (e.auto) t += e.auto === 't' ? ' — 시간 초과' : e.auto === 'a' ? ' — 자리 비움' : ' — 연결 끊김';
+    return nick + ' ' + t;
+  }
+  function potLabel(i, n) { return n > 1 ? (i === 0 ? '메인 팟' : '사이드 팟' + (n > 2 ? ' ' + i : '')) : '팟'; }
+  function handText(r) {
+    var L = [], nm = function (s) { return r.names[s] || ('좌석 ' + (s + 1)); }, parts = [], head = '[프리플랍]';
+    L.push('핸드 #' + r.no + ' · 레벨 ' + (r.lvl + 1) + ' (' + money(r.sb) + '/' + money(r.bb) + ', BB 앤티 ' + money(r.ante) + ') · ' + stamp(r.at));
+    L.push(r.names.map(function (n, s) {
+      if (!r.live[s]) return null;
+      var pos = [];
+      if (s === r.btn) pos.push('BTN');
+      if (s === r.sbSeat) pos.push('SB');
+      if (s === r.bbSeat) pos.push('BB');
+      return (s + 1) + '. ' + n + ' ' + money(r.start[s]) + (pos.length ? ' (' + pos.join('/') + ')' : '');
+    }).filter(Boolean).join(' · '));
+    if (r.my) L.push('내 카드: ' + cardsTxt(r.my));
+    r.log.forEach(function (e) {
+      if (e.d) { L.push(head + ' ' + parts.join(', ')); parts = []; head = '[' + STREET[e.d] + ' ' + cardsTxt(e.c) + ']'; return; }
+      parts.push(actTxt(e, nm(e.s)));
+    });
+    L.push(head + ' ' + parts.join(', '));
+    var res = r.res;
+    if (res) {
+      Object.keys(res.show || {}).forEach(function (s) {
+        L.push('공개: ' + nm(+s) + ' ' + cardsTxt(res.show[s]) + (res.names && res.names[s] ? ' — ' + res.names[s] : ''));
+      });
+      res.pots.forEach(function (pt, i) {
+        L.push(potLabel(i, res.pots.length) + ' ' + money(pt.a) + ' → ' + pt.sh.map(function (x) { return nm(x[0]) + ' ' + money(x[1]); }).join(', '));
+      });
+      if (res.bust && res.bust.length) L.push('탈락: ' + res.bust.map(nm).join(', '));
+      if (r.prizes && res.bust) res.bust.forEach(function (s) { if (r.prizes[s]) L.push(nm(s) + ' 상금 ' + money(r.prizes[s])); });
+    }
+    return L.join('\n');
+  }
+  function exportText() {
+    var X = loadHist(), out = ['홀덤 토너먼트 기록 — 방 ' + O.code, ''], tids = [];
+    X.hands.forEach(function (r) { if (tids.indexOf(r.tid) < 0) tids.push(r.tid); });
+    tids.forEach(function (tid) {
+      var t = X.tours[tid] || {};
+      out.push('==== 토너먼트 ' + tid + (t.at ? ' · ' + stamp(t.at) : '') + ' ====');
+      if (t.cfg) out.push(cfgLine(t.cfg));
+      if (t.pool) out.push('상금 풀 ' + money(t.pool));
+      if (t.places) out.push('순위: ' + t.places.map(function (p) { return p[1] + '위 ' + p[0] + (p[3] ? ' ' + money(p[3]) : ''); }).join(', '));
+      out.push('');
+      X.hands.filter(function (r) { return r.tid === tid; }).forEach(function (r) { out.push(handText(r), ''); });
+    });
+    if (!tids.length) out.push('아직 기록된 핸드가 없어요.');
+    return out.join('\n');
+  }
+  function download(name, text) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 2000);
+  }
+
+  // ------------------------------------------------------------ sound, wake lock
+  var AC = null, wake = null;
+  function audio() {
+    if (!AC) { try { AC = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { AC = null; } }
+    if (AC && AC.state === 'suspended') { try { AC.resume(); } catch (e) { /* ignore */ } }
+    return AC;
+  }
+  function beep(freq, dur, vol, at) {
+    if (!O.sound || !AC) return;
+    try {
+      var t = AC.currentTime + (at || 0), o = AC.createOscillator(), g = AC.createGain();
+      o.type = 'sine'; o.frequency.value = freq;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol || 0.08, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(AC.destination);
+      o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) { /* ignore */ }
+  }
+  function chime() {
+    beep(660, 0.12, 0.09); beep(880, 0.18, 0.09, 0.13);
+    if (navigator.vibrate) { try { navigator.vibrate(70); } catch (e) { /* ignore */ } }
+  }
+  function keepAwake() {
+    if (!O.code || wake || document.visibilityState !== 'visible' || !navigator.wakeLock) return;
+    navigator.wakeLock.request('screen').then(function (w) {
+      wake = w;
+      w.addEventListener('release', function () { wake = null; });
+    }, function () { /* not allowed now: try again on the next tap */ });
+  }
+
+  // ------------------------------------------------------------ rendering
+  var rq = 0;
+  function render() { if (!rq) rq = requestAnimationFrame(function () { rq = 0; draw(); }); }
+  function setHTML(el, html) {
+    if (el._h === html) return;
+    var a = document.activeElement, keep = null;
+    if (a && a.id && el.contains(a)) keep = { id: a.id, v: a.value, s: a.selectionStart, e: a.selectionEnd };
+    el._h = html;
+    el.innerHTML = html;
+    if (keep) {
+      var n = document.getElementById(keep.id);
+      if (n) {
+        if (typeof keep.v === 'string' && n.type !== 'range') n.value = keep.v;
+        try { n.focus(); if (keep.s != null && n.setSelectionRange) n.setSelectionRange(keep.s, keep.e); } catch (e) { /* ignore */ }
+      }
+    }
+  }
+  function screen() {
+    if (!O.code) return 'home';
+    if (O.unsupported) return 'unsupported';
+    if (O.yielded) return 'yield';
+    var T = curT();
+    if (!T || !O.key) return 'connecting';
+    if (T.st === 'lobby') return O.dealer ? 'dlobby' : 'lobby';
+    return 'table';
+  }
+  function draw() {
+    var scr = screen(), T = curT(), ov, table = scr === 'table';
+    document.body.className = 'scr-' + scr + (O.dealer ? ' is-dealer' : ' is-player') + (O.four ? ' four' : '');
+    ov = overlayHtml(scr, T);
+    setHTML($('#overlay'), ov);
+    $('#overlay').hidden = !ov;
+    setHTML($('#top'), table ? topHtml(T) : '');
+    setHTML($('#table'), table ? tableHtml(T) : '<div class="felt"></div>');
+    setHTML($('#feed'), table && O.dealer ? feedHtml(T) : '');
+    setHTML($('#dock'), table && !O.dealer ? dockHtml(T) : '');
+    var sc = $('#sheet .sheet-in'), top = sc ? sc.scrollTop : 0;
+    if (O.sheet !== O.sheetShown) { O.sheetShown = O.sheet; O.sheetAt = Date.now(); }
+    setHTML($('#sheet'), O.sheet ? sheetHtml(Date.now() - O.sheetAt < 250) : '');
+    $('#sheet').hidden = !O.sheet;
+    sc = $('#sheet .sheet-in');
+    if (sc && top && sc.scrollTop !== top) sc.scrollTop = top;
+    uiTick();
+  }
+
+  function cardHtml(c, size, extra) {
+    return '<span class="cd ' + size + ' s' + SUITC.charAt(c & 3) + (extra ? ' ' + extra : '') + '"><b>' + HD.RN[c >> 2] +
+      '</b><svg viewBox="0 0 100 100"><use href="#su-' + SUITC.charAt(c & 3) + '"/></svg></span>';
+  }
+  function backHtml(size) { return '<span class="cd ' + size + ' back"></span>'; }
+  function cardsInline(cs) {
+    return (cs || []).map(function (c) {
+      return '<span class="ci s' + SUITC.charAt(c & 3) + '">' + HD.RN[c >> 2] + '<svg viewBox="0 0 100 100"><use href="#su-' + SUITC.charAt(c & 3) + '"/></svg></span>';
+    }).join('');
+  }
+  function panel(inner, cls) { return '<div class="panel ' + (cls || '') + '">' + inner + '</div>'; }
+  function chip(name, v, label, on) { return '<button class="chip' + (on ? ' on' : '') + '" data-set="' + name + '" data-v="' + v + '">' + label + '</button>'; }
+
+  function overlayHtml(scr, T) {
+    switch (scr) {
+      case 'home': return homeHtml();
+      case 'unsupported': return panel('<h2>이 브라우저에서는 열 수 없어요</h2><p>최신 크롬·사파리·엣지에서 열어 주세요.</p>');
+      case 'yield': return panel('<h2>이 방이 다른 탭에서 열렸어요</h2><p>같은 자리를 두 곳에서 쓸 수는 없어서 이 탭은 쉬고 있어요.</p><button class="btn primary big" data-act="takeBack">여기서 계속하기</button>');
+      case 'connecting': return connectingHtml();
+      case 'dlobby': return lobbyHtml(T, true);
+      case 'lobby': return lobbyHtml(T, false);
+    }
+    if (T.st === 'run' && !T.hand) return drawHtml(T);
+    if (T.st === 'end' && O.endShown) return endHtml(T);
+    return '';
+  }
+
+  function homeHtml() {
+    var c = O.form, custom = STACKS.indexOf(c.stack) < 0;
+    return panel(
+      '<div class="brand"><span class="mark">♠</span><h1>홀덤 토너먼트</h1></div>' +
+      '<p class="lead">이 화면이 <b>딜러 화면</b>이 돼요. 카드를 섞어 나눠 주고 판 진행을 보여 줄 뿐, 이 화면에서는 아무것도 누를 필요가 없어요. 참가자는 링크를 받아 각자 폰에서 들어와요.</p>' +
+      '<div class="field"><label>시작 스택</label><div class="chips">' +
+      STACKS.map(function (v) { return chip('stack', v, money(v), c.stack === v && !custom); }).join('') +
+      '<input id="stackIn" inputmode="numeric" maxlength="7" placeholder="직접 입력" value="' + esc(O.stackDraft || (custom ? c.stack : '')) + '" class="' + (custom ? 'on' : '') + '"></div></div>' +
+      '<div class="field"><label>레벨 시간</label><div class="chips">' + LVLS.map(function (v) { return chip('lvlMin', v, v + '분', c.lvlMin === v); }).join('') + '</div></div>' +
+      '<div class="field"><label>액션 시간</label><div class="chips">' + ACTS.map(function (v) { return chip('act', v, v + '초', c.act === v); }).join('') + '</div></div>' +
+      '<div class="field"><label>타임 카드 (1장 = +30초)</label><div class="chips">' + TCS.map(function (v) { return chip('tc', v, v + '장', c.tc === v); }).join('') + '</div></div>' +
+      '<p class="hint">블라인드는 $1/$2에서 시작해 레벨마다 올라가요. 빅 블라인드 앤티(BB와 같은 금액)를 써요. 시작 스택 ' + money(c.stack) + ' = ' + Math.floor(c.stack / 2) + 'BB.</p>' +
+      '<p class="hint">참가비는 시작 스택과 같아서 상금 풀 = 참가자 수 × ' + money(c.stack) + '. 상금은 2~4명이면 우승자 독식, 5~8명이면 2위까지 65/35, 9명이면 3위까지 50/30/20.</p>' +
+      '<button class="btn primary big" data-act="create"' + (O.busy ? ' disabled' : '') + '>방 만들기</button>' +
+      '<div class="row"><button class="link" data-act="rules">규칙과 블라인드 구조</button></div>', 'home');
+  }
+
+  function diagText() {
+    if (!O.relay) return '';
+    return '중계: ' + O.relay.info().map(function (c) {
+      return c.host.replace(/^(broker|test|public)\./, '').split('.')[0] + ' ' + (c.state === 'live' ? '연결' + (c.rtt != null ? ' ' + c.rtt + 'ms' : '') : c.state === 'blocked' ? '차단' : '…');
+    }).join(' · ');
+  }
+  function connectingHtml() {
+    var r = O.relay, now = Date.now(), title, body = '';
+    if (r && r.blocked()) {
+      title = '이 화면에서는 연결할 수 없어요';
+      body = '앱 미리보기나 파일 뷰어 안에서는 실시간 연결이 막혀요. 링크를 크롬이나 사파리에서 직접 열어 주세요.';
+    } else if (!O.conn) {
+      title = '중계 서버에 연결하는 중…';
+      if (now - O.openedAt > 9000) body = '연결이 오래 걸리고 있어요. 계속 다시 시도하고 있으니 Wi-Fi나 모바일 데이터를 바꿔 보거나 잠시 기다려 주세요.';
+    } else if (O.dealer) {
+      title = '딜러 화면을 준비하는 중…';
+    } else {
+      title = '딜러 화면을 찾는 중…';
+      if (now - O.liveAt > 6000) body = '방을 만든 화면(딜러 화면)이 켜져 있어야 들어갈 수 있어요. 링크가 맞는지, 딜러 화면이 열려 있는지 확인해 주세요.';
+    }
+    return panel('<div class="spin"></div><h2>' + title + '</h2>' + (body ? '<p>' + body + '</p>' : '') +
+      '<p class="hint diag">' + esc(diagText()) + '</p><div class="row"><button class="link" data-act="home">처음으로</button></div>', 'connecting');
+  }
+
+  function lastHtml(last) {
+    if (!last || !last.places) return '';
+    return '<p class="hint last">지난 토너먼트: ' + last.places.slice(0, 3).map(function (p) { return p[1] + '위 ' + esc(p[0]) + (p[2] ? ' ' + money(p[2]) : ''); }).join(' · ') + '</p>';
+  }
+  function lobbyHtml(T, dealerView) {
+    var me = O.id.pid, mine = null, waiting = false, rdyLocal = O.rdy === T.round;
+    T.lobby.forEach(function (x) { if (x.pid === me) mine = x; });
+    T.wait.forEach(function (x) { if (x.pid === me) waiting = true; });
+    var list = T.lobby.map(function (x, i) {
+      var r = x.pid === me ? rdyLocal : x.rdy;
+      return '<li class="' + (r ? 'rdy' : '') + (x.pid === me ? ' me' : '') + '"><span class="no">' + (i + 1) + '</span><span class="nm">' + esc(x.nick) +
+        (x.pid === me ? ' <em>나</em>' : '') + '</span><span class="st">' + (r ? '준비 완료' : '기다리는 중') + '</span></li>';
+    }).join('') || '<li class="empty">아직 아무도 없어요</li>';
+    var go = T.go ? '<div class="go">시작까지 <b data-go="' + T.go + '">5</b>초</div>'
+      : '<div class="go dim">' + (T.lobby.length < 2 ? '참가자가 2명 이상 모여야 해요' : '모두 \'준비\'를 누르면 5초 뒤 시작해요') + '</div>';
+    var head = '<div class="lhead">' + (dealerView ? '<span class="badge">딜러 화면</span>' : '') + '<h2>홀덤 토너먼트</h2><p class="cfg">' + cfgLine(T.cfg) + '</p></div>';
+    var ctl = '';
+    if (dealerView) {
+      ctl = '<div class="linkbox"><input id="linkIn" readonly value="' + esc(roomUrl()) + '"><button class="btn" data-act="copy">링크 복사</button>' +
+        (navigator.share ? '<button class="btn ghost" data-act="share">공유</button>' : '') + '</div>' +
+        '<p class="hint">이 링크를 참가자에게 보내 주세요. 방장도 플레이하려면 이 링크를 자기 폰에서 열면 돼요. 이 화면은 끝날 때까지 켜 두세요 — 카드를 섞고 시간을 재는 곳이에요.</p>';
+    } else if (!O.want || !O.id.nick) {
+      ctl = '<div class="join"><input id="nickIn" maxlength="12" placeholder="닉네임" autocomplete="nickname" value="' + esc(O.nickDraft != null ? O.nickDraft : O.id.nick) + '">' +
+        '<button class="btn primary" data-act="join">참가하기</button></div>';
+    } else if (waiting) {
+      ctl = '<p class="hint">자리가 꽉 찼어요 (최대 9명). 자리가 나면 들어가요.</p><div class="row"><button class="link" data-act="leaveSeat">관전만 할게요</button></div>';
+    } else if (!mine) {
+      ctl = '<p class="hint">참가하는 중…</p><div class="row"><button class="link" data-act="leaveSeat">관전만 할게요</button></div>';
+    } else {
+      ctl = '<button class="btn ' + (rdyLocal ? 'ghost' : 'primary') + ' big" data-act="ready">' + (rdyLocal ? '준비 취소' : '준비') + '</button>' +
+        '<div class="row"><button class="link" data-act="leaveSeat">관전만 할게요</button></div>';
+    }
+    var nIn = Math.min(T.lobby.length, MAX_SEATS);
+    var pz = nIn >= 2 ? '<p class="prize">상금 풀 ' + money(nIn * T.cfg.stack) + ' · ' + prizeLine(HD.prizes(nIn, nIn * T.cfg.stack)) + '</p>' : '';
+    return panel(head + (dealerView ? ctl : '') + '<h3>참가자 ' + T.lobby.length + '/' + MAX_SEATS + '</h3><ol class="plist">' + list + '</ol>' + pz +
+      (T.wait.length ? '<p class="hint">대기: ' + T.wait.map(function (x) { return esc(x.nick); }).join(', ') + '</p>' : '') +
+      (dealerView ? '' : ctl) + go + lastHtml(T.last) +
+      '<div class="row"><button class="link" data-act="rules">규칙·블라인드 구조</button>' + (dealerView ? '' : '<button class="link" data-act="hist">기록</button>') + '</div>',
+    dealerView ? 'lobby dl' : 'lobby');
+  }
+
+  function drawHtml(T) {
+    var rows = T.seats.map(function (p, i) {
+      return '<li class="' + (i === T.btn0 ? 'win' : '') + '">' + cardHtml(T.draw[i], 'sm') + '<span class="nm">' + esc(p.nick) +
+        (p.pid === O.id.pid ? ' <em>나</em>' : '') + '</span>' + (i === T.btn0 ? '<span class="dbtn in">D</span>' : '') + '</li>';
+    }).join('');
+    return panel('<h2>자리 배정과 버튼 결정</h2><p class="hint">자리는 무작위예요. 한 장씩 받아 가장 높은 카드가 버튼을 가져가요 (같은 숫자면 ♠ ♥ ♦ ♣ 순).</p><ol class="drawlist">' + rows +
+      '</ol><p class="prize">상금 풀 ' + money(T.pool) + ' · ' + prizeLine(T.prizes) + '</p><div class="go">첫 핸드를 곧 시작해요</div>', 'draw');
+  }
+
+  function endHtml(T) {
+    var rows = T.seats.map(function (p) { return p; }).sort(function (a, b) { return a.place - b.place; }).map(function (p) {
+      return '<li class="' + (p.place === 1 ? 'champ' : '') + (p.pid === O.id.pid ? ' me' : '') + '"><span class="no">' + p.place + '위</span><span class="nm">' + esc(p.nick) +
+        (p.pid === O.id.pid ? ' <em>나</em>' : '') + '</span><span class="st">' + (p.place === 1 ? '우승' : '핸드 #' + p.bust + ' 탈락') + '</span>' +
+        '<span class="pz' + (p.prize ? '' : ' none') + '">' + (p.prize ? money(p.prize) : '—') + '</span></li>';
+    }).join('');
+    var ctl = O.dealer ? '<p class="hint">참가자가 자기 폰에서 \'다시 하기\'를 누르면 같은 설정으로 새 토너먼트를 준비해요.</p>'
+      : '<button class="btn primary big" data-act="again">다시 하기</button><div class="row"><button class="btn ghost" data-act="hist">기록 보기</button></div>';
+    return panel('<h2>토너먼트 끝</h2><p class="cfg">' + T.handNo + '핸드 · ' + cfgLine(T.cfg) + ' · 상금 풀 ' + money(T.pool) + '</p><ol class="plist places">' + rows + '</ol>' + ctl +
+      '<div class="row"><button class="link" data-act="hideEnd">테이블 보기</button></div>', 'end');
+  }
+
+  function topHtml(T) {
+    var h = T.hand, lv = h ? h.lvl : T.lvl, live = 0;
+    T.seats.forEach(function (p) { if (!p.out) live++; });
+    var avg = Math.round(T.cfg.stack * T.seats.length / Math.max(1, live)), next = '';
+    if (T.st === 'run') next = T.lvl > lv ? '다음 핸드부터 <b>Lv ' + (T.lvl + 1) + '</b>' : '다음 레벨 <b data-lvl="' + T.lvlEnd + '">' + mmss(T.lvlLeft) + '</b>';
+    var warn = '';
+    if (!O.conn) warn = '<div class="warn">연결이 끊겼어요 — 다시 연결하는 중…</div>';
+    else if (!O.dealer && !O.dealerHere) warn = '<div class="warn">딜러 화면과 연결이 끊겼어요 — 딜러 화면이 다시 켜지면 이어서 진행돼요</div>';
+    return '<div class="tb"><div class="lv"><b>Lv ' + (lv + 1) + '</b> <span>' + blinds(lv) + '</span></div><div class="nx">' + next + '</div>' +
+      '<div class="ct">' + live + '/' + T.seats.length + '명 · 평균 ' + money(avg) + '</div>' + moneyTag(T) + '<div class="tools">' +
+      (T.st === 'end' ? '<button class="ic" data-act="showEnd">결과</button>' : '') +
+      '<button class="ic" data-act="hist">기록</button><button class="ic" data-act="rules">규칙</button><button class="ic" data-act="menu">메뉴</button></div></div>' + warn;
+  }
+
+  function moneyTag(T) {
+    var m = moneyState(T);
+    if (!m.k) return '';
+    if (m.k === 'itm') return '<div class="mn itm" title="' + esc(prizeLine(T.prizes)) + '">머니 인</div>';
+    if (m.k === 'bubble') return '<div class="mn bubble" title="' + esc(prizeLine(T.prizes)) + '">버블 · 한 명 더 떨어지면 모두 상금</div>';
+    return '<div class="mn" title="' + esc(prizeLine(T.prizes)) + '">상금 ' + (m.paid === 1 ? '우승자' : m.paid + '위까지') + '</div>';
+  }
+  function present(pid) {
+    for (var i = 0; i < O.peers.length; i++) if (O.peers[i].pid === pid) return O.peers[i];
+    return null;
+  }
+  function flagFor(T, pid) {
+    if (pid === O.id.pid) return O.away ? '자리 비움' : '';
+    if (T.st !== 'run' || !O.conn || Date.now() - O.liveAt < SETTLE) return '';
+    var p = present(pid);
+    if (!p) return '연결 끊김';
+    return p.away ? '자리 비움' : '';
+  }
+  function actionTag(T, s) {
+    var h = T.hand;
+    for (var i = h.log.length - 1; i >= 0; i--) {
+      var e = h.log[i];
+      if (e.d) break;
+      if (e.s !== s) continue;
+      if (e.a === 'N' || e.a === 'R') continue;
+      if (e.ai) return '올인';
+      return { S: 'SB', B: 'BB', f: '폴드', k: '체크', c: '콜', b: '벳', r: '레이즈', T: '타임 카드' }[e.a] || '';
+    }
+    return '';
+  }
+
+  function tableHtml(T) {
+    var n = T.seats.length, h = T.hand, me = mySeat(), bottom = me >= 0 ? me : 0, el = $('#table');
+    var wide = el.clientWidth > el.clientHeight * 1.05;
+    var rx = wide ? 41 : 37, ry = wide ? 35 : 37, cy = wide ? 49 : 47, out = '<div class="felt"></div>', s;
+    for (s = 0; s < n; s++) {
+      var k = (s - bottom + n) % n, th = (90 + k * 360 / n) * Math.PI / 180, cx = Math.cos(th), sy = Math.sin(th);
+      out += seatHtml(T, s, 50 + rx * cx, cy + ry * sy, me);
+      if (h && h.bet[s] > 0) out += '<div class="bet" style="left:' + f2(50 + rx * 0.6 * cx) + '%;top:' + f2(cy + ry * 0.55 * sy) + '%"><i class="cp"></i>' + money(h.bet[s]) + '</div>';
+    }
+    return out + centerHtml(T, cy);
+  }
+  function seatHtml(T, s, x, y, me) {
+    var p = T.seats[s], h = T.hand, cls = ['seat'], cards = '', show = null;
+    var live = !!(h && h.live[s]), folded = live && h.fold[s];
+    var won = !!(h && h.res && h.res.won && h.res.won[s] > 0);
+    if (p.out) cls.push('out'); else if (h && !live) cls.push('idle');
+    if (folded) cls.push('fold');
+    if (h && h.actor === s) cls.push('turn');
+    if (s === me) cls.push('me');
+    if (won) cls.push('win');
+    if (live) show = (h.res && h.res.show && h.res.show[s]) || (h.reveal && h.reveal[s]) || null;
+    if (live && !show && s === me) show = myCards(T);
+    if (show && (!folded || (h.res && h.res.show && h.res.show[s]))) {
+      var best = won && h.res.best && h.res.best[s];
+      cards = cardHtml(show[0], 'xs', best && best.indexOf(show[0]) >= 0 ? 'hl' : '') + cardHtml(show[1], 'xs', best && best.indexOf(show[1]) >= 0 ? 'hl' : '');
+    } else if (live && !folded) cards = backHtml('xs') + backHtml('xs');
+    var timer = '';
+    if (h && h.actor === s && h.dl) {
+      timer = '<div class="bar"><i class="bar-i" data-dl="' + h.dl + '" data-tot="' + (T.cfg.act * 1000 + h.tcu * HD.TC_MS) + '"></i></div>' +
+        '<span class="secs" data-dl="' + h.dl + '"></span>';
+    }
+    var tag = p.out ? p.place + '위' + (p.prize ? ' · ' + money(p.prize) : '') : (h && !won ? actionTag(T, s) : '');
+    var flag = p.out ? '' : flagFor(T, p.pid);
+    var extra = '';
+    if (won) extra = '<div class="wonb">+' + money(h.res.won[s]) + (h.res.names && h.res.names[s] ? '<small>' + esc(h.res.names[s]) + '</small>' : '') + '</div>';
+    else if (h && h.res && h.res.names && h.res.names[s]) extra = '<div class="hn">' + esc(h.res.names[s]) + '</div>';
+    if (h && h.actor === s && p.tc > 0 && s !== me) extra += '<div class="tcn">타임 카드 ' + p.tc + '</div>';
+    return '<div class="' + cls.join(' ') + '" style="left:' + f2(x) + '%;top:' + f2(y) + '%" data-seat="' + s + '">' +
+      '<div class="mini">' + cards + '</div>' +
+      '<div class="plate">' + (h && h.btn === s ? '<i class="dbtn" title="딜러 버튼">D</i>' : '') + '<div class="nm">' + esc(p.nick) + '</div><div class="stk">' + (live && h.allin[s] && !h.done ? '올인' : money(p.stack)) + '</div>' + timer + '</div>' +
+      (tag ? '<div class="tag">' + tag + '</div>' : '') + (flag ? '<div class="flag">' + flag + '</div>' : '') + extra + '</div>';
+  }
+  function centerHtml(T, cy) {
+    var h = T.hand, i, slots = '', best = null, note, pos = ' style="top:' + (cy || 50) + '%"';
+    if (!h) return '<div class="center"' + pos + '></div>';
+    var r = h.res;
+    if (r && !r.fold && r.pots[0] && r.pots[0].w.length === 1 && r.best) best = r.best[r.pots[0].w[0]] || null;
+    for (i = 0; i < 5; i++) {
+      slots += h.board[i] !== undefined ? cardHtml(h.board[i], 'md', best ? (best.indexOf(h.board[i]) >= 0 ? 'hl' : 'dim') : '') : '<span class="cd md slot"></span>';
+    }
+    if (r) {
+      note = r.pots.map(function (pt, k) {
+        var who = pt.w.map(function (s) { return esc(T.seats[s].nick); }).join(', ');
+        var how = r.fold ? '' : pt.w.length > 1 ? ' · 나눠 가짐' : (r.names[pt.w[0]] ? ' · ' + esc(r.names[pt.w[0]]) : '');
+        return '<div>' + (r.pots.length > 1 ? potLabel(k, r.pots.length) + ' ' : '') + money(pt.a) + ' → <b>' + who + '</b>' + how + '</div>';
+      }).join('');
+    } else if (h.actor >= 0) note = '<span class="who">' + esc(T.seats[h.actor].nick) + '</span> 차례 · <span data-dl="' + h.dl + '"></span>초';
+    else if (h.reveal) note = '올인 — 카드를 펼쳐요';
+    else note = STREET[h.street] || '';
+    return '<div class="center"' + pos + '><div class="pot">' + (r ? '' : '팟 <b>' + money(h.pot + sum(h.bet)) + '</b>') + '</div><div class="board">' + slots +
+      '</div><div class="note">' + note + '</div><div class="hno">핸드 #' + h.no + '</div></div>';
+  }
+
+  function feedHtml(T) {
+    var h = T.hand;
+    if (!h) return '<div class="feed-h">곧 시작해요</div>';
+    var items = h.log.map(function (e) {
+      if (e.d) return '<li class="st">' + STREET[e.d] + ' ' + cardsInline(e.c) + '</li>';
+      return '<li>' + esc(actTxt(e, T.seats[e.s] ? T.seats[e.s].nick : '')) + '</li>';
+    });
+    if (h.res) {
+      Object.keys(h.res.show || {}).forEach(function (s) {
+        items.push('<li class="sd">' + esc(T.seats[s].nick) + ' ' + cardsInline(h.res.show[s]) + (h.res.names[s] ? ' ' + esc(h.res.names[s]) : '') + '</li>');
+      });
+      h.res.pots.forEach(function (pt, i) {
+        items.push('<li class="res">' + potLabel(i, h.res.pots.length) + ' ' + money(pt.a) + ' → ' + pt.w.map(function (s) { return esc(T.seats[s].nick); }).join(', ') + '</li>');
+      });
+    }
+    return '<div class="feed-h">핸드 #' + h.no + ' · Lv ' + (h.lvl + 1) + ' · ' + blinds(h.lvl) + '</div><ol>' + items.slice(-24).join('') + '</ol>';
+  }
+
+  function strength(cards, board) {
+    if (!cards) return '';
+    if (!board || board.length < 3) {
+      var a = cards[0] >> 2, b = cards[1] >> 2, hi = Math.max(a, b), lo = Math.min(a, b);
+      if (a === b) return '포켓 페어 ' + HD.RN[a];
+      return HD.RN[hi] + '·' + HD.RN[lo] + ((cards[0] & 3) === (cards[1] & 3) ? ' 수딧' : ' 오프수트');
+    }
+    return HD.handName(HD.evalCards(cards.concat(board)));
+  }
+  function presets(h, L) {
+    var potNow = h.pot + sum(h.bet), base = L.isBet ? 0 : h.cur;
+    function to(fr) { return Math.max(L.minTo, Math.min(L.maxTo, Math.round(base + fr * (potNow + L.toCall)))); }
+    return [['최소', L.minTo], ['½ 팟', to(0.5)], ['¾ 팟', to(0.75)], ['팟', to(1)], ['올인', L.maxTo]];
+  }
+  function dockHtml(T) {
+    var me = mySeat(), h = T.hand;
+    if (me < 0) {
+      return '<div class="dock-in viewer"><div class="status"><b>관전 중</b> — 이번 토너먼트가 끝나면 \'다시 하기\'로 참가할 수 있어요.</div></div>';
+    }
+    var p = T.seats[me], cards = myCards(T), live = h && h.live[me] && !h.fold[me];
+    var mine = cards ? cardHtml(cards[0], 'lg') + cardHtml(cards[1], 'lg') : (live ? backHtml('lg') + backHtml('lg') : '<span class="cd lg slot"></span><span class="cd lg slot"></span>');
+    var left = '<div class="mine"><div class="cards">' + mine + '</div><div class="hs">' + (cards && h && h.live[me] ? esc(strength(cards, h.board)) : '') + '</div></div>';
+    return '<div class="dock-in">' + left + '<div class="acts">' + actsHtml(T, me, p) + '</div></div>';
+  }
+  function status(html) { return '<div class="status">' + html + '</div>'; }
+  function actsHtml(T, me, p) {
+    var h = T.hand;
+    if (p.out) return status('탈락 · <b>' + p.place + '위</b>' + (p.prize ? ' · 상금 <b class="up">' + money(p.prize) + '</b>' : ''));
+    if (T.st === 'end') return status('우승! 🏆 상금 <b class="up">' + money(p.prize) + '</b>');
+    if (!h) return status('곧 첫 핸드를 시작해요');
+    if (h.done) {
+      var delta = p.stack - h.start[me], canShow = h.live[me] && !(h.res.show && h.res.show[me]) && myCards(T);
+      return status('이번 핸드 <b class="' + (delta > 0 ? 'up' : delta < 0 ? 'dn' : '') + '">' + signed(delta) + '</b>') +
+        (canShow ? '<button class="btn ghost small" data-act="show">내 카드 보여주기</button>' : '');
+    }
+    var away = '<button class="tog' + (O.away ? ' on' : '') + '" data-act="away">' + (O.away ? '자리 비움 켜짐 — 돌아왔어요' : '자리 비움') + '</button>';
+    if (!h.live[me]) return status('다음 핸드부터 함께해요') + away;
+    if (h.fold[me]) return status('폴드했어요 — 다음 핸드를 기다려요') + away;
+    if (h.allin[me]) return status('<b>올인</b> — 결과를 기다려요');
+    var L = HD.legal(h, T.seats, me);
+    if (!L) {
+      var who = h.actor >= 0 ? '<b>' + esc(T.seats[h.actor].nick) + '</b> 차례 · <span data-dl="' + h.dl + '"></span>초' : (h.reveal ? '올인 — 카드를 펼쳐요' : '…');
+      return status(who) + away;
+    }
+    if (O.pending && O.pending.h === h.no && O.pending.n === h.n) return status('보내는 중…');
+    var callLbl = L.canCheck ? '체크' : (L.toCall >= p.stack ? '콜 올인 ' : '콜 ') + money(L.toCall);
+    var row = '<div class="arow">' + (L.canCheck ? '' : '<button class="btn fold" data-act="fold">폴드</button>') +
+      '<button class="btn call" data-act="' + (L.canCheck ? 'check' : 'call') + '">' + callLbl + '</button>' +
+      (L.canRaise ? '<button class="btn raise' + (O.raiseOpen ? ' on' : '') + '" data-act="raise">' + (L.isBet ? '벳' : '레이즈') + '</button>' : '') + '</div>';
+    var rp = '';
+    if (O.raiseOpen && L.canRaise) {
+      if (!O.raiseTo || O.raiseTo < L.minTo || O.raiseTo > L.maxTo) O.raiseTo = L.minTo;
+      var fixed = L.minTo === L.maxTo;
+      rp = '<div class="rpanel"><div class="presets">' + presets(h, L).map(function (x) {
+        return '<button class="' + (O.raiseTo === x[1] ? 'on' : '') + '" data-amt="' + x[1] + '">' + x[0] + '</button>';
+      }).join('') + '</div>' +
+        (fixed ? '' : '<div class="rrow"><input type="range" id="rng" min="' + L.minTo + '" max="' + L.maxTo + '" step="1" value="' + O.raiseTo + '">' +
+          '<input id="ramt" inputmode="numeric" value="' + O.raiseTo + '"></div>') +
+        '<button class="btn go" data-act="raiseGo">' + raiseLabel(L, O.raiseTo) + '</button></div>';
+    }
+    var tc = p.tc > 0 ? '<button class="tcard" data-act="tc">⏱ 타임 카드 +30초 <small>' + p.tc + '장 남음</small></button>' : '<span class="tcard none">타임 카드 없음</span>';
+    return row + rp + '<div class="arow2"><span class="mytime"><span data-dl="' + h.dl + '"></span>초</span>' + tc + '</div>';
+  }
+  function raiseLabel(L, v) { return (v >= L.maxTo ? '올인 ' : (L.isBet ? '벳 ' : '레이즈 ')) + money(v); }
+
+  function sheetHtml(anim) {
+    var body = O.sheet === 'hist' ? histHtml() : O.sheet === 'rules' ? rulesHtml() : menuHtml();
+    return '<div class="sheet-bg" data-act="closeSheet"></div><div class="sheet-in' + (anim ? ' anim' : '') + '"><button class="x" data-act="closeSheet" aria-label="닫기">✕</button>' + body + '</div>';
+  }
+  function histHtml() {
+    var X = loadHist(), hands = X.hands.slice().reverse();
+    var items = hands.map(function (r) {
+      var open = O.histOpen === r.k, net = r.me >= 0 && r.end ? r.end[r.me] - r.start[r.me] : null;
+      var winners = r.res ? uniq(r.res.pots.reduce(function (a, pt) { return a.concat(pt.w); }, [])).map(function (s) { return r.names[s]; }).join(', ') : '';
+      return '<li class="' + (open ? 'open' : '') + '"><button class="hrow" data-hk="' + esc(r.k) + '"><span class="hno2">#' + r.no + '</span><span class="hc">' + (r.my ? cardsInline(r.my) : '') +
+        '</span><span class="hw">' + esc(winners) + '</span>' + (net !== null ? '<span class="hnet ' + (net > 0 ? 'up' : net < 0 ? 'dn' : '') + '">' + signed(net) + '</span>' : '') +
+        '</button>' + (open ? '<pre>' + esc(handText(r)) + '</pre>' : '') + '</li>';
+    }).join('');
+    return '<h2>핸드 기록</h2><p class="hint">이 기기에서 본 핸드가 저장돼요 (' + hands.length + '개). 탭하면 자세히 보여요.</p>' +
+      '<div class="row left"><button class="btn small" data-act="export">텍스트 파일로 저장</button><button class="btn ghost small" data-act="copyHist">전체 복사</button></div>' +
+      '<ol class="hlist">' + (items || '<li class="empty">아직 기록이 없어요</li>') + '</ol>';
+  }
+  function rulesHtml() {
+    var T = curT(), cfg = (T && T.cfg) || O.form || CFG0, rows = '', i;
+    for (i = 0; i < 18; i++) {
+      var L = HD.level(i);
+      rows += '<tr' + (T && T.st === 'run' && T.lvl === i ? ' class="now"' : '') + '><td>' + (i + 1) + '</td><td>' + money(L.sb) + ' / ' + money(L.bb) +
+        '</td><td>' + money(L.ante) + '</td><td>' + (i * cfg.lvlMin) + '분</td></tr>';
+    }
+    var li = [
+      '노리밋 텍사스 홀덤 토너먼트(프리즈아웃)예요. 칩을 다 잃으면 탈락하고, 마지막 한 명이 우승해요.',
+      '블라인드는 $1/$2에서 시작해 ' + cfg.lvlMin + '분마다 올라가요. 새 레벨은 다음 핸드부터 적용돼요.',
+      '빅 블라인드 앤티: 빅 블라인드를 내는 사람이 빅 블라인드와 같은 금액을 테이블 앤티로 내요. 칩이 모자라면 빅 블라인드를 먼저 채우고, 남는 칩이 앤티가 돼요.',
+      '데드 버튼: 빅 블라인드는 매 핸드 다음 사람에게 넘어가요. 그래서 스몰 블라인드나 버튼이 빈자리에 있을 수 있어요.',
+      '둘만 남으면(헤즈업) 버튼이 스몰 블라인드를 내고, 프리플랍엔 먼저, 플랍부터는 나중에 액션해요.',
+      '최소 벳은 빅 블라인드, 최소 레이즈는 직전 벳·레이즈만큼이에요. 그보다 적은 올인은 이미 액션한 사람에게 다시 레이즈할 기회를 주지 않아요.',
+      '콜 받지 못한 금액은 돌려받아요. 올인한 사람이 있으면 사이드 팟이 나뉘어요.',
+      '쇼다운: 누가 올인했으면 모두 카드를 펼쳐요. 아니면 리버에서 마지막으로 벳·레이즈한 사람부터 보여 주고, 이길 수 없는 패는 자동으로 버려요. 끝난 뒤 원하면 \'내 카드 보여주기\'를 누를 수 있어요.',
+      '팟을 나눌 때 남는 $1은 버튼 왼쪽에서 가장 가까운 승자에게 가요.',
+      '같은 핸드에서 여러 명이 탈락하면, 그 핸드를 시작할 때 칩이 많았던 사람이 더 높은 순위예요.',
+      '액션 시간은 ' + cfg.act + '초예요. 타임 카드(' + cfg.tc + '장)를 쓰면 1장에 30초씩 늘어나요. 시간이 끝나면 체크할 수 있으면 체크, 아니면 폴드돼요.',
+      '접속이 끊기거나 \'자리 비움\'이면 차례가 왔을 때 자동으로 체크/폴드되고, 블라인드와 앤티는 계속 내요.',
+      '카드는 딜러 화면이 섞어서 나눠 줘요. 각자의 카드는 그 사람 기기에서만 풀리도록 암호화돼서 다른 참가자나 중계 서버는 볼 수 없어요. 딜러 화면은 숨겨진 카드를 화면에 표시하지 않아요.'
+    ];
+    return '<h2>규칙</h2><ul class="rules">' + li.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
+      '<h2>상금 (머니인)</h2><table class="struct"><thead><tr><th>참가자</th><th>상금 받는 자리</th><th>나누는 비율</th></tr></thead><tbody>' +
+      '<tr><td>2–4명</td><td>우승</td><td>100%</td></tr><tr><td>5–8명</td><td>2위까지</td><td>65 / 35%</td></tr><tr><td>9명</td><td>3위까지</td><td>50 / 30 / 20%</td></tr></tbody></table>' +
+      '<p class="hint">참가비 = 시작 스택이라 상금 풀은 참가자 수 × 시작 스택이에요' + (T && T.pool ? ' (이번 판 ' + money(T.pool) + ': ' + prizeLine(T.prizes) + ')' : '') + '. 같은 핸드에서 같은 칩으로 함께 탈락하면 차지한 자리들의 상금을 똑같이 나눠요.</p>' +
+      '<h2>블라인드 구조</h2><table class="struct"><thead><tr><th>레벨</th><th>블라인드</th><th>BB 앤티</th><th>시작</th></tr></thead><tbody>' + rows + '</tbody></table>' +
+      '<p class="hint">18레벨 이후에도 같은 흐름으로 계속 올라가요.</p>';
+  }
+  function menuHtml() {
+    var T = curT(), me = mySeat();
+    return '<h2>메뉴</h2><div class="menu">' +
+      '<button class="mi' + (O.sound ? ' on' : '') + '" data-tog="sound">소리</button>' +
+      '<button class="mi' + (O.four ? ' on' : '') + '" data-tog="four">4색 카드 (♦ 파랑 · ♣ 초록)</button>' +
+      (!O.dealer && me >= 0 && T && T.st === 'run' ? '<button class="mi' + (O.away ? ' on' : '') + '" data-tog="away">자리 비움 — 내 차례에 자동 체크/폴드</button>' : '') +
+      '<button class="mi" data-act="copy">참가 링크 복사</button>' +
+      (O.dealer && document.documentElement.requestFullscreen ? '<button class="mi" data-act="fullscreen">전체 화면</button>' : '') +
+      '<button class="mi danger" data-act="leave">' + (O.leaveArmed && Date.now() - O.leaveArmed < 4000 ? '한 번 더 누르면 나가요' : (O.dealer ? '딜러 화면 닫기 (게임이 멈춰요)' : '방 나가기')) + '</button>' +
+      '</div><p class="hint diag">' + esc(diagText()) + '</p>';
+  }
+
+  // ------------------------------------------------------------ clocks on screen
+  function uiTick() {
+    var now = Date.now(), T = curT(), off = offset(), scr = screen();
+    if (scr === 'connecting' && now - O.connDrawn > 1000) { O.connDrawn = now; $('#overlay')._h = ''; render(); }
+    if (!T) return;
+    $$('[data-dl]').forEach(function (el) {
+      var left = Math.max(0, +el.getAttribute('data-dl') - off - now);
+      if (el.classList.contains('bar-i')) {
+        var tot = +el.getAttribute('data-tot') || 30000;
+        el.style.transform = 'scaleX(' + Math.max(0, Math.min(1, left / tot)).toFixed(3) + ')';
+        el.parentNode.className = 'bar' + (left < 5000 ? ' crit' : left < 10000 ? ' low' : '');
+      } else el.textContent = String(Math.ceil(left / 1000));
+    });
+    $$('[data-lvl]').forEach(function (el) { el.textContent = mmss(+el.getAttribute('data-lvl') - off - now); });
+    $$('[data-go]').forEach(function (el) { el.textContent = String(Math.max(0, Math.ceil((+el.getAttribute('data-go') - off - now) / 1000))); });
+    var h = T.hand, me = mySeat();
+    if (h && me >= 0 && h.actor === me && h.dl && !h.next) {
+      var left = h.dl - off - now;
+      if (left <= 10000 && left > 8500 && !O.warned[10]) { O.warned[10] = 1; beep(880, 0.08, 0.06); }
+      if (left <= 5000 && left > 0 && !O.warned[5]) {
+        O.warned[5] = 1; beep(988, 0.08, 0.07); beep(988, 0.08, 0.07, 0.16);
+        if (navigator.vibrate) { try { navigator.vibrate([40, 60, 40]); } catch (e) { /* ignore */ } }
+      }
+    }
+    if (O.pending && now - O.pending.at > 7000) { O.pending = null; toast('응답이 늦어요. 다시 눌러 주세요'); render(); }
+    if (T.st === 'end' && !O.endShown && !O.endHidden && now > (T.endAt - off) + END_SHOW) { O.endShown = true; render(); }
+  }
+
+  // ------------------------------------------------------------ input
+  function toast(msg) {
+    var el = $('#toast');
+    el.textContent = msg;
+    el.classList.add('on');
+    clearTimeout(O.toastT);
+    O.toastT = setTimeout(function () { el.classList.remove('on'); }, 2600);
+  }
+  function roomUrl() { return location.href.split('#')[0] + '#hd-' + O.code; }
+  function copyText(text, done) {
+    function fallback() {
+      var ta = document.createElement('textarea'), good = false;
+      ta.value = text; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      try { good = document.execCommand('copy'); } catch (e) { good = false; }
+      ta.remove();
+      toast(good ? done : '복사하지 못했어요. 직접 선택해서 복사해 주세요');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { toast(done); }, fallback);
+    else fallback();
+  }
+
+  function pruneOld() {
+    var now = Date.now(), i, k, v, drop = [];
+    try {
+      for (i = 0; i < localStorage.length; i++) {
+        k = localStorage.key(i);
+        if (k && k.indexOf('hd.host.') === 0) { v = LS.get(k, null); if (!v || !v.at || now - v.at > 3 * 86400000) drop.push(k); }
+        if (k && k.indexOf('hd.ids.') === 0) { v = LS.get(k, []); if (!Array.isArray(v) || !v.length || now - (v[0].at || 0) > 14 * 86400000) drop.push(k); }
+      }
+    } catch (e) { /* ignore */ }
+    drop.forEach(function (x) { LS.del(x); });
+  }
+  function createRoom() {
+    if (O.busy) return;
+    if (O.stackDraft) {
+      var st = Math.floor(+O.stackDraft);
+      if (!(st >= 20 && st <= 1000000)) { toast('시작 스택은 $20 ~ $1,000,000 사이로 정해 주세요'); return; }
+      O.form.stack = st;
+    }
+    var cfg = validCfg(O.form), code = rid(6);
+    O.busy = true; render();
+    pruneOld();
+    HC.newKey().then(function (k) {
+      LS.set('hd.host.' + code, { cfg: cfg, S: null, round: 1, v: 0, joinAt: {}, last: null, at: Date.now(), jwk: k.jwk, made: Date.now() });
+      LS.set('hd.cfg', cfg);
+      SS.set('hd.sess.' + code, { pid: code });
+      history.replaceState(null, '', '#hd-' + code);
+      O.busy = false;
+      enterRoom(code);
+    }, function () { O.busy = false; O.unsupported = true; render(); });
+  }
+
+  function doAct(a, x) {
+    var T = O.T, h = T && T.hand, me = mySeat();
+    if (!h || me < 0 || h.actor !== me || (O.pending && O.pending.n === h.n && O.pending.h === h.no)) return;
+    O.pending = { h: h.no, n: h.n, at: Date.now() };
+    O.raiseOpen = false;
+    render();
+    sendReq({ k: 'act', h: h.no, n: h.n, a: a, x: x || 0 }).then(function (sent) { if (!sent) { O.pending = null; render(); } });
+  }
+  function doTimeCard() {
+    var T = O.T, h = T && T.hand, me = mySeat();
+    if (!h || me < 0 || h.actor !== me || T.seats[me].tc <= 0) return;
+    var key = T.tid + ':' + h.no + ':' + h.n;
+    O.tcUsed = O.tcKey === key ? O.tcUsed + 1 : h.tcu + 1;
+    O.tcKey = key;
+    O.warned = {};
+    sendReq({ k: 'tc', h: h.no, n: h.n, c: O.tcUsed }).then(function (ok) { if (ok) toast('타임 카드를 썼어요 (+30초)'); });
+  }
+  function setAway(v) {
+    O.away = v ? 1 : 0;
+    publish();
+    render();
+    toast(O.away ? '자리 비움: 내 차례가 오면 자동으로 체크/폴드돼요' : '돌아왔어요');
+  }
+
+  function onClick(ev) {
+    audio(); keepAwake();
+    var t = ev.target.closest ? ev.target.closest('[data-act],[data-set],[data-amt],[data-hk],[data-tog]') : null;
+    if (!t) return;
+    if (t.hasAttribute('data-set')) {
+      O.form[t.getAttribute('data-set')] = +t.getAttribute('data-v');
+      if (t.getAttribute('data-set') === 'stack') O.stackDraft = '';
+      render();
+      return;
+    }
+    if (t.hasAttribute('data-amt')) { O.raiseTo = +t.getAttribute('data-amt'); render(); return; }
+    if (t.hasAttribute('data-hk')) { var hk = t.getAttribute('data-hk'); O.histOpen = O.histOpen === hk ? '' : hk; render(); return; }
+    if (t.hasAttribute('data-tog')) {
+      var g = t.getAttribute('data-tog');
+      if (g === 'sound') { O.sound = !O.sound; LS.set('hd.snd', O.sound); if (O.sound) { audio(); beep(660, 0.1, 0.07); } }
+      else if (g === 'four') { O.four = !O.four; LS.set('hd.4c', O.four); }
+      else if (g === 'away') { setAway(!O.away); return; }
+      render();
+      return;
+    }
+    var a = t.getAttribute('data-act'), T = curT(), h = T && T.hand;
+    switch (a) {
+      case 'create': createRoom(); break;
+      case 'rules': case 'hist': case 'menu': O.sheet = a; O.leaveArmed = 0; render(); break;
+      case 'closeSheet': O.sheet = ''; render(); break;
+      case 'copy': copyText(roomUrl(), '참가 링크를 복사했어요'); break;
+      case 'share':
+        if (navigator.share) navigator.share({ title: '홀덤 토너먼트', text: '홀덤 토너먼트에 참가해요', url: roomUrl() }).catch(function () { /* cancelled */ });
+        break;
+      case 'home': location.href = location.href.split('#')[0]; break;
+      case 'takeBack': takeBack(); break;
+      case 'join': {
+        var nick = cleanNick(O.nickDraft != null ? O.nickDraft : O.id.nick);
+        if (!nick) { toast('닉네임을 적어 주세요'); var ni = $('#nickIn'); if (ni) ni.focus(); break; }
+        O.id.nick = nick; O.nickDraft = null; O.want = 1; O.rdy = 0;
+        LS.set('hd.nick', nick); saveSess(); saveId(); publish(); render();
+        break;
+      }
+      case 'ready': if (T && T.st === 'lobby') { O.rdy = O.rdy === T.round ? 0 : T.round; publish(); render(); } break;
+      case 'leaveSeat': O.want = 0; O.rdy = 0; saveSess(); publish(); render(); break;
+      case 'again':
+        if (T && T.st === 'end') {
+          O.want = 1; O.rdy = O.id.nick ? T.round + 1 : 0;
+          saveSess(); publish();
+          if (O.id.nick) toast('다음 토너먼트에 준비했어요');
+          else { O.endHidden = true; O.endShown = false; toast('닉네임을 정하면 다음 토너먼트에 참가할 수 있어요'); render(); }
+        }
+        break;
+      case 'hideEnd': O.endHidden = true; O.endShown = false; render(); break;
+      case 'showEnd': O.endHidden = false; O.endShown = true; render(); break;
+      case 'fold': doAct('f'); break;
+      case 'check': doAct('k'); break;
+      case 'call': doAct('c'); break;
+      case 'raise': O.raiseOpen = !O.raiseOpen; render(); break;
+      case 'raiseGo': {
+        var L = h && HD.legal(h, T.seats, mySeat());
+        if (L) doAct(O.raiseTo >= L.maxTo ? 'A' : 'r', O.raiseTo);
+        break;
+      }
+      case 'tc': doTimeCard(); break;
+      case 'away': setAway(!O.away); break;
+      case 'show': if (h && h.done) sendReq({ k: 'show', h: h.no }).then(function (ok) { if (ok) toast('카드를 보여 줬어요'); }); break;
+      case 'export': download('holdem-' + O.code + '.txt', exportText()); break;
+      case 'copyHist': copyText(exportText(), '기록을 복사했어요'); break;
+      case 'fullscreen': try { document.documentElement.requestFullscreen(); } catch (e) { /* ignore */ } O.sheet = ''; render(); break;
+      case 'leave':
+        if (!O.leaveArmed || Date.now() - O.leaveArmed > 4000) { O.leaveArmed = Date.now(); render(); break; }
+        if (!O.dealer) { O.want = 0; O.rdy = 0; saveSess(); publish(); }
+        if (O.relay) { try { O.relay.leave(); } catch (e) { /* ignore */ } O.relay = null; }
+        stopDealer();
+        location.href = location.href.split('#')[0];
+        break;
+    }
+  }
+  function onInput(ev) {
+    var t = ev.target;
+    if (t.id === 'nickIn') O.nickDraft = t.value;
+    else if (t.id === 'stackIn') {
+      O.stackDraft = t.value.replace(/[^0-9]/g, '').slice(0, 7);
+      if (t.value !== O.stackDraft) t.value = O.stackDraft;
+      var st = +O.stackDraft;
+      if (st >= 20 && st <= 1000000) { O.form.stack = st; render(); }
+    } else if (t.id === 'rng' || t.id === 'ramt') {
+      var T = O.T, h = T && T.hand, L = h && HD.legal(h, T.seats, mySeat());
+      if (!L) return;
+      var v = Math.floor(+String(t.value).replace(/[^0-9]/g, '')) || 0;
+      if (t.id === 'rng') { O.raiseTo = v; var ra = $('#ramt'); if (ra) ra.value = v; }
+      else { if (v >= L.minTo && v <= L.maxTo) { O.raiseTo = v; var rg = $('#rng'); if (rg) rg.value = v; } }
+      var go = $('[data-act=raiseGo]');
+      if (go && O.raiseTo >= L.minTo && O.raiseTo <= L.maxTo) go.textContent = raiseLabel(L, O.raiseTo);
+      $$('.presets button').forEach(function (b) { b.classList.toggle('on', +b.getAttribute('data-amt') === O.raiseTo); });
+    }
+  }
+  function onKey(ev) {
+    if (ev.key === 'Escape' && O.sheet) { O.sheet = ''; render(); return; }
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'nickIn') { ev.preventDefault(); var b = $('[data-act=join]'); if (b) b.click(); }
+    if (ev.key === 'Enter' && ev.target && ev.target.id === 'ramt') { ev.preventDefault(); var g = $('[data-act=raiseGo]'); if (g) g.click(); }
+  }
+
+  function boot() {
+    O.form = validCfg(LS.get('hd.cfg', CFG0));
+    document.addEventListener('click', onClick);
+    document.addEventListener('input', onInput);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('resize', function () { $('#table')._h = ''; render(); });
+    document.addEventListener('visibilitychange', function () { keepAwake(); if (O.dealer) dealerKick(); render(); });
+    window.addEventListener('hashchange', function () { location.reload(); });
+    setInterval(uiTick, 200);
+    setInterval(maintain, 1000);
+    var m = /^#hd-([a-z0-9]{6})$/.exec(location.hash);
+    if (m) enterRoom(m[1]); else render();
+  }
+
+  if (DEBUG) window.__hd = { O: O, D: D, T: curT, me: mySeat, cards: function () { return myCards(curT()); }, hist: loadHist, exportText: exportText };
+  boot();
+})();
+
+</script>
+</body>
+</html>
