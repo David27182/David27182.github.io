@@ -35,9 +35,9 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outl
 #stage { grid-row: 2; grid-column: 1; position: relative; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr);
   background: radial-gradient(ellipse at 50% 45%, #14211b 0%, var(--bg) 72%); }
 #dock { grid-row: 3; grid-column: 1; }
-#table { position: relative; min-height: 0; overflow: hidden; container-type: size;
+#table, .tbl { position: relative; min-height: 0; overflow: hidden; container-type: size;
   --sw: clamp(86px, 25cqmin, 224px); --ph: clamp(34px, 10cqmin, 82px); --cw: clamp(24px, 7.6cqmin, 62px); --ch: clamp(34px, 10.6cqmin, 87px); }
-#table.narrow { --sw: clamp(74px, 22cqmin, 200px); --ph: clamp(31px, 9.2cqmin, 76px); --cw: clamp(22px, 7cqmin, 58px); --ch: clamp(31px, 9.8cqmin, 81px); }
+#table.narrow, .tbl.narrow { --sw: clamp(74px, 22cqmin, 200px); --ph: clamp(31px, 9.2cqmin, 76px); --cw: clamp(22px, 7cqmin, 58px); --ch: clamp(31px, 9.8cqmin, 81px); }
 #feed { display: none; }
 body.is-dealer.scr-table #stage { grid-template-columns: minmax(0, 1fr) minmax(250px, 23vw); }
 body.is-dealer.scr-table #feed { display: block; }
@@ -69,8 +69,8 @@ body.scr-home .felt, body.scr-connecting .felt, body.scr-lobby .felt, body.scr-d
 /* ---------------- seats: a pill with an avatar; the timer runs round the avatar */
 .seat { position: absolute; z-index: 3; transform: translate(-50%, -50%); width: var(--sw); height: var(--ph); }
 .plate {
-  position: absolute; inset: 0; display: flex; align-items: center; gap: clamp(4px, 1.3cqmin, 12px);
-  padding: 0 clamp(8px, 2.6cqmin, 22px) 0 2px; border-radius: 999px;
+  position: absolute; inset: 0; display: flex; align-items: center; gap: calc(var(--ph) * .12);
+  padding: 0 calc(var(--ph) * .22) 0 2px; border-radius: 999px;
   background: linear-gradient(180deg, rgba(25, 35, 31, .97), rgba(9, 14, 12, .97)); border: 1px solid rgba(255, 255, 255, .14);
   box-shadow: 0 4px 14px rgba(0, 0, 0, .45);
 }
@@ -107,6 +107,7 @@ body.scr-home .felt, body.scr-connecting .felt, body.scr-lobby .felt, body.scr-d
 .tag {
   position: absolute; left: 50%; z-index: 5; transform: translateX(-50%); white-space: nowrap; pointer-events: none;
   font: 700 calc(var(--ph) * .27) var(--sans); padding: 1px 9px; border-radius: 99px; background: #2c3632; color: var(--ink);
+  max-width: var(--sw); overflow: hidden; text-overflow: ellipsis; box-sizing: border-box;
   box-shadow: 0 2px 6px rgba(0, 0, 0, .45); animation: pop .25s ease-out;
 }
 .seat.lo .tag, .seat.mid .tag, .seat.sl .tag, .seat.sr .tag { top: calc(100% - 2px); }
@@ -118,6 +119,10 @@ body.scr-home .felt, body.scr-connecting .felt, body.scr-lobby .felt, body.scr-d
 .tag.t-allin { background: #b3372a; color: #fff; }
 .tag.t-blind { background: #2c3531; color: var(--ink2); }
 .tag.t-time { background: #3b3220; color: var(--gold); }
+.tag.t-win { background: var(--gold); color: #1d1607; font-family: var(--mono); box-shadow: 0 3px 12px rgba(230, 192, 104, .4); }
+.seat.sl .dbtn { right: auto; left: -5px; }
+.av .fl { position: absolute; left: 50%; bottom: -2px; transform: translateX(-50%); padding: 0 4px; border-radius: 6px; white-space: nowrap;
+  font: 700 calc(var(--ph) * .2) / 1.25 var(--sans); background: rgba(150, 45, 32, .95); color: #ffe1da; box-shadow: 0 1px 3px rgba(0, 0, 0, .5); }
 .sub { position: absolute; left: 50%; z-index: 5; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 3px; white-space: nowrap; pointer-events: none; }
 .seat.lo .sub { bottom: calc(100% + var(--ch) - 2px); }
 .seat.hi .sub { top: calc(100% + var(--ch) - 2px); }
@@ -170,16 +175,19 @@ body.scr-home .felt, body.scr-connecting .felt, body.scr-lobby .felt, body.scr-d
 }
 
 /* ---------------- centre: pot, board, what is happening */
-.center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; text-align: center; width: 66cqmin; max-width: 92%; pointer-events: none; }
-.potrow { height: calc(var(--ph) * .66); margin-bottom: 1.2cqmin; display: flex; align-items: center; justify-content: center; }
+.center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1; text-align: center; width: var(--cbw, 66cqmin); pointer-events: none; }
+.potrow { height: calc(var(--ph) * .66); margin-bottom: var(--cgap, 1.2cqmin); display: flex; align-items: center; justify-content: center; }
 .pot { display: inline-flex; align-items: center; gap: 6px; padding: 2px 12px 2px 4px; border-radius: 99px; background: rgba(0, 0, 0, .38); font-size: calc(var(--ph) * .3); color: var(--ink2); }
 .pot b { font-family: var(--mono); color: var(--ink); }
 .pot.bump { animation: bump .5s ease-out; }
 @keyframes bump { 30% { transform: scale(1.14); background: rgba(230, 192, 104, .28); } }
-.board { display: flex; justify-content: center; gap: 1.2cqmin; perspective: 800px; }
-.note { margin-top: 1.4cqmin; min-height: 4.4cqmin; font-size: calc(var(--ph) * .3); line-height: 1.4; }
+.board { display: flex; justify-content: center; gap: var(--bgap, 1.2cqmin); perspective: 800px; }
+.note { margin-top: var(--cgap, 1.4cqmin); height: var(--noteh, 8cqmin); overflow: hidden; font-size: calc(var(--ph) * .3); line-height: 1.4; }
+.note.many { font-size: calc(var(--ph) * .22); line-height: 1.32; }
+.note.tiny { font-size: calc(var(--ph) * .17); line-height: 1.28; }
 .note b, .note .who { color: var(--gold); font-weight: 600; }
-.hno { margin-top: 2px; font: 500 calc(var(--ph) * .22) var(--mono); color: rgba(238, 234, 223, .35); }
+.note .tcs { color: var(--gold); opacity: .85; white-space: nowrap; }
+.hno { margin-top: 2px; font: 500 calc(var(--ph) * .22) / 1.3 var(--mono); color: rgba(238, 234, 223, .35); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* ---------------- cards */
 .cd {
@@ -203,9 +211,9 @@ body.four .cd.sc { color: var(--green); }
 .cd.xs b { font-size: calc(var(--cw) * .58); }
 .cd.xs svg { width: calc(var(--cw) * .46); height: calc(var(--cw) * .46); }
 .cd.xs.back { border-width: calc(var(--cw) * .07); }
-.cd.md { width: clamp(30px, 11cqmin, 98px); height: clamp(42px, 15.4cqmin, 137px); border-radius: clamp(4px, 1.4cqmin, 12px); }
-.cd.md b { font-size: clamp(17px, 6.6cqmin, 58px); }
-.cd.md svg { width: clamp(13px, 5.2cqmin, 46px); height: clamp(13px, 5.2cqmin, 46px); }
+.cd.md { width: var(--bw, 40px); height: var(--bh, 56px); border-radius: calc(var(--bw, 40px) * .127); }
+.cd.md b { font-size: calc(var(--bw, 40px) * .6); }
+.cd.md svg { width: calc(var(--bw, 40px) * .47); height: calc(var(--bw, 40px) * .47); }
 .cd.sm { width: 34px; height: 47px; }
 .cd.sm b { font-size: 19px; }
 .cd.sm svg { width: 15px; height: 15px; }
@@ -310,7 +318,7 @@ body.is-player.scr-table.lay-land .warn { margin: 6px auto 0; width: fit-content
 .status b { color: var(--ink); }
 .status .up, .hnet.up { color: var(--jade); }
 .status .dn, .hnet.dn { color: #f08a7a; }
-.myturn { display: flex; align-items: center; gap: 8px; }
+.myturn { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .mt-l { font-weight: 700; color: var(--gold); font-size: 14px; white-space: nowrap; }
 .mt-bar { position: relative; flex: 1; height: 6px; border-radius: 4px; background: rgba(255, 255, 255, .1); overflow: hidden; }
 .mt-bar .bar-i { position: absolute; inset: 0; background: var(--jade); transform-origin: left center; transition: transform .2s linear; }
@@ -360,8 +368,8 @@ input#rng { width: 100%; accent-color: var(--gold); margin: 2px 0; }
 .presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
 .presets button { border: 1px solid var(--line); background: var(--panel2); border-radius: 9px; padding: 7px 2px; font-size: 12.5px; }
 .presets button.on { border-color: var(--gold); color: var(--gold); }
-.tcard { border: 1px dashed rgba(230, 192, 104, .55); background: transparent; color: var(--gold); border-radius: 10px; padding: 7px 11px; font-size: 13px; }
-.tcard small { color: var(--ink3); margin-left: 4px; }
+.tcard { flex: none; border: 1px dashed rgba(230, 192, 104, .55); background: transparent; color: var(--gold); border-radius: 10px; padding: 5px 9px; font-size: 12.5px; white-space: nowrap; }
+.tcard small { color: var(--ink3); margin-left: 4px; font-size: 11px; }
 .tcard.none { border-color: var(--line); color: var(--ink3); }
 .tog { border: 1px solid var(--line); background: transparent; border-radius: 9px; padding: 6px 10px; font-size: 12.5px; color: var(--ink3); }
 .tog.on { border-color: var(--amber); color: var(--amber); }
@@ -371,7 +379,7 @@ input#rng { width: 100%; accent-color: var(--gold); margin: 2px 0; }
 }
 /* sideways: everything stacks in the right-hand column, buttons at thumb height */
 body.lay-land .dock-in { flex-direction: column; align-items: stretch; flex: 1; min-height: 0; max-width: none; margin: 0; gap: 8px; }
-body.lay-land .mine { --lw: clamp(52px, calc((var(--col) - 46px) / 2.45), 104px); }
+body.lay-land .mine { --lw: clamp(40px, min(calc((var(--col) - 46px) / 2.45), 17vh), 104px); }
 body.lay-land .me-stk { display: flex; align-items: center; gap: 7px; width: 100%; font-size: 12.5px; color: var(--ink2); }
 body.lay-land .me-stk .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 body.lay-land .me-stk b { margin-left: auto; font-family: var(--mono); color: var(--gold); }
@@ -382,7 +390,7 @@ body.lay-land .ctl { flex: 1; }
 body.lay-land .abtns { margin-top: auto; grid-auto-flow: row; grid-template-columns: 1fr 1fr; grid-auto-columns: auto; }
 body.lay-land .abtns .raise { order: 0; grid-column: 1 / -1; }
 body.lay-land .abtns.nofold .call, body.lay-land .abtns.noraise .call:only-child { grid-column: 1 / -1; }
-body.lay-land .pre { margin-top: auto; grid-template-columns: 1fr; }
+body.lay-land .pre { margin-top: auto; grid-template-columns: 1fr 1fr; }
 body.lay-land .presets { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 body.lay-land .dock-in.raising .mine { display: none; }
 body.lay-land .status { font-size: 13.5px; }
@@ -468,6 +476,13 @@ body.is-dealer.lay-land .panel.split { width: min(1040px, 100%); }
   .plist li { padding: 6px 10px; }
   .btn.big { padding: 11px; margin-top: 6px; }
   .go { margin: 8px 0 2px; }
+  .panel .cfg { margin: 2px 0 6px; }
+  .aibox { margin: 8px 0 2px; padding: 6px 10px; gap: 6px 8px; }
+  .aibox .stepb { width: 32px; height: 32px; }
+  .go.on, .go.dim { font-size: 13px; }
+  .panel .row { margin-top: 4px; }
+  .panel .row .link { padding: 4px 6px; }
+  .panel.lobby .startb { margin-top: 8px; }
 }
 
 /* ---------------- sheet */
@@ -502,15 +517,226 @@ table.struct { width: 100%; border-collapse: collapse; font-size: 13.5px; margin
 .mi.danger { color: #f08a7a; }
 
 #toast {
-  position: fixed; left: 50%; bottom: 130px; z-index: 40; max-width: 90vw; transform: translate(-50%, 16px); opacity: 0; pointer-events: none;
-  background: rgba(20, 31, 26, .97); border: 1px solid var(--line); border-radius: 12px; padding: 10px 16px; font-size: 14px; text-align: center; transition: .25s;
+  position: fixed; left: 50%; top: max(4px, env(safe-area-inset-top)); z-index: 45; max-width: min(92vw, 560px); transform: translate(-50%, -12px); opacity: 0; pointer-events: none;
+  background: rgba(20, 31, 26, .98); border: 1px solid rgba(230, 192, 104, .3); border-radius: 12px; padding: 7px 14px; font-size: 13.5px; line-height: 1.35; text-align: center;
+  transition: .25s; box-shadow: 0 6px 20px rgba(0, 0, 0, .5);
 }
 #toast.on { opacity: 1; transform: translate(-50%, 0); }
-body.is-player.scr-table.lay-land.seated #toast { left: calc((100% - var(--col)) / 2); bottom: 24px; }
-body.is-player.scr-table.lay-port #toast { bottom: 170px; }
+body.is-player.scr-table.lay-land.seated #toast { left: calc((100% - var(--col)) / 2); max-width: calc(100% - var(--col) - 16px); }
 
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
+}
+
+/* ---- AI players */
+.stepper { display: inline-flex; align-items: center; gap: 8px; margin-right: 6px; }
+.stepper .stepb { width: 36px; height: 36px; border-radius: 999px; font-size: 18px; color: var(--ink); }
+.stepper .stepb:disabled { opacity: .35; }
+.stepper b { min-width: 44px; text-align: center; font: 600 15px var(--mono); color: var(--gold); }
+.ai-chips { align-items: center; }
+.aibox { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; margin: 12px 0 4px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, .03); }
+.aibox .ai-h { font-size: 13px; color: var(--ink2); margin-right: auto; }
+.aibox .chips { gap: 5px; }
+.aibox .chip { padding: 6px 11px; font-size: 13px; }
+.plist li.bot .nm { color: var(--ink2); }
+.plist li.bot .st { color: #9fb7e8; }
+.av .ini.ai { font: 800 calc(var(--ph) * .3) var(--mono); letter-spacing: -.02em; }
+.av.sm .ini.ai { font-size: 9px; }
+
+/* ---- history: replay entry and GTO summary */
+.hdet { margin: -2px 0 10px; }
+.hdet > .btn { width: 100%; margin-bottom: 8px; }
+.ssum { background: rgba(255, 255, 255, .03); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+.sm-h { font-size: 12px; color: var(--ink3); margin-bottom: 4px; }
+.sm-row { display: flex; gap: 10px; padding: 4px 0; border-top: 1px solid rgba(255, 255, 255, .05); font-size: 13px; }
+.sm-row:first-of-type { border-top: 0; }
+.sm-st { flex: none; width: 52px; color: var(--ink3); font-size: 12px; padding-top: 1px; }
+.sm-b { display: grid; gap: 3px; min-width: 0; }
+.sm-i small { color: var(--ink3); }
+.vm { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font-size: 11px; font-weight: 800; margin-right: 6px; vertical-align: -3px; flex: none; }
+.vm.v-good { background: rgba(71, 185, 142, .2); color: #8fe3bd; }
+.vm.v-mix { background: rgba(230, 192, 104, .2); color: var(--gold); }
+.vm.v-miss { background: rgba(229, 83, 61, .22); color: #f3a093; }
+
+/* ---- replay */
+#replay { position: fixed; inset: 0; z-index: 40; background: var(--bg); display: grid; grid-template-rows: auto minmax(0, 1fr); }
+.rp-head { display: flex; align-items: center; gap: 10px; padding: 6px 8px 6px 14px; border-bottom: 1px solid var(--line); min-width: 0; }
+.rp-head .t { flex: 1; min-width: 0; font-weight: 600; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rp-head .d { font: 12px var(--mono); color: var(--ink3); white-space: nowrap; }
+.rp-head .x { width: 40px; height: 40px; border: 0; background: none; font-size: 18px; color: var(--ink2); }
+.rp-main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(270px, 37%); min-height: 0; }
+.rp-stage { position: relative; min-height: 0; min-width: 0; display: grid; grid-template-rows: minmax(0, 1fr) auto;
+  background: radial-gradient(ellipse at 50% 45%, #14211b 0%, var(--bg) 72%); }
+.rp-stage .tbl { width: 100%; height: 100%; touch-action: pan-y; }
+.rp-ctl { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 10px 10px; }
+.rp-ctl button { width: 44px; height: 42px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel2); font-size: 16px; color: var(--ink); }
+.rp-ctl button.big { width: 64px; height: 46px; font-size: 30px; line-height: 1; font-weight: 700; color: var(--gold); background: #22322a; border-color: rgba(230, 192, 104, .35); }
+.rp-ctl button:disabled { opacity: .3; }
+.rp-ctl .pos { min-width: 62px; text-align: center; font: 600 14px var(--mono); color: var(--ink2); }
+.rp-side { min-height: 0; overflow: auto; border-left: 1px solid var(--line); padding: 12px 14px 20px; -webkit-overflow-scrolling: touch; }
+.rp-side h4 { margin: 14px 0 6px; font-size: 13px; color: var(--ink2); font-weight: 600; }
+.rp-now { font-size: 15px; line-height: 1.5; min-height: 26px; }
+.rp-now .st-l { font-size: 11.5px; color: var(--ink3); border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; margin-right: 8px; vertical-align: 2px; }
+.rp-now .ci { vertical-align: -4px; }
+#replay .hint { font-size: 12.8px; color: var(--ink3); line-height: 1.55; }
+.rp-tip { margin: 10px 0 0; }
+.rp-tip .link { padding: 0 2px; font-size: 12.8px; color: var(--gold); }
+.gto { background: var(--panel2); border: 1px solid rgba(230, 192, 104, .22); border-radius: 12px; padding: 10px 12px; margin: 10px 0 4px; }
+.gto-h { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 10px; font-size: 12.5px; color: var(--ink2); margin-bottom: 6px; }
+.gto-h b { color: var(--gold); font-size: 13px; }
+.gbar { display: grid; grid-template-columns: minmax(84px, 40%) 1fr 40px; align-items: center; gap: 8px; margin: 5px 0; font-size: 13.5px; }
+.gbar .lbl small { color: var(--ink3); font: 11px var(--mono); margin-left: 5px; }
+.gbar i { display: block; height: 10px; border-radius: 6px; background: rgba(255, 255, 255, .07); overflow: hidden; }
+.gbar i b { display: block; height: 100%; border-radius: 6px; background: var(--k, var(--jade)); transition: width .3s; }
+.gbar .pc { font: 600 13px var(--mono); text-align: right; }
+.k-fold { --k: #7d8791; } .k-check, .k-call { --k: var(--jade); } .k-bet, .k-raise { --k: var(--gold); } .k-allin { --k: var(--alarm); }
+.gmeta { font-size: 12.5px; color: var(--ink2); margin: 8px 0 4px; }
+.gmeta b { color: var(--ink); font-family: var(--mono); }
+.gnotes { margin: 6px 0 0; padding-left: 16px; font-size: 12.6px; color: var(--ink2); line-height: 1.5; }
+.gnotes li { margin: 2px 0; }
+.verdict { margin-top: 9px; padding: 7px 10px; border-radius: 9px; font-size: 13.5px; line-height: 1.45; }
+.verdict small { opacity: .85; }
+.verdict.v-good { background: rgba(71, 185, 142, .14); color: #9fe6c4; }
+.verdict.v-mix { background: rgba(230, 192, 104, .13); color: #f0d48f; }
+.verdict.v-miss { background: rgba(229, 83, 61, .14); color: #f3a69a; }
+.dlist { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.dlist li.st { font-size: 11.5px; color: var(--ink3); margin: 6px 0 0; }
+.drow { display: flex; align-items: center; gap: 4px; width: 100%; text-align: left; background: rgba(255, 255, 255, .03); border: 1px solid transparent; border-radius: 9px; padding: 7px 9px; font-size: 13px; }
+.drow.on { border-color: rgba(230, 192, 104, .5); background: rgba(230, 192, 104, .08); }
+.drow .da { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.drow .dr { color: var(--ink3); font-size: 12px; white-space: nowrap; }
+.rp-opt { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 12px 0 0; }
+.rp-opt > span { font-size: 12.5px; color: var(--ink3); margin-right: 4px; }
+.rp-opt .chip { padding: 6px 11px; font-size: 13px; }
+.gto-note { margin-top: 14px !important; font-size: 11.8px !important; }
+#rtable .seat.turn .plate { animation: none; box-shadow: 0 0 0 2px rgba(230, 192, 104, .7), 0 0 22px rgba(230, 192, 104, .35); }
+@media (max-aspect-ratio: 1/1) {
+  .rp-main { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 54%) minmax(0, 1fr); }
+  .rp-side { border-left: 0; border-top: 1px solid var(--line); }
+}
+@media (max-height: 430px) and (min-aspect-ratio: 1/1) {
+  .rp-head { padding: 2px 6px 2px 12px; }
+  .rp-head .x { width: 34px; height: 34px; }
+  .rp-ctl { padding: 2px 8px 6px; gap: 6px; }
+  .rp-ctl button { height: 36px; width: 40px; }
+  .rp-ctl button.big { height: 40px; width: 58px; font-size: 26px; }
+  .rp-side { padding: 8px 12px 14px; }
+}
+.nw { white-space: nowrap; }
+.panel.lobby .startb { width: 100%; margin: 12px 0 2px; }
+.go.on { color: var(--jade); font-size: 15px; }
+.go.on b { font: inherit; font-weight: 700; color: var(--gold); }
+
+/* ---- room for everything on short screens: nothing needs scrolling, nothing is cut off */
+.rp-amt .rp-x { margin-left: 2px; }
+.ic.snd .lbl { white-space: nowrap; }
+@media (max-width: 480px) { .ic.snd .lbl { display: none; } }
+body.lay-port .dock-in.raising .mine { display: none; }
+@media (max-aspect-ratio: 1/1) and (max-height: 760px) {
+  .rotate { display: none; }
+  .mine { --lw: clamp(44px, 12.5vw, 66px); }
+  #dock { padding-top: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
+  .dock-in { min-height: 84px; }
+  .ctl { gap: 6px; }
+  .btn { min-height: 44px; padding: 8px 6px; }
+  .rpanel { gap: 6px; padding: 6px 8px 8px; }
+  .presets button { padding: 6px 2px; }
+}
+@media (max-aspect-ratio: 1/1) and (max-height: 640px) {
+  .mine { --lw: clamp(40px, 11vw, 54px); }
+  .hs { font-size: 11.5px; min-height: 14px; }
+  .btn { min-height: 40px; font-size: 14px; }
+  .btn small { font-size: 11px; }
+  .stepb { width: 36px; height: 36px; }
+  input#ramt { font-size: 19px; }
+  .status { font-size: 13.5px; }
+}
+@media (min-aspect-ratio: 1/1) and (max-height: 430px) {
+  body.lay-land #dock { padding: max(6px, env(safe-area-inset-top)) 8px max(6px, env(safe-area-inset-bottom)); }
+  body.lay-land .dock-in { gap: 6px; }
+  body.lay-land .mine { gap: 3px; }
+  body.lay-land .ctl { gap: 6px; }
+  body.lay-land .btn { min-height: 40px; padding: 6px 6px; font-size: 14px; }
+  body.lay-land .btn small { font-size: 11px; margin-top: 1px; }
+  body.lay-land .abtns { gap: 6px; }
+  body.lay-land .pchip { padding: 6px 8px; font-size: 12.5px; }
+  body.lay-land .rpanel { gap: 5px; padding: 5px 7px 7px; }
+  body.lay-land .stepb { width: 34px; height: 34px; }
+  body.lay-land input#ramt { font-size: 18px; }
+  body.lay-land .presets button { padding: 5px 2px; font-size: 12px; }
+  body.lay-land .hs { font-size: 11.5px; min-height: 14px; }
+}
+@media (min-aspect-ratio: 1/1) and (max-height: 350px) {
+  body.lay-land .tinfo { display: none; }
+  body.lay-land.seated .hl3 { display: flex; }
+  body.lay-land .btn { min-height: 36px; }
+  body.lay-land .status { font-size: 12.5px; line-height: 1.35; }
+}
+body.lay-land .myturn .mt-bar { display: none; }
+body.lay-land .myturn .tcard { margin-left: auto; }
+@media (max-aspect-ratio: 1/1) and (max-height: 760px) {
+  #overlay { padding: 10px; }
+  .panel { padding: 16px 16px 14px; max-height: calc(100dvh - 20px); }
+  .panel h2 { font-size: 20px; }
+  .panel h3 { margin: 10px 0 6px; }
+  .plist { gap: 5px; }
+  .plist li { padding: 7px 11px; }
+  .btn.big { padding: 12px; margin-top: 8px; }
+  .go { margin: 10px 0 2px; }
+  .aibox { margin: 8px 0 2px; padding: 7px 10px; }
+  .panel .row { margin-top: 4px; }
+}
+
+/* ---- the room form: two columns when there is width, compact everywhere, the create button always in reach */
+.panel.home .field { margin: 10px 0; }
+.panel.home .field label small { color: var(--ink3); margin-left: 6px; font-size: 12px; }
+.panel.home .chip { padding: 7px 12px; font-size: 13.5px; }
+.panel.home .lead { margin: 6px 0 4px; line-height: 1.5; }
+.facts { margin: 10px 0 0; padding-left: 16px; color: var(--ink3); font-size: 12.5px; line-height: 1.5; }
+.facts li { margin: 2px 0; }
+@media (min-width: 760px) and (min-aspect-ratio: 1/1) {
+  .panel.home { width: min(940px, 100%); display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 0 30px; align-items: start; }
+  .panel.home .hcol:last-child { padding-top: 54px; }
+}
+@media (max-height: 500px) and (min-aspect-ratio: 1/1) {
+  .panel.home .lead { font-size: 12.5px !important; }
+  .panel.home .field { margin: 6px 0; }
+  .panel.home .field label { margin-bottom: 4px; }
+  .panel.home .chip { padding: 5px 10px; font-size: 12.5px; }
+  .panel.home .brand h1 { font-size: 20px; }
+  .panel.home .hcol:last-child { padding-top: 40px; }
+  .facts { margin-top: 6px; font-size: 11.5px; }
+}
+@media (max-aspect-ratio: 1/1) and (max-height: 900px) {
+  .panel.home .field { margin: 8px 0; }
+  .panel.home .field label { margin-bottom: 5px; }
+  .panel.home .chip { padding: 6px 10px; font-size: 13px; }
+  .panel.home .lead { font-size: 13px !important; }
+  .facts { font-size: 12px; margin-top: 6px; }
+}
+@media (max-height: 500px) and (min-aspect-ratio: 1/1) {
+  .panel.home { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 0 22px; }
+  .panel.home .chip { padding: 4px 9px; }
+  .panel.home input#stackIn { width: 84px; padding: 4px 10px; font-size: 12.5px; }
+  .panel.home .lead { font-size: 12px !important; line-height: 1.45; }
+}
+@media (max-aspect-ratio: 1/1) and (max-height: 760px) {
+  .panel.home .field { margin: 7px 0; }
+  .panel.home .lead { line-height: 1.45; }
+}
+/* the seat draw and the final standings fit without scrolling */
+.drawlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(150px, 100%), 1fr)); gap: 6px; }
+.drawlist li { padding: 6px 8px; gap: 8px; }
+.drawlist .cd.sm { width: 28px; height: 39px; }
+.drawlist .cd.sm b { font-size: 16px; }
+.drawlist .cd.sm svg { width: 12px; height: 12px; }
+@media (max-height: 500px) {
+  .plist.places { gap: 3px; }
+  .plist.places li { padding: 4px 10px; font-size: 13px; }
+  .plist.places .pz { font-size: 13px; }
+  .panel.end .btn.big { margin-top: 4px; }
+  .panel.draw h2 { font-size: 18px; margin-bottom: 2px; }
+  .panel.draw .hint { margin: 4px 0; }
 }
 
 </style>
@@ -531,6 +757,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
 </div>
 <div id="overlay" hidden></div>
 <div id="sheet" hidden></div>
+<div id="replay" hidden role="dialog" aria-label="핸드 리플레이"></div>
 <div id="toast" role="status" aria-live="polite"></div>
 <script></script>
 <script>
@@ -705,7 +932,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     var order = players.slice(), i, j, t;
     for (i = order.length - 1; i > 0; i--) { j = rnd(i + 1); t = order[i]; order[i] = order[j]; order[j] = t; }
     var seats = order.map(function (p) {
-      return { pid: p.pid, nick: p.nick, pk: p.pk || '', stack: cfg.stack, tc: cfg.tc, out: false, place: 0, bust: 0, prize: 0 };
+      return { pid: p.pid, nick: p.nick, pk: p.pk || '', bot: p.bot || 0, stack: cfg.stack, tc: cfg.tc, out: false, place: 0, bust: 0, prize: 0 };
     });
     var deck = shuffleDeck(rnd), draw = seats.map(function (_, k) { return deck[k]; }), btn = 0;
     for (i = 1; i < draw.length; i++) if (draw[i] > draw[btn]) btn = i;   // rank, then suit: spades high
@@ -1076,7 +1303,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     }
     return {
       v: S.v, tid: S.tid, st: S.st, cfg: S.cfg, handNo: S.handNo,
-      seats: S.seats.map(function (p) { return { pid: p.pid, nick: p.nick, stack: p.stack, tc: p.tc, out: p.out, place: p.place, bust: p.bust, prize: p.prize || 0 }; }),
+      seats: S.seats.map(function (p) { return { pid: p.pid, nick: p.nick, bot: p.bot || 0, stack: p.stack, tc: p.tc, out: p.out, place: p.place, bust: p.bust, prize: p.prize || 0 }; }),
       pool: S.pool || 0, prizes: (S.prizes || []).slice(),
       draw: S.draw, btn0: S.btn0, firstAt: S.firstAt || 0, lvl: levelAt(S, now), lvlLeft: levelLeft(S, now),
       places: S.places.slice(), endAt: S.endAt || 0, hand: ph
@@ -1090,6 +1317,826 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     act: act, autoAct: autoAct, timeout: timeout, useTimeCard: useTimeCard, showCards: showCards, advance: advance,
     delay: delay, levelAt: levelAt, levelLeft: levelLeft, pub: pub, buildPots: buildPots, fromButton: fromButton
   };
+});
+
+</script>
+<script>
+/* HoldemAdvisor — GTO-style advice (an approximation, not a solver) and the AI players built on it.
+ *
+ * Preflop: a 169-hand order that follows the shape of standard GTO opening charts, opening /
+ * 3-bet / defending ranges by position, and push/fold ranges for short stacks after Nash charts.
+ * Postflop: equity against the ranges the betting suggests (Monte Carlo), pot odds, minimum
+ * defence frequency and board texture, turned into mixed frequencies the way solvers report them.
+ * Also rebuilds a recorded hand step by step for the replay viewer and grades each decision.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory(require('./engine.js'));
+  else root.HoldemAdvisor = factory(root.Holdem);
+})(typeof self !== 'undefined' ? self : this, function (HD) {
+  'use strict';
+
+  var RK = '23456789TJQKA';
+  // roughly the order hands join GTO raise-first-in ranges as they widen
+  var ORDER = ('AA KK QQ AKs JJ AQs KQs AKo TT AJs KJs ATs AQo QJs KTs 99 QTs JTs A9s AJo KQo 88 A8s K9s A5s A7s T9s ' +
+    'A4s Q9s A6s J9s A3s 77 ATo KJo A2s QJo K8s 98s T8s 66 K7s Q8s J8s 87s KTo K6s QTo JTo 97s 55 K5s 76s A9o 86s ' +
+    'T7s K4s Q7s 65s 44 K3s J7s 54s Q6s A8o 96s K2s 75s 33 Q5s A7o K9o 64s Q4s T9o A5o 85s J6s 22 A6o Q3s 53s A4o ' +
+    'T6s Q9o J9o Q2s 74s J5s A3o 95s 43s K8o J4s A2o 63s 84s T8o 98o J3s K7o T5s 52s J2s 73s 42s K6o T4s Q8o 94s ' +
+    '87o J8o T3s 62s K5o 32s 93s 97o T2s 83s 92s K4o 76o Q7o 72s 86o 82s K3o T7o J7o 65o Q6o K2o 54o 96o 75o Q5o ' +
+    '64o 85o Q4o J6o 53o T6o Q3o 74o J5o Q2o 95o 43o 63o J4o 84o T5o J3o 52o 73o J2o 42o T4o 94o T3o 62o 32o 93o ' +
+    'T2o 83o 92o 72o 82o').split(' ');
+  var IDX = {}, LO = [], HI = [], COMBOS = [];
+  (function build() {
+    var tot = 0;
+    ORDER.forEach(function (k, i) {
+      IDX[k] = i;
+      var a = RK.indexOf(k.charAt(0)), b = RK.indexOf(k.charAt(1)), cs = [], s1, s2;
+      for (s1 = 0; s1 < 4; s1++) for (s2 = 0; s2 < 4; s2++) {
+        if (a === b) { if (s1 < s2) cs.push([a * 4 + s1, b * 4 + s2]); }
+        else if (k.charAt(2) === 's') { if (s1 === s2) cs.push([a * 4 + s1, b * 4 + s2]); }
+        else if (s1 !== s2) cs.push([a * 4 + s1, b * 4 + s2]);
+      }
+      LO.push(tot / 1326);
+      cs.forEach(function (c) { COMBOS.push(c); });
+      tot += cs.length;
+      HI.push(tot / 1326);
+    });
+  })();
+  function key(c1, c2) {
+    var r1 = c1 >> 2, r2 = c2 >> 2, hi = Math.max(r1, r2), lo = Math.min(r1, r2);
+    if (r1 === r2) return RK.charAt(hi) + RK.charAt(lo);
+    return RK.charAt(hi) + RK.charAt(lo) + ((c1 & 3) === (c2 & 3) ? 's' : 'o');
+  }
+  function band(cards) { var i = IDX[key(cards[0], cards[1])]; return [LO[i], HI[i]]; }
+  // share of this hand's combos that fall inside the top x of all hands
+  function inTop(b, x) { return x <= b[0] ? 0 : x >= b[1] ? 1 : (x - b[0]) / (b[1] - b[0]); }
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+  function sum(a) { var t = 0; for (var i = 0; i < a.length; i++) t += a[i]; return t; }
+
+  function rng(seed) {
+    var a = seed >>> 0;
+    return function () {
+      a = a + 0x6D2B79F5 | 0;
+      var t = Math.imul(a ^ a >>> 15, 1 | a);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function hashStr(s) { var h = 2166136261; for (var i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+  // ------------------------------------------------------------ ranges
+  var RFI = { 1: 0.46, 2: 0.48, 3: 0.34, 4: 0.27, 5: 0.22, 6: 0.19, 7: 0.17, 8: 0.15 };
+  function rfiPct(behind, nLive) { return nLive <= 2 ? 0.82 : RFI[clamp(behind, 1, 8)]; }
+  // push-or-fold with no one in yet (chip EV, Nash-style), by players still to act and stack in BB
+  var PUSH_BB = [5, 8, 10, 12, 15, 20];
+  var PUSH = {
+    1: [0.75, 0.63, 0.58, 0.52, 0.45, 0.38], 2: [0.52, 0.42, 0.37, 0.33, 0.28, 0.22], 3: [0.40, 0.31, 0.27, 0.24, 0.20, 0.16],
+    4: [0.33, 0.25, 0.21, 0.19, 0.16, 0.12], 5: [0.28, 0.21, 0.18, 0.16, 0.13, 0.10], 6: [0.25, 0.18, 0.15, 0.13, 0.11, 0.09]
+  };
+  function pushPct(bbs, behind, ante) {
+    var row = PUSH[clamp(behind, 1, 6)], v, i;
+    if (bbs <= PUSH_BB[0]) v = row[0];
+    else if (bbs >= PUSH_BB[5]) v = row[5];
+    else {
+      for (i = 0; bbs > PUSH_BB[i + 1]; i++);
+      v = row[i] + (row[i + 1] - row[i]) * (bbs - PUSH_BB[i]) / (PUSH_BB[i + 1] - PUSH_BB[i]);
+    }
+    return Math.min(1, v * (ante ? 1.2 : 1));
+  }
+  function threeBetPct(ro) { return clamp(ro * 0.25, 0.025, 0.14); }
+
+  // ------------------------------------------------------------ the table as the advice sees it
+  // ctx: { me, cards, n, live, fold, allin, stack (behind), bet (this street), pot (collected), board,
+  //        street, btn, sbSeat, bbSeat, bb, sb, ante, cur, minR, log (before this decision), L (legal) }
+  function ctxFrom(h, seats, seat, cards) {
+    return {
+      me: seat, cards: cards, n: seats.length, live: h.live, fold: h.fold, allin: h.allin,
+      stack: seats.map(function (p) { return p.stack; }), bet: h.bet, pot: h.pot, board: h.board || [], street: h.street,
+      btn: h.btn, sbSeat: h.sbSeat, bbSeat: h.bbSeat, bb: h.bb, sb: h.sb, ante: h.ante, cur: h.cur, minR: h.minR,
+      log: h.log || [], L: HD.legal(h, seats, seat)
+    };
+  }
+  function preOrder(c) {
+    var out = [], k, i;
+    for (k = 1; k <= c.n; k++) { i = (c.bbSeat + k) % c.n; if (c.live[i]) out.push(i); }
+    return out;                                   // first to act ... big blind last
+  }
+  function behindOf(order, s) { return order.length - 1 - order.indexOf(s); }
+  function posName(c, order, s) {
+    if (s === c.bbSeat) return 'BB';
+    if (s === c.sbSeat) return c.btn === s ? 'BTN/SB' : 'SB';
+    if (s === c.btn) return 'BTN';
+    var firstBlind = order.indexOf(c.sbSeat >= 0 && c.live[c.sbSeat] ? c.sbSeat : c.bbSeat);
+    var k = firstBlind - order.indexOf(s) - 1;
+    return ['BTN', 'CO', 'HJ', 'LJ', 'MP', 'UTG+1'][k] || 'UTG';
+  }
+  function isBlind(c, s) { return s === c.bbSeat || s === c.sbSeat; }
+  function opponents(c) {
+    var out = [];
+    for (var i = 0; i < c.n; i++) if (i !== c.me && c.live[i] && !c.fold[i]) out.push(i);
+    return out;
+  }
+  function potTotal(c) { return c.pot + sum(c.bet); }
+  function effBB(c) {
+    var mine = c.stack[c.me] + c.bet[c.me], top = 0;
+    opponents(c).forEach(function (s) { top = Math.max(top, c.stack[s] + c.bet[s]); });
+    return Math.min(mine, top) / c.bb;
+  }
+
+  // what each player did before the flop
+  function story(c) {
+    var A = { order: preOrder(c), raises: [], limps: [], acts: {}, post: {} }, street = 0;
+    c.log.forEach(function (e) {
+      if (e.d) { street = e.d; return; }
+      if (e.s === undefined || 'fkcbr'.indexOf(e.a) < 0) return;
+      if (street > 0) {
+        (A.post[e.s] = A.post[e.s] || []).push({ st: street, t: e.a === 'b' || e.a === 'r' ? 'agg' : e.a === 'c' ? 'call' : e.a === 'k' ? 'chk' : 'fold' });
+        return;
+      }
+      var list = A.acts[e.s] = A.acts[e.s] || [];
+      if (e.a === 'b' || e.a === 'r') { A.raises.push({ s: e.s, to: e.t, ai: !!e.ai }); list.push({ a: 'raise', k: A.raises.length, ai: !!e.ai, to: e.t }); }
+      else if (e.a === 'c') { if (!A.raises.length) A.limps.push(e.s); list.push({ a: A.raises.length ? 'call' : 'limp', k: A.raises.length, ai: !!e.ai, to: e.t }); }
+      else list.push({ a: e.a === 'k' ? 'check' : 'fold', k: A.raises.length });
+    });
+    return A;
+  }
+  function openerRange(c, A) {
+    var r = A.raises[0];
+    if (!r) return 1;
+    var bbs = r.to / c.bb;
+    return r.ai && bbs <= 20 ? pushPct(bbs, behindOf(A.order, r.s), c.ante) : rfiPct(behindOf(A.order, r.s), A.order.length);
+  }
+  function callTop(c, A, s, ro) {
+    if (s === c.bbSeat) return clamp(ro * 1.35 + 0.08, 0.2, 0.75);
+    if (s === c.sbSeat) return clamp(ro * 0.45, 0.05, 0.22);
+    var opener = A.raises[0] ? A.raises[0].s : -1;
+    var ip = opener >= 0 && A.order.indexOf(s) > A.order.indexOf(opener) && !isBlind(c, s);
+    return ip ? clamp(ro * 0.6, 0.05, 0.3) : clamp(ro * 0.45, 0.04, 0.22);
+  }
+  // the slice of the hand order a player's preflop betting points to
+  function bandOf(c, A, s) {
+    var acts = A.acts[s] || [], last = acts[acts.length - 1], ro = openerRange(c, A), t3 = threeBetPct(ro);
+    if (!last) return [0, 1];
+    var bbs = last.to ? last.to / c.bb : 0;
+    if (last.a === 'raise') {
+      if (last.k === 1) return [0, ro];
+      if (last.k === 2) return [0, last.ai && bbs <= 25 ? clamp(ro * 0.5, 0.06, 0.3) : t3];
+      return [0, last.ai && bbs <= 30 ? 0.06 : 0.03];
+    }
+    if (last.a === 'call') {
+      var faced = A.raises[last.k - 1];
+      if (faced && faced.ai) return [0, clamp(ro * (last.k === 1 ? 0.55 : 0.4), 0.03, 0.35)];
+      if (last.k === 1) { var ct = callTop(c, A, s, ro); return [Math.min(t3, ct * 0.5), ct]; }
+      if (last.k === 2) return [0.02, 0.1];
+      return [0, 0.05];
+    }
+    if (last.a === 'limp') return s === c.sbSeat ? [0.08, 0.75] : [0.06, 0.45];
+    if (last.a === 'check') return s === c.bbSeat ? [0.12, 1] : [0, 1];
+    return [0, 1];
+  }
+
+  // ------------------------------------------------------------ hands on boards
+  function straightHigh(mask) {
+    for (var hi = 12; hi >= 4; hi--) if (((mask >> (hi - 4)) & 31) === 31) return hi;
+    return (mask & 0x100F) === 0x100F ? 3 : -1;
+  }
+  function drawInfo(hand, board) {
+    if (board.length >= 5 || board.length < 3) return { fd: false, sd: 0 };
+    var sc = [0, 0, 0, 0], hs = [0, 0, 0, 0], mask = 0, bmask = 0, fd = false, sd = 0, r;
+    hand.forEach(function (x) { sc[x & 3]++; hs[x & 3]++; mask |= 1 << (x >> 2); });
+    board.forEach(function (x) { sc[x & 3]++; mask |= 1 << (x >> 2); bmask |= 1 << (x >> 2); });
+    for (r = 0; r < 4; r++) if (sc[r] === 4 && hs[r] > 0) fd = true;
+    if (straightHigh(mask) < 0) {
+      for (r = 0; r < 13; r++) if (!(mask & (1 << r)) && straightHigh(mask | (1 << r)) >= 0 && straightHigh(bmask | (1 << r)) < 0) sd++;
+    }
+    return { fd: fd, sd: Math.min(sd, 2) };
+  }
+  function topRank(board) { var t = 0; board.forEach(function (x) { t = Math.max(t, x >> 2); }); return t; }
+  // strong (top pair / overpair or better, made with a hole card), pair, draw, air
+  function classify(hand, board, bev) {
+    if (board.length < 3) return 'pre';
+    if (!bev) bev = HD.evalCards(board);
+    var ev = HD.evalCards(hand.concat(board)), pr = -1;
+    if (ev.cat >= 3 && ev.cat > bev.cat) return 'strong';
+    if (ev.cat === 2 && bev.cat === 0) return 'strong';
+    if (ev.cat === 2 && bev.cat === 1) pr = ev.keys[0] === bev.keys[0] ? ev.keys[1] : ev.keys[0];
+    else if (ev.cat === 1 && bev.cat === 0) pr = ev.keys[0];
+    if (pr >= 0) return pr >= topRank(board) ? 'strong' : 'pair';
+    var d = drawInfo(hand, board);
+    return d.fd || d.sd ? 'draw' : 'air';
+  }
+  var ACC = {
+    agg: { strong: 1, pair: 0.7, draw: 0.75, air: 0.3 },
+    call: { strong: 0.85, pair: 1, draw: 0.9, air: 0.2 },
+    chk: { strong: 0.45, pair: 0.9, draw: 0.85, air: 1 }
+  };
+  function texture(board) {
+    if (board.length < 3) return 0;
+    var sc = [0, 0, 0, 0], ranks = board.map(function (x) { return x >> 2; }).sort(function (a, b) { return a - b; }), w = 0, i;
+    board.forEach(function (x) { sc[x & 3]++; });
+    var m = Math.max.apply(null, sc);
+    if (m >= 3) w += 0.45; else if (m === 2) w += 0.2;
+    for (i = 1; i < ranks.length; i++) {
+      var g = ranks[i] - ranks[i - 1];
+      if (g === 0) w -= 0.12; else if (g <= 2) w += 0.18; else if (g <= 4) w += 0.06;
+    }
+    if (ranks[ranks.length - 1] >= 8 && ranks[0] >= 8) w += 0.1;    // broadway-heavy
+    return clamp(w, 0, 1);
+  }
+
+  // ------------------------------------------------------------ equity by simulation
+  function sampleCombo(lo, hi, dead, rnd) {
+    var a = Math.floor(lo * 1326), b = Math.max(a + 1, Math.min(1326, Math.ceil(hi * 1326))), t, c;
+    for (t = 0; t < 24; t++) { c = COMBOS[a + Math.floor(rnd() * (b - a))]; if (!dead[c[0]] && !dead[c[1]]) return c; }
+    for (t = 0; t < 300; t++) { c = COMBOS[Math.floor(rnd() * 1326)]; if (!dead[c[0]] && !dead[c[1]]) return c; }
+    return null;
+  }
+  // opp: [{ band:[lo,hi], post:[{st, t}] }], boardAt[street] = board as it was on that street
+  function equity(hero, board, opp, boardAt, iters, rnd) {
+    var dead0 = new Uint8Array(52), win = 0, it, j, bevs = {};
+    hero.forEach(function (x) { dead0[x] = 1; });
+    board.forEach(function (x) { dead0[x] = 1; });
+    Object.keys(boardAt).forEach(function (st) { bevs[st] = HD.evalCards(boardAt[st]); });
+    for (it = 0; it < iters; it++) {
+      var dead = dead0.slice(), hands = [];
+      for (j = 0; j < opp.length; j++) {
+        var h = null, t, o = opp[j];
+        for (t = 0; t < 10; t++) {
+          var c = sampleCombo(o.band[0], o.band[1], dead, rnd);
+          if (!c) break;
+          h = c;
+          var p = 1;
+          (o.post || []).forEach(function (a) { if (boardAt[a.st] && ACC[a.t]) p *= ACC[a.t][classify(c, boardAt[a.st], bevs[a.st])] || 1; });
+          if (rnd() < p) break;
+        }
+        if (!h) h = sampleCombo(0, 1, dead, rnd);
+        dead[h[0]] = dead[h[1]] = 1;
+        hands.push(h);
+      }
+      var full = board.slice();
+      while (full.length < 5) { var x = Math.floor(rnd() * 52); if (!dead[x]) { dead[x] = 1; full.push(x); } }
+      var hs = HD.evalCards(hero.concat(full)).score, ties = 1, lost = false;
+      for (j = 0; j < hands.length; j++) {
+        var s = HD.evalCards(hands[j].concat(full)).score;
+        if (s > hs) { lost = true; break; }
+        if (s === hs) ties++;
+      }
+      if (!lost) win += 1 / ties;
+    }
+    return win / iters;
+  }
+  function oppModel(c, A) {
+    return opponents(c).map(function (s) { return { s: s, band: bandOf(c, A, s), post: A.post[s] || [] }; });
+  }
+  function boardsByStreet(c) {
+    var out = {}, b = [];
+    c.log.forEach(function (e) { if (e.d) { b = b.concat(e.c); out[e.d] = b.slice(); } });
+    return out;
+  }
+
+  // ------------------------------------------------------------ advice
+  function opt(k, f, to) { return { k: k, f: Math.max(0, f), to: to }; }
+  function finish(opts) {
+    var t = 0, merged = {}, out = [];
+    opts.forEach(function (o) { t += o.f; });
+    opts.forEach(function (o) {
+      if (!(o.f > 0) || !t) return;
+      var m = merged[o.k];
+      if (m) { m.f += o.f / t; if (o.to && (!m.to || o.f > m.w)) { m.to = o.to; m.w = o.f; } }
+      else { merged[o.k] = { k: o.k, f: o.f / t, to: o.to, w: o.f }; out.push(merged[o.k]); }
+    });
+    out = out.filter(function (o) { return o.f >= 0.03; });
+    var tt = 0;
+    out.forEach(function (o) { tt += o.f; delete o.w; });
+    out.forEach(function (o) { o.f = o.f / tt; });
+    return out.sort(function (a, b) { return b.f - a.f; });
+  }
+  function sizeTo(c, to) {
+    var L = c.L;
+    to = Math.round(to);
+    if (!L || !L.canRaise) return 0;
+    if (to >= L.maxTo * 0.8) return L.maxTo;
+    return clamp(to, L.minTo, L.maxTo);
+  }
+  function aggKind(c, to) { return c.L && to >= c.L.maxTo ? 'allin' : c.L && c.L.isBet ? 'bet' : 'raise'; }
+
+  function preflop(c, A, out, rnd, iters) {
+    var me = c.me, bb = c.bb, hb = band(c.cards), L = c.L, order = A.order, beh = behindOf(order, me), nLive = order.length;
+    var pos = posName(c, order, me), eff = effBB(c), nR = A.raises.length, last = A.raises[nR - 1];
+    var iRaised = A.raises.some(function (r) { return r.s === me; }), mid = (hb[0] + hb[1]) / 2, pot = potTotal(c);
+    out.pos = pos; out.eff = eff; out.handPct = mid;
+    var hk = key(c.cards[0], c.cards[1]), N = out.notes;
+    N.push(pos + ' · 유효 스택 ' + Math.round(eff) + 'BB · ' + hk + '는 전체 핸드 중 상위 약 ' + Math.max(1, Math.round(mid * 100)) + '%');
+    var opts = [];
+    // an all-in in front of us (or a call that would put most of our stack in): call or fold on equity
+    var commit = L && !L.canCheck && L.toCall >= 0.45 * (c.stack[me] + 0);
+    if (last && (last.ai || commit) && L && !L.canCheck) {
+      var opp = oppModel(c, A), eq = equity(c.cards, [], opp, {}, iters, rnd), need = L.toCall / (pot + L.toCall);
+      var callF = clamp((eq - need) / 0.06 + 0.5, 0, 1);
+      out.eq = eq; out.need = need; out.kind = 'shove';
+      N.push('상대 범위(상위 약 ' + Math.round(bandOf(c, A, last.s)[1] * 100) + '%) 대비 에퀴티 ' + pct(eq) + ' · 콜에 필요한 에퀴티 ' + pct(need));
+      opts.push(opt('call', callF, 0), opt('fold', 1 - callF));
+      return opts;
+    }
+    if (nR === 0) {
+      if (A.limps.length === 0 || (A.limps.length === 1 && A.limps[0] === c.sbSeat && me === c.bbSeat)) {
+        if (me === c.bbSeat) {                       // small blind limped: raise for value, otherwise check
+          var rB = inTop(hb, 0.2);
+          out.kind = 'bbOption';
+          N.push('스몰 블라인드가 림프: 빅 블라인드는 상위 약 20%로 레이즈, 나머지는 체크');
+          opts.push(opt('raise', rB, sizeTo(c, 3.5 * bb)), opt('check', 1 - rB));
+          return opts;
+        }
+        if (eff <= 13) {
+          var pp = pushPct(eff, beh, c.ante), pF = inTop(hb, pp);
+          out.kind = 'push';
+          N.push('유효 ' + Math.round(eff) + 'BB는 푸시/폴드 구간: 뒤에 ' + beh + '명, 올인 범위는 상위 약 ' + pct(pp));
+          opts.push(opt('allin', pF, L ? L.maxTo : 0), opt('fold', 1 - pF));
+          return opts;
+        }
+        var rp = rfiPct(beh, nLive), rF = inTop(hb, rp), size = me === c.sbSeat && nLive > 2 ? 3 : eff < 25 ? 2 : 2.2;
+        out.kind = 'rfi';
+        N.push('앞에서 모두 폴드: ' + pos + ' 오픈 범위는 상위 약 ' + pct(rp) + ' (' + size + 'BB)');
+        opts.push(opt('raise', rF, sizeTo(c, size * bb)));
+        if (me === c.sbSeat && nLive > 2) {
+          var limpF = Math.max(0, inTop(hb, 0.7) - rF) * 0.6;
+          if (limpF > 0) N.push('스몰 블라인드는 레이즈 범위 밖의 핸드 일부를 림프로 섞어요');
+          opts.push(opt('call', limpF));
+          opts.push(opt('fold', 1 - rF - limpF));
+        } else opts.push(opt('fold', 1 - rF));
+        return opts;
+      }
+      // limpers in front
+      var nL = A.limps.length, iso = rfiPct(beh, nLive) * 0.6, over = rfiPct(beh, nLive) * 1.1;
+      if (eff <= 13 && L && L.canRaise) {
+        var lj = me === c.bbSeat ? 0.15 : pushPct(eff, beh, c.ante) * 0.75, fl = inTop(hb, lj);
+        out.kind = 'vsLimpShort';
+        N.push('림프 ' + nL + '명, 유효 ' + Math.round(eff) + 'BB: 상위 약 ' + pct(lj) + '로 올인, 나머지는 ' + (me === c.bbSeat ? '체크' : '폴드'));
+        opts.push(opt('allin', fl, L.maxTo), opt(me === c.bbSeat ? 'check' : 'fold', 1 - fl));
+        return opts;
+      }
+      if (me === c.bbSeat) {
+        var bR = inTop(hb, 0.12);
+        out.kind = 'bbVsLimp';
+        N.push('림프 ' + nL + '명: 빅 블라인드는 상위 약 12%로 레이즈, 나머지는 체크');
+        opts.push(opt('raise', bR, sizeTo(c, (3 + nL) * bb)), opt('check', 1 - bR));
+        return opts;
+      }
+      var iF = inTop(hb, iso), oF = Math.max(0, inTop(hb, over) - iF) * 0.6;
+      out.kind = 'vsLimp';
+      N.push('림프 ' + nL + '명: 상위 약 ' + pct(iso) + '로 아이솔레이션 레이즈 (' + (3 + nL) + 'BB)');
+      opts.push(opt('raise', iF, sizeTo(c, (3 + nL) * bb)), opt('call', oF), opt('fold', 1 - iF - oF));
+      return opts;
+    }
+    var ro = openerRange(c, A);
+    if (nR === 1 && !iRaised) {
+      var callers = A.raises.length ? Object.keys(A.acts).filter(function (s) { return (A.acts[s] || []).some(function (x) { return x.a === 'call' && x.k === 1; }); }).length : 0;
+      var t3 = clamp(threeBetPct(ro) + callers * 0.01, 0.025, 0.16), tc = Math.max(t3, callTop(c, A, me, ro) - callers * 0.02 + (me === c.bbSeat ? callers * 0.05 : 0));
+      var f3 = inTop(hb, t3), fc = Math.max(0, inTop(hb, tc) - f3);
+      var openTo = last.to, to3 = eff <= 22 ? (L ? L.maxTo : 0) : sizeTo(c, (A.order.indexOf(me) > A.order.indexOf(last.s) && !isBlind(c, me) ? 3 : 3.8) * openTo + callers * openTo);
+      if (eff <= 20 && L && L.canRaise) {
+        var jr = Math.max(0.03, (eff <= 8 ? clamp(ro * 0.9, 0.15, 0.6) : eff <= 12 ? clamp(ro * 0.6, 0.1, 0.4) : clamp(ro * 0.4, 0.06, 0.25)) - callers * 0.03);
+        var fJ = inTop(hb, jr), fC = 0;
+        if (me === c.bbSeat) fC = Math.max(0, inTop(hb, Math.max(jr, callTop(c, A, me, ro) * (eff <= 8 ? 0.6 : 0.8))) - fJ);
+        else if (eff > 12) fC = Math.max(0, inTop(hb, Math.max(jr, tc * 0.5)) - fJ);
+        out.kind = 'vsOpenShort';
+        N.push(posName(c, order, last.s) + ' 오픈(상위 약 ' + pct(ro) + ')에 유효 ' + Math.round(eff) + 'BB: 상위 약 ' + pct(jr) + '로 올인' + (fC > 0 ? ', 그 아래 일부는 콜' : ', 나머지는 폴드'));
+        opts.push(opt('allin', fJ, L.maxTo), opt('call', fC), opt('fold', 1 - fJ - fC));
+        return opts;
+      }
+      out.kind = 'vsOpen';
+      N.push(posName(c, order, last.s) + ' 오픈(상위 약 ' + pct(ro) + ')에 대해: 3벳 상위 약 ' + pct(t3) + ', 콜 상위 약 ' + pct(tc) + (callers ? ' · 앞에 콜 ' + callers + '명' : ''));
+      if (L && L.canRaise) opts.push(opt(eff <= 22 ? 'allin' : 'raise', f3, to3)); else fc += f3;
+      opts.push(opt('call', fc), opt('fold', 1 - f3 - fc));
+      return opts;
+    }
+    if (iRaised && last.s !== me && nR === 2 && eff <= 25 && L && L.canRaise) {
+      var j4 = clamp(ro * 0.3, 0.04, 0.16), f4j = inTop(hb, j4);
+      out.kind = 'vs3betShort';
+      N.push('내 오픈에 3벳, 유효 ' + Math.round(eff) + 'BB: 상위 약 ' + pct(j4) + '로 올인, 나머지는 폴드');
+      opts.push(opt('allin', f4j, L.maxTo), opt('fold', 1 - f4j));
+      return opts;
+    }
+    if (iRaised && last.s !== me && nR === 2) {
+      var t4 = clamp(ro * 0.12, 0.015, 0.06), tc4 = clamp(ro * 0.35, 0.03, 0.18);
+      var f4 = inTop(hb, t4), fc4 = Math.max(0, inTop(hb, tc4) - f4);
+      out.kind = 'vs3bet';
+      N.push('내 오픈에 3벳: 4벳 상위 약 ' + pct(t4) + ', 콜 상위 약 ' + pct(tc4) + ', 나머지는 폴드');
+      if (L && L.canRaise) opts.push(opt(eff <= 35 ? 'allin' : 'raise', f4, eff <= 35 ? L.maxTo : sizeTo(c, last.to * 2.3)));
+      else fc4 += f4;
+      opts.push(opt('call', fc4), opt('fold', 1 - f4 - fc4));
+      return opts;
+    }
+    var tj = 0.025, fj = inTop(hb, tj), fcc = Math.max(0, inTop(hb, 0.05) - fj);
+    out.kind = 'vs4bet';
+    N.push('3벳 이상이 나온 큰 팟: 상위 약 2.5%(QQ+, AK)로만 계속');
+    if (L && L.canRaise) opts.push(opt('allin', fj, L.maxTo)); else fcc += fj;
+    opts.push(opt('call', fcc), opt('fold', 1 - fj - fcc));
+    return opts;
+  }
+
+  function handLabel(cards, board) {
+    var ev = HD.evalCards(cards.concat(board)), bev = HD.evalCards(board), parts = [];
+    var hi = HD.RN[Math.max(cards[0] >> 2, cards[1] >> 2)] + ' 하이';
+    if (ev.cat === 0) parts.push('노페어 (' + hi + ')');
+    else if (ev.cat <= bev.cat) parts.push('보드 ' + HD.handName(bev) + ' + ' + hi);
+    else parts.push(HD.handName(ev));
+    var pr = ev.cat === 1 && bev.cat === 0 ? ev.keys[0] : ev.cat === 2 && bev.cat === 1 ? (ev.keys[0] === bev.keys[0] ? ev.keys[1] : ev.keys[0]) : -1;
+    if (pr >= 0) {
+      var top = topRank(board), ranks = board.map(function (x) { return x >> 2; });
+      if (pr > top) parts.push('오버페어');
+      else if (pr === top) parts.push('탑페어');
+      else if (ranks.filter(function (r) { return r > pr; }).length === 1) parts.push('세컨드 페어');
+      else parts.push('약한 페어');
+    }
+    var d = drawInfo(cards, board);
+    if (d.fd) parts.push('플러시 드로우');
+    if (d.sd === 2) parts.push('양방 스트레이트 드로우');
+    else if (d.sd === 1) parts.push('거트샷');
+    return parts.join(' · ');
+  }
+  function pct(x) { return Math.round(x * 100) + '%'; }
+
+  function postflop(c, A, out, rnd, iters) {
+    var me = c.me, L = c.L, board = c.board, opp = oppModel(c, A), multi = opp.length;
+    var eq = equity(c.cards, board, opp, boardsByStreet(c), iters, rnd), pot = potTotal(c), tex = texture(board), N = out.notes;
+    var cls = classify(c.cards, board), d = drawInfo(c.cards, board), strongDraw = d.fd || d.sd === 2;
+    var curAgg = -1, prevAgg = -1;              // who made the last bet or raise on the street before this one
+    c.log.forEach(function (e) { if (e.d) { prevAgg = curAgg; curAgg = -1; } else if (e.a === 'b' || e.a === 'r') curAgg = e.s; });
+    out.eq = eq; out.tex = tex; out.hand = handLabel(c.cards, board); out.multi = multi;
+    N.push('내 패: ' + out.hand + ' · 상대 ' + multi + '명의 예상 범위 대비 에퀴티 ' + pct(eq));
+    N.push('보드: ' + (tex < 0.25 ? '마른 편(드로우 적음)' : tex < 0.55 ? '보통' : '젖은 편(드로우 많음)'));
+    var opts = [], street = c.street;
+    if (L && !L.canCheck) {
+      var need = L.toCall / (pot + L.toCall), mdf = pot > 0 ? (pot - L.toCall) / pot : 1;
+      out.need = need; out.mdf = mdf; out.kind = 'facing';
+      N.push('콜 ' + L.toCall + '에 필요한 에퀴티 ' + pct(need) + ' · 이 크기 벳엔 범위의 ' + pct(mdf) + ' 이상 지켜야 해요(MDF)');
+      var margin = eq - need, valueBar = multi > 1 ? 0.75 : 0.68;
+      var raiseF = L.canRaise ? clamp((eq - valueBar) / 0.2, 0, 0.8) : 0;
+      if (L.canRaise && strongDraw && street < 3 && eq > need - 0.08) raiseF = Math.max(raiseF, multi > 1 ? 0.12 : 0.28);
+      var callF = margin >= 0 ? 1 : clamp(1 + margin / 0.1, 0, 1);
+      var raiseTo = sizeTo(c, c.cur + (pot + L.toCall) * 0.9);
+      if (raiseTo && (raiseTo - c.bet[me]) > c.stack[me] * 0.6) raiseTo = L.maxTo;
+      opts.push(opt(aggKind(c, raiseTo), raiseF, raiseTo), opt('call', (1 - raiseF) * callF), opt('fold', (1 - raiseF) * (1 - callF)));
+      if (raiseF > 0.2 && eq > valueBar) N.push('에퀴티가 높아 가치 레이즈를 섞어요');
+      else if (raiseF > 0 && strongDraw) N.push('강한 드로우라 세미블러프 레이즈를 일부 섞어요');
+      return opts;
+    }
+    // nobody has bet: bet or check
+    var size = street === 1 ? (tex < 0.3 ? 0.33 : tex < 0.6 ? 0.5 : 0.7) : street === 2 ? 0.66 : (eq > 0.8 ? 0.85 : 0.66);
+    var valueF = clamp((eq - (multi > 1 ? 0.62 : 0.55)) / 0.25, 0, 0.92), bluffF = 0;
+    var aggressor = prevAgg === me;
+    if (eq < 0.4) {
+      if (street === 3) bluffF = cls === 'air' ? (size / (1 + 2 * size)) * 0.8 : 0;
+      else bluffF = strongDraw ? 0.5 : d.sd ? 0.25 : (aggressor ? 0.3 * (1 - tex) + 0.05 : 0.06);
+    } else if (eq < 0.55 && aggressor && street === 1) valueF = Math.max(valueF, 0.35 * (1 - tex) + 0.1);
+    if (!aggressor && eq < 0.75 && street === 1) valueF *= 0.45;            // donk bets are rare
+    if (multi > 1) bluffF *= 0.4;
+    var betF = clamp(valueF + bluffF, 0, 0.95), betTo = sizeTo(c, c.cur + pot * size);
+    if (betTo && betTo > c.stack[me] * 0.7) betTo = L.maxTo;
+    out.kind = aggressor ? 'aggressor' : 'checkedTo';
+    if (aggressor && street === 1) N.push('프리플랍 공격자: ' + (tex < 0.3 ? '마른 보드는 범위 전체로 작게(팟의 1/3) 자주 c벳하는 자리' : '젖은 보드는 크게, 덜 자주 c벳하는 자리'));
+    else if (aggressor) N.push('지난 스트리트에 내가 마지막으로 공격했어요: 강한 패와 드로우로 이어서 베팅');
+    if (street === 3 && bluffF > 0) N.push('리버 블러프 비율: 팟의 ' + Math.round(size * 100) + '% 벳이면 블러프가 약 ' + pct(size / (1 + 2 * size)) + '가 되도록');
+    opts.push(opt(aggKind(c, betTo), betF, betTo), opt('check', 1 - betF));
+    return opts;
+  }
+
+  // the recommendation for one decision
+  function advise(c, o) {
+    o = o || {};
+    var rnd = o.rnd || Math.random, iters = o.iters || 700, A = story(c);
+    var out = { street: c.street, notes: [], pot: potTotal(c), toCall: c.L ? c.L.toCall : 0, bb: c.bb, opts: [] };
+    if (!c.L || !c.cards) return out;
+    var opts = c.street === 0 ? preflop(c, A, out, rnd, Math.round(iters * 1.6)) : postflop(c, A, out, rnd, iters);
+    // a free check is never folded
+    if (c.L.canCheck) opts.forEach(function (x) { if (x.k === 'fold') x.k = 'check'; });
+    if (!c.L.canCheck) opts.forEach(function (x) { if (x.k === 'check') x.k = 'fold'; });
+    if (!c.L.canRaise) opts.forEach(function (x) { if (x.k === 'raise' || x.k === 'bet' || x.k === 'allin') { x.k = c.L.canCheck ? 'check' : 'call'; x.to = 0; } });
+    out.opts = finish(opts);
+    return out;
+  }
+
+  // how a decision compares with the advice: good, mixed, miss
+  function judge(adv, e, c) {
+    var me = c.me, kind = e.a === 'f' ? 'fold' : e.a === 'k' ? 'check' : e.a === 'c' ? 'call' : (e.ai ? 'allin' : (c.L && c.L.isBet ? 'bet' : 'raise'));
+    var agg = { bet: 1, raise: 1, allin: 1 }, f = 0, best = null, note = '';
+    adv.opts.forEach(function (x) { if (x.k === kind || (agg[x.k] && agg[kind])) { f += x.f; if (!best || x.f > best.f) best = x; } });
+    if (kind === 'fold' && c.L && c.L.canCheck) return { v: 'miss', f: 0, kind: kind, note: '공짜로 체크할 수 있었는데 폴드했어요' };
+    var v = f >= 0.45 ? 'good' : f >= 0.15 ? 'mix' : 'miss';
+    if (agg[kind] && best && best.to && e.t) {
+      var put = e.t - c.bet[me], want = best.to - c.bet[me];
+      if (want > 0 && best.k !== 'allin') {
+        if (put > want * 3) { note = kind === 'allin' ? '권장 사이즈보다 훨씬 큰 올인이에요' : '사이즈가 권장보다 훨씬 커요'; if (v === 'good') v = 'mix'; }
+        else if (put > want * 1.8) note = '사이즈가 권장보다 큰 편이에요';
+        else if (put < want * 0.55) note = '사이즈가 권장보다 작은 편이에요';
+      }
+    }
+    return { v: v, f: f, kind: kind, note: note };
+  }
+
+  // ------------------------------------------------------------ replaying a recorded hand
+  function replay(rec) {
+    var n = rec.names.length, z = function (v) { return rec.names.map(function () { return v; }); };
+    var st = { stack: rec.start.slice(), bet: z(0), pot: 0, fold: z(false), allin: z(false), acted: z(null), board: [], street: 0, cur: rec.bb, minR: rec.bb };
+    var steps = [];
+    function snap(i, e, final) {
+      return {
+        i: i, e: e || null, final: !!final,
+        seats: rec.names.map(function (nm, s) {
+          return { pid: rec.pids && rec.pids[s] ? rec.pids[s] : 'r' + s, nick: nm, stack: st.stack[s], tc: 0, out: !rec.live[s], place: 0, bust: 0, prize: 0, bot: rec.bots ? rec.bots[s] || 0 : 0 };
+        }),
+        hand: {
+          no: rec.no, lvl: rec.lvl, sb: rec.sb, bb: rec.bb, ante: rec.ante, btn: rec.btn, sbSeat: rec.sbSeat, bbSeat: rec.bbSeat,
+          street: st.street, board: st.board.slice(), live: rec.live.slice(), fold: st.fold.slice(), allin: st.allin.slice(),
+          bet: st.bet.slice(), acted: st.acted.slice(), start: rec.start.slice(), pot: st.pot, cur: st.cur, minR: st.minR,
+          actor: -1, n: i, dl: 0, tcu: 0, log: rec.log.slice(0, i), next: '', res: final ? rec.res : null, done: final ? 1 : 0
+        }
+      };
+    }
+    function apply(e) {
+      var s = e.s;
+      if (e.d) {
+        for (var k = 0; k < n; k++) { st.pot += st.bet[k]; st.bet[k] = 0; st.acted[k] = null; }
+        st.board = st.board.concat(e.c); st.street = e.d; st.cur = 0; st.minR = rec.bb;
+        return;
+      }
+      switch (e.a) {
+        case 'S': case 'B': st.stack[s] -= e.x; st.bet[s] += e.x; if (!st.stack[s]) st.allin[s] = true; break;
+        case 'N': st.stack[s] -= e.x; st.pot += e.x; if (!st.stack[s]) st.allin[s] = true; break;
+        case 'f': st.fold[s] = true; st.acted[s] = st.cur; break;
+        case 'k': st.acted[s] = st.cur; break;
+        case 'c': st.stack[s] -= e.x; st.bet[s] += e.x; if (e.ai || !st.stack[s]) st.allin[s] = true; st.acted[s] = st.cur; break;
+        case 'b': case 'r':
+          st.stack[s] -= e.x; st.bet[s] += e.x;
+          if (st.bet[s] - st.cur >= st.minR) st.minR = st.bet[s] - st.cur;
+          st.cur = Math.max(st.cur, st.bet[s]);
+          if (e.ai || !st.stack[s]) st.allin[s] = true;
+          st.acted[s] = st.cur;
+          break;
+        case 'R': st.bet[s] -= e.x; st.stack[s] += e.x; st.allin[s] = false; break;
+      }
+    }
+    steps.push(snap(0));
+    rec.log.forEach(function (e, i) { apply(e); steps.push(snap(i + 1, e)); });
+    if (rec.res) {
+      for (var k = 0; k < n; k++) { st.pot += st.bet[k]; st.bet[k] = 0; }
+      if (rec.end) st.stack = rec.end.slice();
+      steps.push(snap(rec.log.length, { res: 1 }, true));
+    }
+    steps.forEach(function (sp) {        // who acts next, for the turn highlight
+      for (var j = sp.i; j < rec.log.length; j++) {
+        var e = rec.log[j];
+        if (e.d) break;
+        if ('fkcbr'.indexOf(e.a) >= 0 && e.s !== undefined) { if (!sp.final) sp.hand.actor = e.s; break; }
+      }
+    });
+    return steps;
+  }
+  function analyze(rec, seat, cards, o) {
+    o = o || {};
+    if (!cards || cards.length !== 2) return [];
+    var steps = replay(rec), out = [];
+    rec.log.forEach(function (e, i) {
+      if (e.s !== seat || e.d || 'fkcbr'.indexOf(e.a) < 0) return;
+      var sp = steps[i], h = sp.hand;
+      h.actor = seat;
+      var c = ctxFrom(h, sp.seats, seat, cards);
+      if (!c.L) return;
+      var adv = advise(c, { iters: o.iters || 600, rnd: rng(hashStr((rec.k || '') + ':' + seat + ':' + i)) });
+      adv.i = i; adv.e = e; adv.verdict = judge(adv, e, c); adv.ctxBet = c.bet[seat]; adv.street = c.street;
+      out.push(adv);
+    });
+    return out;
+  }
+
+  // ------------------------------------------------------------ AI players
+  // lv 1 easy (loose, passive, noisy), 2 normal, 3 hard (follows the advice closely)
+  function botAct(c, lv, rnd, iters) {
+    rnd = rnd || Math.random;
+    var L = c.L;
+    if (!L) return null;
+    var adv = advise(c, { iters: iters || (lv >= 3 ? 900 : lv === 2 ? 450 : 220), rnd: rnd }), opts = adv.opts.map(function (x) { return { k: x.k, f: x.f, to: x.to }; });
+    if (lv <= 1) {
+      opts.forEach(function (x) {
+        if (x.k === 'call' || x.k === 'check') x.f += 0.25;
+        if (x.k === 'fold') x.f *= 0.6;
+        if (x.k === 'raise' || x.k === 'bet') x.f *= 0.75;
+      });
+      if (rnd() < 0.06 && L.canRaise) opts.push({ k: 'raise', f: 0.5, to: L.minTo });
+    } else if (lv === 2) opts.forEach(function (x) { x.f = Math.pow(x.f, 0.85); });
+    var t = 0, r, pick = opts[0];
+    opts.forEach(function (x) { t += x.f; });
+    r = rnd() * t;
+    for (var i = 0; i < opts.length; i++) { r -= opts[i].f; if (r <= 0) { pick = opts[i]; break; } }
+    if (!pick) return { a: L.canCheck ? 'k' : 'f', x: 0 };
+    switch (pick.k) {
+      case 'fold': return { a: L.canCheck ? 'k' : 'f', x: 0 };
+      case 'check': return { a: L.canCheck ? 'k' : 'f', x: 0 };
+      case 'call': return { a: L.canCheck ? 'k' : 'c', x: 0 };
+      case 'allin': return { a: 'A', x: 0 };
+      default:
+        if (!L.canRaise) return { a: L.canCheck ? 'k' : 'c', x: 0 };
+        var to = clamp(Math.round(pick.to || L.minTo), L.minTo, L.maxTo);
+        return to >= L.maxTo ? { a: 'A', x: 0 } : { a: 'r', x: to };
+    }
+  }
+
+  return {
+    ORDER: ORDER, key: key, band: band, inTop: inTop, rfiPct: rfiPct, pushPct: pushPct, rng: rng, hashStr: hashStr,
+    ctxFrom: ctxFrom, story: story, posName: posName, preOrder: preOrder, equity: equity, classify: classify, drawInfo: drawInfo,
+    texture: texture, advise: advise, judge: judge, replay: replay, analyze: analyze, botAct: botAct, handLabel: handLabel
+  };
+});
+
+</script>
+<script>
+/* HoldemLayout — where everything on a table goes, in pixels, so that nothing overlaps and nothing leaves the box.
+ *
+ * Seats go round an ellipse (spaced by arc length, so long tables don't crowd their ends). Each seat is a plate
+ * with its hole cards on the table side, an action tag and the dealer button; all of that is a list of rectangles.
+ * The ellipse is as large as the box allows, the pot/board/note block sits in the middle, and every seat gets a
+ * spot for its bet between its cards and the middle. When something collides, the board shrinks first, then the
+ * seats, until nothing does.
+ */
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) module.exports = factory();
+  else root.HoldemLayout = factory();
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  function clamp(x, a, b) { return x < a ? a : x > b ? b : x; }
+
+  // every size the table uses, from the usable box and two shrink factors (seats, board)
+  function sizes(W, Hu, wide, sc, bsc, chars) {
+    var m = Math.min(W, Hu) / 100, v = { m: m };
+    if (wide) { v.ph = clamp(10 * m, 34, 82); v.sw = clamp(25 * m, 86, 224); v.cw = clamp(7.6 * m, 24, 62); v.ch = clamp(10.6 * m, 34, 87); }
+    else { v.ph = clamp(9.2 * m, 31, 76); v.sw = clamp(22 * m, 74, 200); v.cw = clamp(7 * m, 22, 58); v.ch = clamp(9.8 * m, 31, 81); }
+    v.ph *= sc; v.sw *= sc; v.cw *= sc; v.ch *= sc;
+    // the plate always has room for the largest stack: avatar + gap + digits (mono, 0.31 ph) + padding
+    v.sw = Math.max(v.sw, v.ph * (1.38 + 0.19 * (chars || 6)) + 4);
+    v.bw = clamp(11 * m, 30, 98) * bsc; v.bh = v.bw * 1.4; v.gap = Math.max(2, 1.2 * m * bsc);
+    v.cgap = Math.max(3, m * Math.min(1, bsc + 0.15));
+    v.tag = v.ph * 0.36 + 4;                                  // one line of action tag
+    v.cbw = 5 * v.bw + 4 * v.gap;                              // pot / board / note block
+    v.noteh = v.ph * 0.3 * 1.4 * 2;                           // two lines of note
+    v.hnoh = v.ph * 0.22 * 1.3 + 2;
+    v.cbh = v.ph * 0.66 + v.cgap + v.bh + v.cgap + v.noteh + v.hnoh;
+    return v;
+  }
+
+  // the zone says which way a seat's cards and tag go: lo (cards up), hi (cards down), sl / sr (cards inward), mid
+  function zoneOf(wide, c, s) {
+    if (!wide) return s > 0.3 ? 'lo' : s < -0.3 ? 'hi' : 'mid';
+    return s > 0.45 ? 'lo' : s < -0.45 ? 'hi' : (c < 0 ? 'sl' : 'sr');
+  }
+  // a seat's parts as rectangles around its centre (must match style.css)
+  function seatRects(z, v) {
+    var sw = v.sw, ph = v.ph, cw = v.cw * 1.78, ch = v.ch, tg = v.tag, R = [];
+    var bl = z === 'sl' ? 6 : 0, br = z === 'sl' ? 0 : 6;          // the dealer button sits on the outer top corner
+    R.push({ x0: -sw / 2 - bl, x1: sw / 2 + br, y0: -ph / 2 - 7, y1: ph / 2 });
+    if (z === 'hi') {
+      R.push({ x0: -cw / 2, x1: cw / 2, y0: ph / 2 - 5, y1: ph / 2 - 5 + ch });
+      R.push({ x0: -sw / 2, x1: sw / 2, y0: -ph / 2 + 2 - tg, y1: -ph / 2 + 2 });
+    } else if (z === 'sl') {
+      R.push({ x0: sw / 2 - 8, x1: sw / 2 - 8 + cw, y0: -ch / 2, y1: ch / 2 });
+      R.push({ x0: -sw / 2, x1: sw / 2, y0: ph / 2 - 2, y1: ph / 2 - 2 + tg });
+    } else if (z === 'sr') {
+      R.push({ x0: -sw / 2 + 8 - cw, x1: -sw / 2 + 8, y0: -ch / 2, y1: ch / 2 });
+      R.push({ x0: -sw / 2, x1: sw / 2, y0: ph / 2 - 2, y1: ph / 2 - 2 + tg });
+    } else {
+      R.push({ x0: -cw / 2, x1: cw / 2, y0: -ph / 2 + 5 - ch, y1: -ph / 2 + 5 });
+      R.push({ x0: -sw / 2, x1: sw / 2, y0: ph / 2 - 2, y1: ph / 2 - 2 + tg });
+    }
+    return R;
+  }
+  function union(R) {
+    var u = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+    R.forEach(function (r) { u.x0 = Math.min(u.x0, r.x0); u.x1 = Math.max(u.x1, r.x1); u.y0 = Math.min(u.y0, r.y0); u.y1 = Math.max(u.y1, r.y1); });
+    return u;
+  }
+  function hit(a, b, g) { return a.x0 < b.x1 + g && b.x0 < a.x1 + g && a.y0 < b.y1 + g && b.y0 < a.y1 + g; }
+  function inside(a, B) { return a.x0 >= B.x0 - 0.5 && a.x1 <= B.x1 + 0.5 && a.y0 >= B.y0 - 0.5 && a.y1 <= B.y1 + 0.5; }
+  function at(S, r) { return { x0: S.x + r.x0, x1: S.x + r.x1, y0: S.y + r.y0, y1: S.y + r.y1 }; }
+
+  // angles for n seats, first at the bottom, clockwise on screen: lam 1 = even arc length, 0 = even angles
+  function angles(n, rx, ry, lam) {
+    var N = 720, cum = [0], tot = 0, i, k, out = [], j = 0;
+    for (i = 1; i <= N; i++) {
+      var a = Math.PI / 2 + (i - 1) * 2 * Math.PI / N, b = Math.PI / 2 + i * 2 * Math.PI / N;
+      var dx = rx * (Math.cos(b) - Math.cos(a)), dy = ry * (Math.sin(b) - Math.sin(a));
+      tot += Math.sqrt(dx * dx + dy * dy); cum.push(tot);
+    }
+    for (k = 0; k < n; k++) {
+      var target = tot * k / n;
+      while (j < N - 1 && cum[j + 1] < target) j++;
+      var f = cum[j + 1] > cum[j] ? (target - cum[j]) / (cum[j + 1] - cum[j]) : 0;
+      var tArc = Math.PI / 2 + (j + f) * 2 * Math.PI / N, tEq = Math.PI / 2 + k * 2 * Math.PI / n;
+      out.push(lam * tArc + (1 - lam) * tEq);
+    }
+    return out;
+  }
+
+  // seats on the largest ellipse that keeps every seat inside the box
+  function placeSeats(B, n, v, wide, lam) {
+    var cx = (B.x0 + B.x1) / 2, cy = (B.y0 + B.y1) / 2;
+    var rx = Math.max(10, (B.x1 - B.x0) / 2 - v.sw / 2), ry = Math.max(10, (B.y1 - B.y0) / 2 - v.ph), seats = [], it;
+    for (it = 0; it < 5; it++) {
+      var nrx = Infinity, nry = Infinity;
+      seats = angles(n, rx, ry, lam).map(function (t) {
+        var c = Math.cos(t), s = Math.sin(t), z = zoneOf(wide, c, s), R = seatRects(z, v), U = union(R);
+        if (c > 1e-6) nrx = Math.min(nrx, (B.x1 - cx - U.x1) / c); else if (c < -1e-6) nrx = Math.min(nrx, (cx + U.x0 - B.x0) / -c);
+        if (s > 1e-6) nry = Math.min(nry, (B.y1 - cy - U.y1) / s); else if (s < -1e-6) nry = Math.min(nry, (cy + U.y0 - B.y0) / -s);
+        return { t: t, c: c, s: s, z: z, R: R };
+      });
+      rx = Math.max(10, nrx === Infinity ? rx : nrx); ry = Math.max(10, nry === Infinity ? ry : nry);
+    }
+    var bad = 0, i, j, a, b;
+    seats.forEach(function (S) { S.x = cx + rx * S.c; S.y = cy + ry * S.s; S.A = S.R.map(function (r) { return at(S, r); }); });
+    seats.forEach(function (S) { S.A.forEach(function (r) { if (!inside(r, B)) bad++; }); });
+    for (i = 0; i < n; i++) for (j = i + 1; j < n; j++) {
+      for (a = 0; a < seats[i].A.length; a++) for (b = 0; b < seats[j].A.length; b++) if (hit(seats[i].A[a], seats[j].A[b], 3)) bad++;
+    }
+    return { seats: seats, rx: rx, ry: ry, cx: cx, cy: cy, bad: bad };
+  }
+
+  // a spot for each seat's bet: as near as possible to the point just past its cards on the way to the middle,
+  // clear of everything else. strict: within a short reach of that point and nearer its own seat than any other
+  function placeBets(P, B, C, v, chars, strict) {
+    var w = 3 + v.ph * 0.36 + 4 + v.ph * 0.3 * 0.62 * chars + 9 + 2, h = Math.max(v.ph * 0.36, v.ph * 0.3 * 1.3) + 5;
+    var all = [], placed = [], bad = 0, reach = strict ? w * 0.75 + h * 2 : w * 2 + h * 8, step = strict ? Math.max(4, h * 0.3) : Math.max(6, h * 0.55);
+    P.seats.forEach(function (S) { all = all.concat(S.A); });
+    var box = function (x, y) { return { x0: x - w / 2, x1: x + w / 2, y0: y - h / 2, y1: y + h / 2 }; };
+    P.seats.forEach(function (S, si) {
+      var dx = P.cx - S.x, dy = P.cy - S.y, q, t, qx = S.x + dx * 0.5, qy = S.y + dy * 0.5, found = null;
+      for (t = 0.01; t <= 0.98; t += 0.01) {                 // the point just past this seat's own parts
+        var r0 = box(S.x + dx * t, S.y + dy * t), own = false;
+        for (q = 0; q < S.A.length && !own; q++) if (hit(r0, S.A[q], 3)) own = true;
+        if (!own) { qx = S.x + dx * t; qy = S.y + dy * t; break; }
+      }
+      var ok = function (x, y) {
+        var r = box(x, y);
+        if (!inside(r, B) || hit(r, C, 3)) return null;
+        for (q = 0; q < all.length; q++) if (hit(r, all[q], 3)) return null;
+        for (q = 0; q < placed.length; q++) if (hit(r, placed[q], 3)) return null;
+        if (strict) {
+          var d0 = (x - S.x) * (x - S.x) + (y - S.y) * (y - S.y);
+          for (q = 0; q < P.seats.length; q++) if (q !== si && 1.3 * ((x - P.seats[q].x) * (x - P.seats[q].x) + (y - P.seats[q].y) * (y - P.seats[q].y)) < d0) return null;
+        }
+        return r;
+      };
+      // rings of growing radius round that point; the first clear spot wins
+      for (var rad = 0; rad <= reach && !found; rad += step) {
+        var k = rad === 0 ? 1 : Math.max(8, Math.round(2 * Math.PI * rad / step)), a0 = Math.atan2(dy, dx);
+        for (var i = 0; i < k && !found; i++) {
+          var ang = a0 + (i % 2 ? 1 : -1) * Math.ceil(i / 2) * 2 * Math.PI / k;     // toward the middle first
+          var x = qx + rad * Math.cos(ang), y = qy + rad * Math.sin(ang), r = ok(x, y);
+          if (r) found = { x: x, y: y, r: r };
+        }
+      }
+      if (!found) { bad++; found = { x: qx, y: qy, r: null }; }
+      S.bx = found.x; S.by = found.y;
+      if (found.r) placed.push(found.r);
+    });
+    return { bad: bad, w: w, h: h };
+  }
+
+  var LAMS = [1, 0.6, 0.3, 0];
+  // o: { W, H, top (px covered at the top, e.g. a floating bar), n, chars (longest bet amount) }
+  function table(o) {
+    var W = Math.max(120, o.W), H = Math.max(120, o.H), top = Math.min(o.top || 0, H * 0.4), n = Math.max(2, o.n), chars = o.chars || 6;
+    var Hu = H - top, wide = W > Hu * 1.05, m = Math.min(W, Hu) / 100, mg = Math.max(3, Math.round(m * 0.8));
+    var B = { x0: mg, x1: W - mg, y0: top + mg, y1: H - mg };
+    var tries = [], i, j, q, li, cache = {}, best = null;
+    for (i = 0; i <= 8; i++) for (j = 0; j <= 11; j++) tries.push([i, j, Math.max(i, j * 0.6) + 0.01 * (i + j)]);
+    tries.sort(function (a, b) { return a[2] - b[2]; });
+    // first look for a layout where every bet sits right in front of its seat; failing that, anywhere clear
+    for (var pass = 0; pass < 2; pass++) {
+      for (q = 0; q < tries.length; q++) {
+        var sc = 1 - 0.05 * tries[q][0], bsc = 1 - 0.05 * tries[q][1];
+        for (li = 0; li < LAMS.length; li++) {
+          var key = tries[q][0] + ':' + li;
+          if (!cache[key]) cache[key] = { P: null };
+          var v = sizes(W, Hu, wide, sc, bsc, chars), P = cache[key].P || (cache[key].P = placeSeats(B, n, v, wide, LAMS[li]));
+          var C = { x0: P.cx - v.cbw / 2, x1: P.cx + v.cbw / 2, y0: P.cy - v.cbh / 2, y1: P.cy + v.cbh / 2 }, bad = P.bad;
+          if (!inside(C, B)) bad++;
+          P.seats.forEach(function (S) { S.A.forEach(function (r) { if (hit(r, C, 4)) bad++; }); });
+          if (bad > 0 && pass === 0) continue;
+          if (bad === 0 || !best || bad < best.bad + 1) {
+            var bets = placeBets(P, B, C, v, chars, pass === 0);
+            bad += bets.bad;
+            var L = { ok: bad === 0, strict: pass === 0, bad: bad, wide: wide, sc: sc, bsc: bsc, lam: LAMS[li], v: v, W: W, H: H, top: top, B: B, C: C, bet: bets,
+              cx: P.cx, cy: P.cy, rx: P.rx, ry: P.ry,
+              seats: P.seats.map(function (S) { return { x: S.x, y: S.y, zone: S.z, bx: S.bx, by: S.by, rects: S.A }; }) };
+            if (bad === 0) return L;
+            if (pass === 1 && (!best || bad < best.bad)) best = L;
+          }
+        }
+      }
+    }
+    return best;
+  }
+
+  return { table: table, sizes: sizes, seatRects: seatRects, zoneOf: zoneOf, hit: hit };
 });
 
 </script>
@@ -1627,11 +2674,13 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
  */
 (function () {
   'use strict';
-  var HD = window.Holdem, RL = window.HoldemRelay, HC = window.HoldemCrypto;
+  var HD = window.Holdem, RL = window.HoldemRelay, HC = window.HoldemCrypto, ADV = window.HoldemAdvisor, LAY = window.HoldemLayout;
   var APP = 'hd1', DEBUG = !!window.__hdDebug;
-  var SETTLE = 3500, COUNTDOWN = 5000, MAX_SEATS = 9, OFFLINE_ACT = 3000, AWAY_ACT = 700, END_SHOW = 3500;
+  var SETTLE = 3500, MAX_SEATS = 9, OFFLINE_ACT = 3000, AWAY_ACT = 700, END_SHOW = 3500;
   var STACKS = [100, 200, 300, 500, 1000], LVLS = [5, 10, 15, 20], ACTS = [15, 20, 30, 45, 60], TCS = [3, 6, 10];
-  var CFG0 = { stack: 200, lvlMin: 10, act: 30, tc: 6 };
+  var CFG0 = { stack: 200, lvlMin: 10, act: 30, tc: 6, bots: 0, botLv: 2 };
+  var BOTS_MAX = 8, BOT_LVN = ['', '쉬움', '보통', '어려움'];
+  var BOT_NAMES = ['AI 알파', 'AI 베타', 'AI 감마', 'AI 델타', 'AI 제타', 'AI 에타', 'AI 세타', 'AI 카파'];
   var ALPH = 'abcdefghijkmnpqrstuvwxyz23456789', SUITC = 'cdhs', SUITS = '♣♦♥♠';
   var STREET = ['프리플랍', '플랍', '턴', '리버'];
 
@@ -1679,7 +2728,9 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
       stack: st >= 20 && st <= 1000000 ? st : CFG0.stack,
       lvlMin: LVLS.indexOf(+c.lvlMin) >= 0 ? +c.lvlMin : CFG0.lvlMin,
       act: ACTS.indexOf(+c.act) >= 0 ? +c.act : CFG0.act,
-      tc: TCS.indexOf(+c.tc) >= 0 ? +c.tc : CFG0.tc
+      tc: TCS.indexOf(+c.tc) >= 0 ? +c.tc : CFG0.tc,
+      bots: Math.floor(+c.bots) >= 0 && Math.floor(+c.bots) <= BOTS_MAX ? Math.floor(+c.bots) : 0,
+      botLv: [1, 2, 3].indexOf(+c.botLv) >= 0 ? +c.botLv : 2
     };
   }
   function cfgLine(c) { return '시작 스택 ' + money(c.stack) + ' · 레벨 ' + c.lvlMin + '분 · 액션 ' + c.act + '초 · 타임 카드 ' + c.tc + '장'; }
@@ -1710,12 +2761,12 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     raiseOpen: false, raiseTo: 0, endShown: false, endHidden: false, recorded: {}, lastLvl: -1,
     yielded: false, reclaimDone: false, sheet: '', histOpen: '', form: null, nickDraft: null, stackDraft: '',
     leaveArmed: 0, busy: false, sound: LS.get('hd.snd', true), four: LS.get('hd.4c', false), toastT: 0, connDrawn: 0,
-    lay: 'land', rotOk: !!SS.get('hd.rotok', false), pre: null, snd: null, handKey: '', dealFrom: 0
+    lay: 'land', rotOk: !!SS.get('hd.rotok', false), pre: null, snd: null, handKey: '', dealFrom: 0, ai: null
   };
   var D = {
     ready: false, waitFrom: 0, S: null, cfg: CFG0, round: 1, v: 0, lobby: [], wait: [], joinAt: {}, go: 0, sig: '',
     last: null, seen: {}, offSince: {}, enc: null, T: null, H: null, made: 0, lastTick: 0,
-    chain: Promise.resolve(), queued: false, stopTick: null
+    chain: Promise.resolve(), queued: false, stopTick: null, aiAt: 0, bot: null, vnow: 0, fast: false, allReady: false, startReq: false
   };
 
   function curT() { return O.dealer ? (D.ready ? D.T : null) : O.T; }
@@ -1782,10 +2833,10 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     var p = { app: APP, pid: O.id.pid, sid: O.sid, since: O.since, nick: O.id.nick || '', pk: O.key ? O.key.pk : '' };
     if (O.dealer) {
       p.role = 'd'; p.T = D.ready ? D.T : null; p.H = D.ready ? D.H : null;
-      p.want = null; p.rdy = null; p.away = null; p.q = null;
+      p.want = null; p.rdy = null; p.away = null; p.q = null; p.ai = null;
     } else {
       p.role = null; p.T = null; p.H = null;
-      p.want = O.want; p.rdy = O.rdy; p.away = O.away; p.q = O.q;
+      p.want = O.want; p.rdy = O.rdy; p.away = O.away; p.q = O.q; p.ai = O.ai;
     }
     return p;
   }
@@ -1800,6 +2851,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
         pid: p.pid, sid: String(p.sid || ''), since: +p.since || 0, nick: cleanNick(p.nick),
         pk: typeof p.pk === 'string' ? p.pk : '', want: !!p.want, rdy: +p.rdy || 0, away: !!p.away,
         q: Array.isArray(p.q) ? p.q.slice(-8) : [], dealer: p.role === 'd',
+        ai: p.ai && typeof p.ai === 'object' ? { at: +p.ai.at || 0, n: Math.floor(+p.ai.n) || 0, lv: Math.floor(+p.ai.lv) || 2 } : null,
         T: p.T && typeof p.T === 'object' ? p.T : null, H: p.H && typeof p.H === 'object' ? p.H : null,
         clock: +x.clock || 0, at: x.updatedAt || 0
       });
@@ -1888,8 +2940,8 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
   function loadDealer() {
     var host = LS.get('hd.host.' + O.code, null) || {};
     D.cfg = validCfg(host.cfg); D.S = host.S || null; D.round = host.round || 1; D.v = host.v || 0;
-    D.joinAt = host.joinAt || {}; D.last = host.last || null; D.made = host.made || Date.now();
-    D.go = 0; D.sig = ''; D.enc = null; D.seen = {}; D.offSince = {};
+    D.joinAt = host.joinAt || {}; D.last = host.last || null; D.made = host.made || Date.now(); D.aiAt = host.aiAt || 0;
+    D.go = 0; D.sig = ''; D.enc = null; D.seen = {}; D.offSince = {}; D.bot = null; D.vnow = 0; D.fast = false;
     if (D.S && D.S.st === 'run' && host.at) {
       var gap = Date.now() - host.at;
       if (gap > 1500) HD.delay(D.S, gap);        // nobody's clock ran while the dealer page was away
@@ -1897,7 +2949,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     D.lastTick = Date.now(); D.ready = true;
   }
   function persistDealer(now) {
-    LS.set('hd.host.' + O.code, { cfg: D.cfg, S: D.S, round: D.round, v: D.v, joinAt: D.joinAt, last: D.last, at: now, jwk: O.id.jwk, made: D.made });
+    LS.set('hd.host.' + O.code, { cfg: D.cfg, S: D.S, round: D.round, v: D.v, joinAt: D.joinAt, last: D.last, at: now, jwk: O.id.jwk, made: D.made, aiAt: D.aiAt });
   }
   function dealerKick() {
     if (!O.dealer || D.queued) return;
@@ -1937,20 +2989,30 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
   function lobbyStep(peers, now) {
     var list = [];
     peers.forEach(function (p) {
-      if (!p.want || !p.pk || !p.nick) return;
+      if (!p.want || !p.pk || !p.nick || /^aibot/.test(p.pid)) return;
       if (!D.joinAt[p.pid]) D.joinAt[p.pid] = now;
       list.push({ pid: p.pid, nick: p.nick, pk: p.pk, rdy: p.rdy === D.round ? 1 : 0, at: D.joinAt[p.pid] });
+      // a player changed the AI seats from the lobby: the newest change wins
+      var r = p.ai;
+      if (r && typeof r === 'object' && +r.at > D.aiAt && +r.at < now + 10000) {
+        D.aiAt = +r.at;
+        D.cfg = validCfg({ stack: D.cfg.stack, lvlMin: D.cfg.lvlMin, act: D.cfg.act, tc: D.cfg.tc, bots: r.n, botLv: r.lv });
+      }
     });
     list.sort(function (a, b) { return a.at - b.at || (a.pid < b.pid ? -1 : 1); });
-    var seats = list.slice(0, MAX_SEATS), wait = list.slice(MAX_SEATS);
-    var allReady = seats.length >= 2 && seats.every(function (x) { return x.rdy; });
-    var go = allReady ? (D.go || now + COUNTDOWN) : 0;
-    var sig = JSON.stringify([seats.map(function (x) { return [x.pid, x.nick, x.rdy]; }), wait.map(function (x) { return x.pid; }), go]);
+    var humans = list.slice(0, MAX_SEATS), wait = list.slice(MAX_SEATS), seats = humans.slice(), k;
+    for (k = 0; k < D.cfg.bots && seats.length < MAX_SEATS; k++) seats.push({ pid: 'aibot' + (k + 1), nick: BOT_NAMES[k], pk: '', rdy: 1, bot: D.cfg.botLv });
+    var allReady = humans.length >= 1 && seats.length >= 2 && humans.every(function (x) { return x.rdy; });
+    var sig = JSON.stringify([seats.map(function (x) { return [x.pid, x.nick, x.rdy, x.bot || 0]; }), wait.map(function (x) { return x.pid; }), allReady, D.cfg.bots, D.cfg.botLv]);
     var changed = sig !== D.sig;
-    D.sig = sig; D.lobby = seats; D.wait = wait; D.go = go;
-    if (go && now >= go) {
-      D.S = HD.create(D.cfg, seats.map(function (x) { return { pid: x.pid, nick: x.nick, pk: x.pk }; }), cryptoInt, now);
-      D.go = 0; D.sig = ''; D.enc = null; D.seen = {}; D.offSince = {};
+    if (allReady && !D.allReady && D.ready) chime();             // everyone is ready: tell the dealer screen
+    D.sig = sig; D.lobby = seats; D.wait = wait; D.go = 0; D.allReady = allReady;
+    var start = D.startReq;
+    D.startReq = false;
+    if (start && !allReady) toast('아직 준비하지 않은 사람이 있어요');
+    if (start && allReady) {
+      D.S = HD.create(D.cfg, seats.map(function (x) { return { pid: x.pid, nick: x.nick, pk: x.pk, bot: x.bot || 0 }; }), cryptoInt, now);
+      D.go = 0; D.sig = ''; D.enc = null; D.seen = {}; D.offSince = {}; D.bot = null; D.vnow = 0; D.fast = false;
       var keep = {};
       seats.forEach(function (x) { keep[x.pid] = D.joinAt[x.pid]; });
       D.joinAt = keep;
@@ -1985,8 +3047,44 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     }).catch(function () { return null; });
   }
 
+  function humansIn(S) { return S.seats.some(function (p) { return !p.bot && !p.out; }); }
+  // how long an AI seems to think: a beat longer facing a big bet, and never while cards are still flying
+  function botThink(S, h) {
+    var L = HD.legal(h, S.seats, h.actor), t = 650 + Math.random() * 1100, last = h.log[h.log.length - 1], live = 0;
+    if (h.street) t += 250;
+    if (L && L.toCall > 0) t += 250 + Math.min(900, 900 * L.toCall / Math.max(1, S.seats[h.actor].stack + L.toCall));
+    h.live.forEach(function (x) { if (x) live++; });
+    if (h.n === 0) t += DEAL_BASE + 2 * live * DEAL_GAP + 450;
+    else if (last && last.d) t += 450;
+    return t;
+  }
+  function botMove(S, h, now, iters) {
+    var p = S.seats[h.actor], ch = null;
+    try { ch = ADV.botAct(ADV.ctxFrom(h, S.seats, h.actor, h.holes[h.actor]), p.bot || 2, Math.random, iters); } catch (e) { ch = null; }
+    if (!ch || HD.act(S, h.actor, ch.a, ch.x, now) !== '') HD.autoAct(S, now, 'a');
+  }
+  // nobody human is still in: play the rest out on a fast clock so the results (and '다시 하기') come soon
+  function fastStep(S, now) {
+    var t0 = Date.now(), n = 0;
+    if (D.vnow < now) D.vnow = now;
+    D.fast = true;
+    while (S.st === 'run' && Date.now() - t0 < 30 && n++ < 600) {
+      var h = S.hand;
+      if (h && h.actor >= 0 && !h.next) { botMove(S, h, D.vnow, 120); D.vnow += 1500; continue; }
+      var at = !h ? S.firstAt : h.next ? h.next.at : 0;
+      if (at > D.vnow) D.vnow = at;
+      var adv = HD.advance(S, D.vnow);
+      if (adv === 'hand') HD.startHand(S, D.vnow, cryptoInt);
+      else if (!adv) D.vnow += 1000;
+    }
+    if (S.st === 'end') { S.endAt = Date.now(); D.vnow = 0; D.fast = false; }
+    return true;
+  }
+
   async function runStep(peers, now) {
     var S = D.S, dirty = false, byPid = {}, i, j;
+    if (!humansIn(S)) return fastStep(S, now);
+    D.fast = false;
     peers.forEach(function (p) { byPid[p.pid] = p; });
     for (i = 0; i < S.seats.length; i++) {
       var seat = S.seats[i], p = byPid[seat.pid], last = D.seen[seat.pid] || 0;
@@ -2001,7 +3099,11 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     }
     now = Date.now();
     var h = S.hand;
-    if (h && h.actor >= 0 && !h.next) {
+    if (h && h.actor >= 0 && !h.next && S.seats[h.actor].bot) {
+      var bk = S.tid + ':' + h.no + ':' + h.n;
+      if (!D.bot || D.bot.k !== bk) D.bot = { k: bk, at: now + botThink(S, h) };
+      else if (now >= D.bot.at) { botMove(S, h, now, 0); D.bot = null; dirty = true; }
+    } else if (h && h.actor >= 0 && !h.next) {
       var who = S.seats[h.actor], pg = byPid[who.pid];
       if (pg) delete D.offSince[who.pid];
       else if (!D.offSince[who.pid]) D.offSince[who.pid] = now;
@@ -2046,13 +3148,14 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     D.v++;
     if (!D.S) {
       T = {
-        v: D.v, st: 'lobby', round: D.round, cfg: D.cfg, go: D.go, last: D.last,
-        lobby: D.lobby.map(function (x) { return { pid: x.pid, nick: x.nick, rdy: x.rdy }; }),
+        v: D.v, st: 'lobby', round: D.round, cfg: D.cfg, go: 0, ready: D.allReady ? 1 : 0, last: D.last,
+        lobby: D.lobby.map(function (x) { return { pid: x.pid, nick: x.nick, rdy: x.rdy, bot: x.bot || 0 }; }), aiAt: D.aiAt,
         wait: D.wait.map(function (x) { return { pid: x.pid, nick: x.nick }; })
       };
     } else {
-      T = HD.pub(D.S, now);
+      T = HD.pub(D.S, D.fast && D.vnow ? D.vnow : now);
       T.v = D.v; T.round = D.round; T.lvlEnd = now + T.lvlLeft;
+      if (D.fast) { T.fast = 1; if (T.hand) T.hand.dl = 0; }
       if (D.S.hand) Hm = await sealHoles(D.S);
     }
     T.now = now;
@@ -2119,12 +3222,12 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     sfxFor(T);
     if (!O.dealer) refreshCards();
     if (T.st === 'run' || T.st === 'end') {
-      if (h && h.done && h.res) recordHand(T);
+      if (h && h.done && h.res && !T.fast) recordHand(T);
       if (T.st === 'end') recordEnd(T);
-      if (T.st === 'run' && O.lastLvl >= 0 && T.lvl > O.lastLvl) toast('레벨 ' + (T.lvl + 1) + ' · ' + blinds(T.lvl) + ' — 다음 핸드부터');
+      if (T.st === 'run' && !T.fast && O.lastLvl >= 0 && T.lvl > O.lastLvl) toast('레벨 ' + (T.lvl + 1) + ' · ' + blinds(T.lvl) + ' — 다음 핸드부터');
       O.lastLvl = T.lvl;
       var ms = moneyState(T), mk = T.tid + ':' + ms.k;
-      if (ms.k && O.moneyKey && O.moneyKey.split(':')[0] === T.tid && O.moneyKey !== mk) {
+      if (ms.k && !T.fast && O.moneyKey && O.moneyKey.split(':')[0] === T.tid && O.moneyKey !== mk) {
         if (ms.k === 'bubble') toast('버블이에요 — 한 명만 더 떨어지면 남은 사람 모두 상금');
         if (ms.k === 'itm' && ms.paid > 1) toast('머니 인! 남은 ' + ms.left + '명 모두 상금을 받아요');
       }
@@ -2163,7 +3266,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
       k: k, tid: T.tid, no: h.no, at: Date.now(), lvl: h.lvl, sb: h.sb, bb: h.bb, ante: h.ante, btn: h.btn,
       sbSeat: h.sbSeat, bbSeat: h.bbSeat, names: T.seats.map(function (s) { return s.nick; }), live: h.live,
       start: h.start, end: T.seats.map(function (s) { return s.stack; }), log: h.log, board: h.board, res: h.res,
-      prizes: T.seats.map(function (s) { return s.prize || 0; }),
+      prizes: T.seats.map(function (s) { return s.prize || 0; }), bots: T.seats.map(function (s) { return s.bot || 0; }), pids: T.seats.map(function (s) { return s.pid; }),
       me: me, my: myCards(T)
     };
     for (i = 0; i < X.hands.length; i++) if (X.hands[i].k === k) break;
@@ -2325,17 +3428,20 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     setHTML($('#overlay'), ov);
     $('#overlay').hidden = !ov;
     setHTML($('#top'), table ? topHtml(T) : '');
-    if (table) drawTable(T);
-    else { $('#table')._sig = ''; setHTML($('#table'), '<div class="felt"></div>'); }
     setHTML($('#feed'), table && O.dealer ? feedHtml(T) : '');
     if (table && !O.dealer) drawDock(T);
     else { $('#dock')._sig = ''; setHTML($('#dock'), ''); }
+    if (table) drawTable(T);
+    else { $('#table')._sig = ''; $('#table').removeAttribute('style'); setHTML($('#table'), '<div class="felt"></div>'); }
     var sc = $('#sheet .sheet-in'), top = sc ? sc.scrollTop : 0;
     if (O.sheet !== O.sheetShown) { O.sheetShown = O.sheet; O.sheetAt = Date.now(); }
-    setHTML($('#sheet'), O.sheet ? sheetHtml(Date.now() - O.sheetAt < 250) : '');
-    $('#sheet').hidden = !O.sheet;
-    sc = $('#sheet .sheet-in');
-    if (sc && top && sc.scrollTop !== top) sc.scrollTop = top;
+    if (!O.rp) {                         // the sheet sits still under an open replay
+      setHTML($('#sheet'), O.sheet ? sheetHtml(Date.now() - O.sheetAt < 250) : '');
+      $('#sheet').hidden = !O.sheet;
+      sc = $('#sheet .sheet-in');
+      if (sc && top && sc.scrollTop !== top) sc.scrollTop = top;
+    }
+    drawReplay();
     uiTick();
   }
 
@@ -2367,20 +3473,25 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
   }
 
   function homeHtml() {
-    var c = O.form, custom = STACKS.indexOf(c.stack) < 0;
-    return panel(
-      '<div class="brand"><span class="mark">♠</span><h1>홀덤 토너먼트</h1></div>' +
-      '<p class="lead">이 화면이 <b>딜러 화면</b>이 돼요. 카드를 섞어 나눠 주고 판 진행을 보여 줄 뿐, 이 화면에서는 아무것도 누를 필요가 없어요. 참가자는 링크를 받아 각자 폰에서 들어와요.</p>' +
-      '<div class="field"><label>시작 스택</label><div class="chips">' +
+    var c = O.form, custom = STACKS.indexOf(c.stack) < 0, n0 = 2 + c.bots;
+    var left = '<div class="brand"><span class="mark">♠</span><h1>홀덤 토너먼트</h1></div>' +
+      '<p class="lead">이 화면이 <b>딜러 화면</b>이 돼요. 카드를 섞어 나눠 주고 판 진행을 보여 줘요. 모두 준비되면 여기서 <b>게임 시작</b>만 누르면 되고, 게임 중에는 누를 것이 없어요. 참가자는 링크를 받아 각자 폰으로 들어와요.</p>' +
+      '<div class="field"><label>시작 스택 <small>' + Math.floor(c.stack / 2) + 'BB</small></label><div class="chips">' +
       STACKS.map(function (v) { return chip('stack', v, money(v), c.stack === v && !custom); }).join('') +
       '<input id="stackIn" inputmode="numeric" maxlength="7" placeholder="직접 입력" value="' + esc(O.stackDraft || (custom ? c.stack : '')) + '" class="' + (custom ? 'on' : '') + '"></div></div>' +
       '<div class="field"><label>레벨 시간</label><div class="chips">' + LVLS.map(function (v) { return chip('lvlMin', v, v + '분', c.lvlMin === v); }).join('') + '</div></div>' +
       '<div class="field"><label>액션 시간</label><div class="chips">' + ACTS.map(function (v) { return chip('act', v, v + '초', c.act === v); }).join('') + '</div></div>' +
-      '<div class="field"><label>타임 카드 (1장 = +30초)</label><div class="chips">' + TCS.map(function (v) { return chip('tc', v, v + '장', c.tc === v); }).join('') + '</div></div>' +
-      '<p class="hint">블라인드는 $1/$2에서 시작해 레벨마다 올라가요. 빅 블라인드 앤티(BB와 같은 금액)를 써요. 시작 스택 ' + money(c.stack) + ' = ' + Math.floor(c.stack / 2) + 'BB.</p>' +
-      '<p class="hint">참가비는 시작 스택과 같아서 상금 풀 = 참가자 수 × ' + money(c.stack) + '. 상금은 2~4명이면 우승자 독식, 5~8명이면 2위까지 65/35, 9명이면 3위까지 50/30/20.</p>' +
+      '<div class="field"><label>타임 카드 <small>1장 = +30초</small></label><div class="chips">' + TCS.map(function (v) { return chip('tc', v, v + '장', c.tc === v); }).join('') + '</div></div>';
+    var right = '<div class="field"><label>AI 플레이어 <small>빈자리를 채워요</small></label><div class="chips ai-chips">' +
+      '<span class="stepper"><button class="stepb" data-set="bots" data-v="' + Math.max(0, c.bots - 1) + '"' + (c.bots <= 0 ? ' disabled' : '') + ' aria-label="AI 빼기">−</button>' +
+      '<b>' + (c.bots ? c.bots + '명' : '없음') + '</b><button class="stepb" data-set="bots" data-v="' + Math.min(BOTS_MAX, c.bots + 1) + '"' + (c.bots >= BOTS_MAX ? ' disabled' : '') + ' aria-label="AI 더하기">+</button></span>' +
+      (c.bots ? [1, 2, 3].map(function (v) { return chip('botLv', v, BOT_LVN[v], c.botLv === v); }).join('') : '') + '</div></div>' +
+      '<ul class="facts"><li>블라인드 $1/$2부터 ' + c.lvlMin + '분마다 올라가요 · 빅 블라인드 앤티</li>' +
+      '<li>상금 풀 = 참가자 수 × ' + money(c.stack) + (c.bots ? ' (AI 포함)' : '') + ' · 2~4명 우승자 독식 · 5~8명 65/35 · 9명 50/30/20</li>' +
+      (c.bots ? '<li>AI가 있으면 혼자서도 돼요: 링크를 내 폰에서 열고 준비를 누르세요. AI 수는 로비에서 폰으로도 바꿀 수 있어요.</li>' : '') + '</ul>' +
       '<button class="btn primary big" data-act="create"' + (O.busy ? ' disabled' : '') + '>방 만들기</button>' +
-      '<div class="row"><button class="link" data-act="rules">규칙과 블라인드 구조</button></div>', 'home');
+      '<div class="row"><button class="link" data-act="rules">규칙과 블라인드 구조</button></div>';
+    return panel('<div class="hcol">' + left + '</div><div class="hcol">' + right + '</div>', 'home' + (n0 ? '' : ''));
   }
 
   function diagText() {
@@ -2415,37 +3526,64 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     var me = O.id.pid, mine = null, waiting = false, rdyLocal = O.rdy === T.round;
     T.lobby.forEach(function (x) { if (x.pid === me) mine = x; });
     T.wait.forEach(function (x) { if (x.pid === me) waiting = true; });
+    var humans = T.lobby.filter(function (x) { return !x.bot; }).length;
     var list = T.lobby.map(function (x, i) {
       var r = x.pid === me ? rdyLocal : x.rdy;
+      if (x.bot) return '<li class="rdy bot"><span class="no">' + (i + 1) + '</span><span class="nm">' + esc(x.nick) + '</span><span class="st">AI · ' + BOT_LVN[x.bot] + '</span></li>';
       return '<li class="' + (r ? 'rdy' : '') + (x.pid === me ? ' me' : '') + '"><span class="no">' + (i + 1) + '</span><span class="nm">' + esc(x.nick) +
         (x.pid === me ? ' <em>나</em>' : '') + '</span><span class="st">' + (r ? '준비 완료' : '기다리는 중') + '</span></li>';
     }).join('') || '<li class="empty">아직 아무도 없어요</li>';
-    var go = T.go ? '<div class="go">시작까지 <b data-go="' + T.go + '">5</b>초</div>'
-      : '<div class="go dim">' + (T.lobby.length < 2 ? '참가자가 2명 이상 모여야 해요' : '모두 \'준비\'를 누르면 5초 뒤 시작해요') + '</div>';
+    var readyN = T.lobby.filter(function (x) { return !x.bot && (x.pid === me ? rdyLocal : x.rdy); }).length;
+    var go = '<div class="go' + (T.ready ? ' on' : ' dim') + '">' + (!humans ? '사람 참가자가 1명 이상 있어야 해요'
+      : T.lobby.length < 2 ? '참가자가 2명 이상 모여야 해요 (AI를 넣어도 돼요)'
+      : T.ready ? (dealerView ? '모두 준비됐어요 — <b>게임 시작</b>을 눌러 주세요' : '모두 준비됐어요 — 딜러 화면에서 시작하면 바로 시작해요')
+      : '준비 ' + readyN + '/' + humans + ' · 모두 준비하면 딜러 화면에서 시작해요') + '</div>';
     var head = '<div class="lhead">' + (dealerView ? '<span class="badge">딜러 화면</span>' : '') + '<h2>홀덤 토너먼트</h2><p class="cfg">' + cfgLine(T.cfg) + '</p></div>';
     var ctl = '';
     if (dealerView) {
       ctl = '<div class="linkbox"><input id="linkIn" readonly value="' + esc(roomUrl()) + '"><button class="btn" data-act="copy">링크 복사</button>' +
         (navigator.share ? '<button class="btn ghost" data-act="share">공유</button>' : '') + '</div>' +
-        '<p class="hint">이 링크를 참가자에게 보내 주세요. 방장도 플레이하려면 이 링크를 자기 폰에서 열면 돼요. 이 화면은 끝날 때까지 켜 두세요 — 카드를 섞고 시간을 재는 곳이에요.</p>';
+        '<button class="btn primary big startb" data-act="start"' + (T.ready ? '' : ' disabled') + '>게임 시작</button>' +
+        '<p class="hint">이 링크를 참가자에게 보내 주세요. 모두 \'준비\'를 누르면 \'게임 시작\'으로 시작해요. 방장도 플레이하려면 이 링크를 자기 폰에서 열면 돼요. 이 화면은 끝날 때까지 켜 두세요 — 카드를 섞고 시간을 재는 곳이에요.</p>';
     } else if (!O.want || !O.id.nick) {
       ctl = '<div class="join"><input id="nickIn" maxlength="12" placeholder="닉네임" autocomplete="nickname" value="' + esc(O.nickDraft != null ? O.nickDraft : O.id.nick) + '">' +
         '<button class="btn primary" data-act="join">참가하기</button></div>';
     } else if (waiting) {
-      ctl = '<p class="hint">자리가 꽉 찼어요 (최대 9명). 자리가 나면 들어가요.</p><div class="row"><button class="link" data-act="leaveSeat">관전만 할게요</button></div>';
+      ctl = '<p class="hint">자리가 꽉 찼어요 (최대 9명). 자리가 나면 들어가요.</p>';
     } else if (!mine) {
-      ctl = '<p class="hint">참가하는 중…</p><div class="row"><button class="link" data-act="leaveSeat">관전만 할게요</button></div>';
+      ctl = '<p class="hint">참가하는 중…</p>';
     } else {
-      ctl = '<button class="btn ' + (rdyLocal ? 'ghost' : 'primary') + ' big" data-act="ready">' + (rdyLocal ? '준비 취소' : '준비') + '</button>' +
-        '<div class="row"><button class="link" data-act="leaveSeat">관전만 할게요</button></div>';
+      ctl = '<button class="btn ' + (rdyLocal ? 'ghost' : 'primary') + ' big" data-act="ready">' + (rdyLocal ? '준비 취소' : '준비') + '</button>' + aiBoxHtml(T, humans);
     }
+    var watching = !dealerView && O.want && O.id.nick ? '<button class="link" data-act="leaveSeat">관전만 할게요</button>' : '';
     var nIn = Math.min(T.lobby.length, MAX_SEATS);
     var pz = nIn >= 2 ? '<p class="prize">상금 풀 ' + money(nIn * T.cfg.stack) + ' · ' + prizeLine(HD.prizes(nIn, nIn * T.cfg.stack)) + '</p>' : '';
     return panel('<div class="lcol">' + head + ctl + go + lastHtml(T.last) +
-      '<div class="row"><button class="link" data-act="rules">규칙·블라인드 구조</button>' + (dealerView ? '' : '<button class="link" data-act="hist">기록</button>') + '</div></div>' +
+      '<div class="row"><button class="link" data-act="rules">규칙·블라인드 구조</button>' + (dealerView ? '' : '<button class="link" data-act="hist">기록</button>') + watching + '</div></div>' +
       '<div class="rcol"><h3>참가자 ' + T.lobby.length + '/' + MAX_SEATS + '</h3><ol class="plist">' + list + '</ol>' + pz +
       (T.wait.length ? '<p class="hint">대기: ' + T.wait.map(function (x) { return esc(x.nick); }).join(', ') + '</p>' : '') + '</div>',
     dealerView ? 'lobby dl split' : 'lobby split');
+  }
+
+  // the AI seats as this phone last asked for them (until the dealer screen has taken the change)
+  function aiWant(T) {
+    var c = T.cfg || {};
+    if (O.ai && O.ai.at > (T.aiAt || 0)) return { n: O.ai.n, lv: O.ai.lv };
+    return { n: c.bots || 0, lv: c.botLv || 2 };
+  }
+  function aiBoxHtml(T, humans) {
+    var w = aiWant(T), room = Math.max(0, MAX_SEATS - humans), n = Math.min(w.n, room);
+    return '<div class="aibox"><span class="ai-h">AI 플레이어</span><span class="stepper"><button class="stepb" data-act="aiN" data-d="-1"' + (n <= 0 ? ' disabled' : '') + ' aria-label="AI 빼기">−</button>' +
+      '<b>' + (n ? n + '명' : '없음') + '</b><button class="stepb" data-act="aiN" data-d="1"' + (n >= Math.min(BOTS_MAX, room) ? ' disabled' : '') + ' aria-label="AI 더하기">+</button></span>' +
+      (n ? '<span class="chips">' + [1, 2, 3].map(function (v) { return '<button class="chip' + (w.lv === v ? ' on' : '') + '" data-act="aiLv" data-v="' + v + '">' + BOT_LVN[v] + '</button>'; }).join('') + '</span>' : '') + '</div>';
+  }
+  function sendAi(n, lv) {
+    var T = curT();
+    if (!T || T.st !== 'lobby' || O.dealer) return;
+    var humans = T.lobby.filter(function (x) { return !x.bot; }).length;
+    n = Math.max(0, Math.min(BOTS_MAX, MAX_SEATS - humans, n));
+    O.ai = { at: Date.now() + offset(), n: n, lv: lv };
+    publish(); render();
   }
 
   function drawHtml(T) {
@@ -2463,7 +3601,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
         (p.pid === O.id.pid ? ' <em>나</em>' : '') + '</span><span class="st">' + (p.place === 1 ? '우승' : '핸드 #' + p.bust + ' 탈락') + '</span>' +
         '<span class="pz' + (p.prize ? '' : ' none') + '">' + (p.prize ? money(p.prize) : '—') + '</span></li>';
     }).join('');
-    var ctl = O.dealer ? '<p class="hint">참가자가 자기 폰에서 \'다시 하기\'를 누르면 같은 설정으로 새 토너먼트를 준비해요.</p>'
+    var ctl = O.dealer ? '<p class="hint">참가자가 자기 폰에서 \'다시 하기\'를 누르면 같은 설정으로 새 토너먼트 로비가 열려요. 모두 준비되면 이 화면에서 \'게임 시작\'을 눌러요.</p>'
       : '<button class="btn primary big" data-act="again">다시 하기</button><div class="row"><button class="btn ghost" data-act="hist">기록 보기</button></div>';
     return panel('<div class="lcol"><h2>토너먼트 끝</h2><p class="cfg">' + T.handNo + '핸드 · ' + cfgLine(T.cfg) + ' · 상금 풀 ' + money(T.pool) + '</p>' + ctl +
       '<div class="row"><button class="link" data-act="hideEnd">테이블 보기</button></div></div><div class="rcol"><ol class="plist places">' + rows + '</ol></div>', 'end split');
@@ -2487,7 +3625,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
         (canLockLand() ? '<button class="rot-b" data-act="land">가로 모드</button>' : '') +
         '<button class="rot-x" data-act="rotOk" aria-label="닫기">✕</button></div>';
     }
-    var mute = O.sound && O.code && (!AC || AC.state !== 'running') ? '<button class="ic snd" data-act="unmute">🔈 소리 켜기</button>' : '';
+    var mute = O.sound && O.code && (!AC || AC.state !== 'running') ? '<button class="ic snd" data-act="unmute" aria-label="소리 켜기">🔈<span class="lbl"> 소리 켜기</span></button>' : '';
     return '<div class="hud"><div class="hud-l"><div class="hl1"><span class="lvchip">Lv ' + (lv + 1) + '</span><span class="bl">' + money(L.sb) + '/' + money(L.bb) +
       ' <small>앤티 ' + money(L.ante) + '</small></span></div>' + (next ? '<div class="hl2">' + next + '</div>' : '') + '<div class="hl3">' + tableInfo(T) +
       (me < 0 && !O.dealer ? '<span class="watch">관전 중</span>' : '') + '</div></div><div class="hud-r">' + mute + (T.st === 'end' ? '<button class="ic" data-act="showEnd">결과</button>' : '') +
@@ -2557,55 +3695,61 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     for (j = 1; j <= n; j++) { s = (h.btn + j) % n; if (h.live[s]) order[s] = k++; }
     return { order: order, live: k, total: DEAL_BASE + 2 * k * DEAL_GAP + 450 };
   }
-  function geometry(el) {
-    var wide = el.clientWidth > el.clientHeight * 1.05;
-    return { wide: wide, rx: wide ? 42 : 38, ry: wide ? 37 : 41, cy: wide ? 50 : 48 };
+  // what one table shows: whose seat is at the bottom, which hole cards face up, where its animation state lives
+  function mainView() {
+    var me = mySeat(), hud = $('#top');
+    // a phone held sideways draws the top bar over the table: keep that strip free of seats
+    var top = !O.dealer && O.lay === 'land' && hud && getComputedStyle(hud).position === 'absolute' ? hud.offsetHeight + 2 : 0;
+    return { st: O, me: me, bottom: me >= 0 ? me : 0, flags: true, top: top, cards: function (T, s) { return s === me ? myCards(T) : null; } };
   }
-  // where a seat's cards and labels go: toward the middle of the table
-  function zoneOf(G, cx, sy) {
-    if (!G.wide) return { z: sy > 0.3 ? 'lo' : sy < -0.3 ? 'hi' : 'mid', si: '' };
-    var z = sy > 0.45 ? 'lo' : sy < -0.45 ? 'hi' : (cx < 0 ? 'sl' : 'sr');
-    return { z: z, si: z === 'sl' ? 'si-l' : z === 'sr' ? 'si-r' : '' };
-  }
-  function drawTable(T) {
-    var el = $('#table'), n = T.seats.length, h = T.hand, me = mySeat(), bottom = me >= 0 ? me : 0, G = geometry(el), now = Date.now(), s;
-    var sig = n + '|' + bottom + '|' + (G.wide ? 'w' : 'n');
+  var LAYV = ['sw', 'ph', 'cw', 'ch', 'bw', 'bh', 'cgap', 'cbw', 'noteh'];
+  function drawTable(T, el, V) {
+    el = el || $('#table'); V = V || mainView();
+    var n = T.seats.length, h = T.hand, me = V.me, bottom = V.bottom, now = Date.now(), s, st = V.st;
+    var W = el.clientWidth, Ht = el.clientHeight, top = V.top || 0;
+    var chars = money(V.total || n * ((T.cfg && T.cfg.stack) || 1000)).length;        // the longest bet that can appear
+    var sig = n + '|' + bottom + '|' + W + '|' + Ht + '|' + top + '|' + chars;
     if (el._sig !== sig) {
-      var html = '<div class="felt"></div>';
-      for (s = 0; s < n; s++) html += '<div class="slot" id="sc' + s + '"></div><div class="slot" id="sp' + s + '"></div>';
-      html += '<div class="slot" id="bets"></div><div class="center" style="top:' + G.cy + '%"><div class="potrow" id="cpot"></div><div class="board" id="cboard"></div>' +
-        '<div class="note" id="cnote"></div><div class="hno" id="chno"></div></div>';
-      el.innerHTML = html; el._sig = sig; el._h = null;
-      el.classList.toggle('narrow', !G.wide);
+      var Lo = LAY.table({ W: W, H: Ht, top: top, n: n, chars: chars }), pc = function (x, d) { return f2(x / d * 100) + '%'; };
+      LAYV.forEach(function (k) { el.style.setProperty('--' + k, Lo.v[k].toFixed(1) + 'px'); });
+      el.style.setProperty('--bgap', Lo.v.gap.toFixed(1) + 'px');
+      var html = '<div class="felt" style="left:' + pc(Lo.cx - Lo.rx, W) + ';top:' + pc(Lo.cy - Lo.ry, Ht) + ';width:' + pc(2 * Lo.rx, W) + ';height:' + pc(2 * Lo.ry, Ht) +
+        ';right:auto;bottom:auto"></div>';
+      for (s = 0; s < n; s++) html += '<div class="slot" data-k="sc' + s + '"></div><div class="slot" data-k="sp' + s + '"></div>';
+      html += '<div class="slot" data-k="bets"></div><div class="center" style="top:' + pc(Lo.cy, Ht) + '"><div class="potrow" data-k="cpot"></div><div class="board" data-k="cboard"></div>' +
+        '<div class="note" data-k="cnote"></div><div class="hno" data-k="chno"></div></div>';
+      el.innerHTML = html; el._sig = sig; el._h = null; el._k = {};
+      $$('[data-k]', el).forEach(function (x) { el._k[x.getAttribute('data-k')] = x; });
+      el.classList.toggle('narrow', !Lo.wide);
+      el._G = { cy: Lo.cy / Ht * 100, wide: Lo.wide, seats: Lo.seats.map(function (S) {
+        return { x: S.x / W * 100, y: S.y / Ht * 100, zone: S.zone, bx: S.bx / W * 100, by: S.by / Ht * 100 };
+      }) };
     }
+    var K = el._k, G = el._G;
     var pos = [];
-    for (s = 0; s < n; s++) {
-      var k = (s - bottom + n) % n, th = (90 + k * 360 / n) * Math.PI / 180, cx = Math.cos(th), sy = Math.sin(th);
-      var zn = zoneOf(G, cx, sy);
-      pos.push({ x: 50 + G.rx * cx, y: G.cy + G.ry * sy, cx: cx, sy: sy, zone: zn.z, si: zn.si });
-    }
+    for (s = 0; s < n; s++) pos.push(G.seats[(s - bottom + n) % n]);
     // dealing: animate only hands this page sees start
     var deal = null;
-    if (!h && T.st === 'run') O.handKey = T.tid + ':0';
+    if (!h && T.st === 'run') st.handKey = T.tid + ':0';
     if (h) {
       var hk = T.tid + ':' + h.no;
-      if (O.handKey !== hk) { O.dealFrom = O.handKey ? now : 0; O.handKey = hk; }
+      if (st.handKey !== hk) { st.dealFrom = st.handKey && !T.fast ? now : 0; st.handKey = hk; }
       var info = dealOrder(T);
-      if (O.dealFrom && now - O.dealFrom < info.total) deal = info;
+      if (st.dealFrom && now - st.dealFrom < info.total) deal = info;
     }
     for (s = 0; s < n; s++) {
-      setHTML($('#sc' + s), seatCardsHtml(T, s, pos[s], G, me, deal));
-      setHTML($('#sp' + s), seatHtml(T, s, pos[s], me));
+      setHTML(K['sc' + s], seatCardsHtml(T, s, pos[s], G, V, deal));
+      setHTML(K['sp' + s], seatHtml(T, s, pos[s], V));
     }
-    setHTML($('#bets'), betsHtml(T, pos, G, now));
-    drawCenter(T, now);
+    setHTML(K.bets, betsHtml(T, pos, G, now, st));
+    drawCenter(T, now, K, V);
   }
-  function seatCardsHtml(T, s, P, G, me, deal) {
+  function seatCardsHtml(T, s, P, G, V, deal) {
     var h = T.hand;
     if (!h || !h.live[s]) return '';
     var shownRes = h.res && h.res.show && h.res.show[s], won = h.res && h.res.won && h.res.won[s] > 0;
     if (h.fold[s] && !shownRes) return '';
-    var show = shownRes || (h.reveal && h.reveal[s]) || (s === me ? myCards(T) : null);
+    var show = shownRes || (h.reveal && h.reveal[s]) || V.cards(T, s);
     var d0 = '', d1 = '';
     if (deal && deal.order[s] !== undefined) {
       d0 = ' deal" style="animation-delay:' + (DEAL_BASE + deal.order[s] * DEAL_GAP) + 'ms';
@@ -2620,42 +3764,46 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     return '<div class="hand-w ' + P.zone + (h.fold[s] ? ' gone' : '') + '" style="left:' + f2(P.x) + '%;top:' + f2(P.y) + '%;--fx:' + f2(50 - P.x) +
       ';--fy:' + f2(G.cy - P.y) + '"><div class="hand">' + inner + '</div></div>';
   }
-  function seatHtml(T, s, P, me) {
-    var p = T.seats[s], h = T.hand, cls = ['seat', P.zone];
-    if (P.si) cls.push(P.si);
+  function seatHtml(T, s, P, V) {
+    var p = T.seats[s], h = T.hand, cls = ['seat', P.zone], me = V.me;
     var live = !!(h && h.live[s]), folded = live && h.fold[s];
-    var won = !!(h && h.res && h.res.won && h.res.won[s] > 0), acting = !!(h && h.actor === s && h.dl && !h.next);
+    var won = !!(h && h.res && h.res.won && h.res.won[s] > 0), acting = !!(h && h.actor === s && (h.dl || V.replay) && !h.next), ring = acting && !!h.dl;
     if (p.out) cls.push('out'); else if (h && !live) cls.push('idle');
     if (folded) cls.push('fold');
     if (acting) cls.push('turn');
     if (s === me) cls.push('me');
     if (won) cls.push('win');
-    var av = '<div class="av" style="--h:' + hueOf(p.pid) + '">' + (acting
+    var av = '<div class="av" style="--h:' + hueOf(p.pid) + '">' + (ring
       ? '<svg class="ring" viewBox="0 0 48 48" aria-hidden="true"><circle class="rt" cx="24" cy="24" r="21"/><circle class="rg" cx="24" cy="24" r="21" pathLength="100" data-dl="' +
         h.dl + '" data-tot="' + (T.cfg.act * 1000 + h.tcu * HD.TC_MS) + '"/></svg><span class="sec" data-dl="' + h.dl + '"></span>'
-      : '<span class="ini">' + esc(initial(p.nick)) + '</span>') + '</div>';
-    var shownName = !won && h && h.res && h.res.names && h.res.names[s];
-    var stk = p.out ? p.place + '위' + (p.prize ? ' · ' + money(p.prize) : '') : shownName ? '<span class="hnm">' + esc(shownName) + '</span>'
+      : p.bot ? '<span class="ini ai">AI</span>' : '<span class="ini">' + esc(initial(p.nick)) + '</span>') + '</div>';
+    var shownName = h && h.res && h.res.names && h.res.names[s];
+    var stk = p.out ? (V.replay ? '탈락' : p.place + '위' + (p.prize ? ' · ' + money(p.prize) : '')) : shownName ? '<span class="hnm" title="' + esc(shownName) + '">' + esc(shortHand(shownName)) + '</span>'
       : (live && h.allin[s] && !h.done ? '올인' : money(p.stack));
-    var tag = !p.out && h && !won && !shownName ? actionTag(T, s) : null, sub = '', flag = p.out ? '' : flagFor(T, p.pid);
-    if (won) sub = '<div class="wonb">+' + money(h.res.won[s]) + (h.res.names && h.res.names[s] ? '<small>' + esc(h.res.names[s]) + '</small>' : '') + '</div>';
-    if (flag) sub += '<div class="flag">' + flag + '</div>';
-    if (acting && p.tc > 0 && s !== me) sub += '<div class="tcn">⏱ 타임 카드 ' + p.tc + '</div>';
+    var tag = won ? ['+' + money(h.res.won[s]), 'win'] : !p.out && h && !shownName ? actionTag(T, s) : null, sub = '', flag = p.out || p.bot || !V.flags ? '' : flagFor(T, p.pid);
+    if (flag) av = av.replace(/<\/div>$/, '<span class="fl">' + (flag === '연결 끊김' ? '끊김' : '비움') + '</span></div>');
     return '<div class="' + cls.join(' ') + '" style="left:' + f2(P.x) + '%;top:' + f2(P.y) + '%" data-seat="' + s + '">' +
       '<div class="plate">' + av + '<div class="info"><div class="nm">' + esc(p.nick) + '</div><div class="stk">' + stk + '</div></div>' +
       (h && h.btn === s ? '<i class="dbtn" title="딜러 버튼">D</i>' : '') + '</div>' +
       (tag ? '<div class="tag t-' + tag[1] + '">' + tag[0] + '</div>' : '') + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
   }
-  function betsHtml(T, pos, G, now) {
+  // a hand name short enough for a seat plate (the full name is in the centre note and the feed)
+  function shortHand(nm) {
+    if (nm.length <= 6) return nm;
+    if (/^스트레이트 플러시/.test(nm)) return '스티플';
+    return nm.replace(/ \(.*\)$/, '').split(' ')[0];
+  }
+  function betsHtml(T, pos, G, now, st) {
     var h = T.hand, out = '', s;
     if (!h) return '';
     var key = T.tid + ':' + h.no + ':' + h.street;
-    if (!O.bets || O.bets.k !== key) O.bets = { k: key, b: h.bet.map(function () { return 0; }), at: [] };
+    if (!st.bets || st.bets.k !== key) st.bets = { k: key, b: h.bet.map(function () { return 0; }), at: [] };
     for (s = 0; s < T.seats.length; s++) {
-      if (h.bet[s] > O.bets.b[s]) { O.bets.at[s] = now; O.bets.b[s] = h.bet[s]; }
+      if (h.bet[s] > st.bets.b[s]) { st.bets.at[s] = now; st.bets.b[s] = h.bet[s]; }
+      else if (h.bet[s] < st.bets.b[s]) { st.bets.b[s] = h.bet[s]; st.bets.at[s] = 0; }     // stepped back in a replay
       if (!(h.bet[s] > 0)) continue;
-      var P = pos[s], kf = P.zone === 'mid' ? 0.62 : P.zone === 'sl' || P.zone === 'sr' ? 0.47 : 0.5, bx = 50 + G.rx * kf * P.cx, by = G.cy + G.ry * kf * P.sy;
-      var push = O.bets.at[s] && now - O.bets.at[s] < 450;
+      var P = pos[s], bx = P.bx, by = P.by;
+      var push = st.bets.at[s] && now - st.bets.at[s] < 450;
       out += '<div class="bet' + (push ? ' push' : '') + '" style="left:' + f2(bx) + '%;top:' + f2(by) + '%;--fx:' + f2(P.x - bx) + ';--fy:' + f2(P.y - by) +
         '"><i class="cp"></i><b>' + money(h.bet[s]) + '</b></div>';
     }
@@ -2669,35 +3817,63 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     }
     return out;
   }
-  function drawCenter(T, now) {
-    var h = T.hand, i, slots = '', best = null, note;
-    if (!h) { setHTML($('#cpot'), ''); setHTML($('#cboard'), ''); setHTML($('#cnote'), ''); setHTML($('#chno'), ''); return; }
+  function drawCenter(T, now, K, V) {
+    var h = T.hand, i, slots = '', best = null, note, st = V.st;
+    if (!h) { setHTML(K.cpot, ''); setHTML(K.cboard, ''); setHTML(K.cnote, ''); setHTML(K.chno, ''); return; }
     var r = h.res, hk = T.tid + ':' + h.no, potNow = h.pot + sum(h.bet);
-    if (!O.potSeen || O.potSeen.k !== hk) O.potSeen = { k: hk, v: h.pot, at: 0 };
-    if (h.pot > O.potSeen.v) { O.potSeen.v = h.pot; O.potSeen.at = now; }
-    setHTML($('#cpot'), r ? '' : '<span class="pot' + (now - O.potSeen.at < 500 ? ' bump' : '') + '"><i class="cp"></i>팟 <b>' + money(potNow) + '</b></span>');
-    if (!O.boardSeen || O.boardSeen.k !== hk) O.boardSeen = { k: hk, n: 0, from: 0, at: 0 };
-    if (h.board.length > O.boardSeen.n) { O.boardSeen.from = O.boardSeen.n; O.boardSeen.n = h.board.length; O.boardSeen.at = now; }
-    var flipping = now - O.boardSeen.at < 900;
+    if (!st.potSeen || st.potSeen.k !== hk) st.potSeen = { k: hk, v: h.pot, at: 0 };
+    if (h.pot > st.potSeen.v) { st.potSeen.v = h.pot; st.potSeen.at = now; } else if (h.pot < st.potSeen.v) { st.potSeen.v = h.pot; st.potSeen.at = 0; }
+    setHTML(K.cpot, r ? '' : '<span class="pot' + (now - st.potSeen.at < 500 ? ' bump' : '') + '"><i class="cp"></i>팟 <b>' + money(potNow) + '</b></span>');
+    if (!st.boardSeen || st.boardSeen.k !== hk) st.boardSeen = { k: hk, n: 0, from: 0, at: 0 };
+    if (h.board.length > st.boardSeen.n) { st.boardSeen.from = st.boardSeen.n; st.boardSeen.n = h.board.length; st.boardSeen.at = now; }
+    else if (h.board.length < st.boardSeen.n) { st.boardSeen.n = st.boardSeen.from = h.board.length; st.boardSeen.at = 0; }
+    var flipping = now - st.boardSeen.at < 900;
     if (r && !r.fold && r.pots[0] && r.pots[0].w.length === 1 && r.best) best = r.best[r.pots[0].w[0]] || null;
     for (i = 0; i < 5; i++) {
       if (h.board[i] === undefined) { slots += '<span class="cd md slot"></span>'; continue; }
       var cls = best ? (best.indexOf(h.board[i]) >= 0 ? 'hl' : 'dim') : '';
-      if (flipping && i >= O.boardSeen.from) cls += ' flip" style="animation-delay:' + ((i - O.boardSeen.from) * 110) + 'ms';
+      if (flipping && i >= st.boardSeen.from) cls += ' flip" style="animation-delay:' + ((i - st.boardSeen.from) * 110) + 'ms';
       slots += cardHtml(h.board[i], 'md', cls);
     }
-    setHTML($('#cboard'), slots);
-    if (r) {
-      note = r.pots.map(function (pt, k) {
+    setHTML(K.cboard, slots);
+    if (V.note != null) note = V.note;
+    else if (T.fast) note = '남은 AI끼리 빠르게 진행하는 중…';
+    else if (r && r.pots.length > 1) {
+      // side pots: one line per winner with what they took (their hands are on their seats)
+      var tot = 0, ws = [];
+      r.pots.forEach(function (pt) { tot += pt.a; });
+      (r.won || []).forEach(function (w, s2) { if (w > 0) ws.push([s2, w]); });
+      ws.sort(function (x, y) { return y[1] - x[1]; });
+      note = '팟 ' + money(tot) + ' → ' + ws.map(function (x) { return '<b>' + esc(T.seats[x[0]].nick) + '</b> +' + money(x[1]); }).join(' · ');
+    } else if (r) {
+      note = r.pots.map(function (pt) {
         var who = pt.w.map(function (s) { return esc(T.seats[s].nick); }).join(', ');
         var how = r.fold ? '' : pt.w.length > 1 ? ' · 나눠 가짐' : (r.names[pt.w[0]] ? ' · ' + esc(r.names[pt.w[0]]) : '');
-        return '<div>' + (r.pots.length > 1 ? potLabel(k, r.pots.length) + ' ' : '') + money(pt.a) + ' → <b>' + who + '</b>' + how + '</div>';
+        return money(pt.a) + ' → <b>' + who + '</b>' + how;
       }).join('');
-    } else if (h.actor >= 0) note = '<span class="who">' + esc(T.seats[h.actor].nick) + '</span> 차례 · <span data-dl="' + h.dl + '"></span>초';
+    } else if (h.actor >= 0) {
+      var ap = T.seats[h.actor];
+      note = '<span class="who">' + esc(ap.nick) + '</span> 차례' + (h.dl ? ' · <span data-dl="' + h.dl + '"></span>초' : '') +
+        (h.dl && ap.tc > 0 && h.actor !== V.me && !ap.bot ? ' · <span class="tcs">⏱ 타임 카드 ' + ap.tc + '</span>' : '');
+    }
     else if (h.reveal) note = '올인 — 카드를 펼쳐요';
     else note = STREET[h.street] || '';
-    setHTML($('#cnote'), note);
-    setHTML($('#chno'), '핸드 #' + h.no + ' · ' + (h.done ? '결과' : STREET[h.street] || ''));
+    setHTML(K.cnote, note);
+    fitText(K.cnote);
+    setHTML(K.chno, '핸드 #' + h.no + ' · ' + (h.done ? '결과' : STREET[h.street] || ''));
+  }
+
+  // a note that would run past its box gets smaller type instead of being cut off
+  function fitText(el) {
+    var k = el._fit || '';
+    if (el._fitH === el._h && k !== '') return;
+    el._fitH = el._h;
+    el.classList.remove('many', 'tiny');
+    if (el.scrollHeight > el.clientHeight + 1) {
+      el.classList.add('many');
+      if (el.scrollHeight > el.clientHeight + 1) { el.classList.remove('many'); el.classList.add('tiny'); }
+    }
+    el._fit = el.className;
   }
 
   function feedHtml(T) {
@@ -2809,24 +3985,23 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
   }
   function turnHtml(T, h, me, p, L) {
     var tot = T.cfg.act * 1000 + h.tcu * HD.TC_MS;
+    var tc = p.tc > 0 ? '<button class="tcard" data-act="tc" aria-label="타임 카드로 30초 더 (' + p.tc + '장 남음)">⏱ +30초<small>' + p.tc + '장</small></button>' : '';
     var head = '<div class="myturn"><span class="mt-l">내 차례</span><i class="mt-bar"><i class="bar-i" data-dl="' + h.dl + '" data-tot="' + tot + '"></i></i>' +
-      '<span class="mt-t"><span data-dl="' + h.dl + '"></span>초</span></div>';
-    var tc = p.tc > 0 ? '<button class="tcard" data-act="tc">⏱ +30초 <small>타임 카드 ' + p.tc + '장</small></button>' : '<span class="tcard none">타임 카드 없음</span>';
-    if (O.raiseOpen && L.canRaise) return head + raiseHtml(h, L) + '<div class="aux">' + tc + '</div>';
+      '<span class="mt-t"><span data-dl="' + h.dl + '"></span>초</span>' + tc + '</div>';
+    if (O.raiseOpen && L.canRaise) return head + raiseHtml(h, L);
     var callLbl = L.canCheck ? '체크' : (L.toCall >= p.stack ? '콜 올인' : '콜');
     var btns = '<div class="abtns' + (L.canCheck ? ' nofold' : '') + (L.canRaise ? '' : ' noraise') + '">' +
       (L.canRaise ? '<button class="btn raise" data-act="raise">' + (L.isBet ? '벳' : '레이즈') + '<small>' + (L.minTo >= L.maxTo ? '올인 ' : '최소 ') + money(L.minTo) + '</small></button>' : '') +
       (L.canCheck ? '' : '<button class="btn fold" data-act="fold">폴드</button>') +
       '<button class="btn call" data-act="' + (L.canCheck ? 'check' : 'call') + '">' + callLbl + (L.canCheck ? '' : '<small>' + money(L.toCall) + '</small>') + '</button></div>';
-    return head + '<div class="aux">' + tc + '</div>' + btns;
+    return head + btns;
   }
   function raiseHtml(h, L) {
     if (!O.raiseTo || O.raiseTo < L.minTo || O.raiseTo > L.maxTo) O.raiseTo = L.minTo;
     var fixed = L.minTo >= L.maxTo;
-    return '<div class="rpanel"><div class="rp-top"><span>' + (L.isBet ? '벳' : '레이즈') + ' 금액</span><button class="rp-x" data-act="raise" aria-label="닫기">✕</button></div>' +
-      '<div class="rp-amt">' + (fixed ? '' : '<button class="stepb" data-act="step" data-d="-1" aria-label="줄이기">−</button>') +
-      '<span class="rp-cur">$</span><input id="ramt" inputmode="numeric" value="' + O.raiseTo + '"' + (fixed ? ' readonly' : '') + '>' +
-      (fixed ? '' : '<button class="stepb" data-act="step" data-d="1" aria-label="늘리기">+</button>') + '</div>' +
+    return '<div class="rpanel"><div class="rp-amt">' + (fixed ? '' : '<button class="stepb" data-act="step" data-d="-1" aria-label="줄이기">−</button>') +
+      '<span class="rp-cur">$</span><input id="ramt" inputmode="numeric" aria-label="' + (L.isBet ? '벳' : '레이즈') + ' 금액" value="' + O.raiseTo + '"' + (fixed ? ' readonly' : '') + '>' +
+      (fixed ? '' : '<button class="stepb" data-act="step" data-d="1" aria-label="늘리기">+</button>') + '<button class="rp-x" data-act="raise" aria-label="레이즈 닫기">✕</button></div>' +
       (fixed ? '' : '<input type="range" id="rng" min="' + L.minTo + '" max="' + L.maxTo + '" step="1" value="' + O.raiseTo + '">') +
       '<div class="presets">' + presets(h, L).map(function (x) {
         return '<button class="' + (O.raiseTo === x[1] ? 'on' : '') + '" data-amt="' + x[1] + '">' + x[0] + '</button>';
@@ -2912,7 +4087,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     if (!h) return;
     var k = T.tid + ':' + h.no, cur = { k: k, tid: T.tid, len: h.log.length, res: !!h.res };
     O.snd = cur;
-    if (!prev || prev.tid !== T.tid || !sfxReady()) return;           // first look: no noise
+    if (!prev || prev.tid !== T.tid || !sfxReady() || T.fast) return;  // first look (or fast-forward): no noise
     try {
       if (prev.k !== k) {                                               // blinds go in, then the deal
         var live = 0;
@@ -2938,11 +4113,212 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
       var winners = r.res ? uniq(r.res.pots.reduce(function (a, pt) { return a.concat(pt.w); }, [])).map(function (s) { return r.names[s]; }).join(', ') : '';
       return '<li class="' + (open ? 'open' : '') + '"><button class="hrow" data-hk="' + esc(r.k) + '"><span class="hno2">#' + r.no + '</span><span class="hc">' + (r.my ? cardsInline(r.my) : '') +
         '</span><span class="hw">' + esc(winners) + '</span>' + (net !== null ? '<span class="hnet ' + (net > 0 ? 'up' : net < 0 ? 'dn' : '') + '">' + signed(net) + '</span>' : '') +
-        '</button>' + (open ? '<pre>' + esc(handText(r)) + '</pre>' : '') + '</li>';
+        '</button>' + (open ? histDetail(r) : '') + '</li>';
     }).join('');
-    return '<h2>핸드 기록</h2><p class="hint">이 기기에서 본 핸드가 저장돼요 (' + hands.length + '개). 탭하면 자세히 보여요.</p>' +
+    return '<h2>핸드 기록</h2><p class="hint">이 기기에서 본 핸드가 저장돼요 (' + hands.length + '개). 탭하면 자세히 보이고, 테이블 리플레이와 GTO 분석을 열 수 있어요.</p>' +
       '<div class="row left"><button class="btn small" data-act="export">텍스트 파일로 저장</button><button class="btn ghost small" data-act="copyHist">전체 복사</button></div>' +
       '<ol class="hlist">' + (items || '<li class="empty">아직 기록이 없어요</li>') + '</ol>';
+  }
+  // ------------------------------------------------------------ replay on a table, with GTO-style advice per decision
+  var RP = null, RO = null;   // the open replay (record, snapshots, steps, analysis per seat); a size watcher for tables
+  var OPT_N = { fold: '폴드', check: '체크', call: '콜', bet: '벳', raise: '레이즈', allin: '올인' };
+  var VERD = { good: '좋아요', mix: '괜찮아요', miss: '아쉬워요' }, VMARK = { good: '✓', mix: '△', miss: '✕' };
+  var GTO_NOTE = '솔버가 아닌 근사치예요: 프리플랍은 표준 GTO 레인지·푸시/폴드 내시 근사표, 포스트플랍은 상대 예상 범위 대비 에퀴티·팟 오즈·MDF·보드 텍스처로 계산해요.';
+  function pc(x) { return Math.round((+x || 0) * 100) + '%'; }
+  function f1(x) { return (Math.round(x * 10) / 10).toString(); }
+  function findRec(k) { var X = loadHist(); for (var i = 0; i < X.hands.length; i++) if (X.hands[i].k === k) return X.hands[i]; return null; }
+  function knownCards(rec, s) {
+    if (s === rec.me && rec.my && rec.my.length === 2) return rec.my;
+    var sh = rec.res && rec.res.show && rec.res.show[s];
+    return sh && sh.length === 2 ? sh : null;
+  }
+  function decides(e) { return e && e.s !== undefined && 'fkcbr'.indexOf(e.a) >= 0; }
+  function analyzable(rec) {
+    var out = [];
+    rec.names.forEach(function (_, s) {
+      if (rec.live[s] && knownCards(rec, s) && rec.log.some(function (e) { return decides(e) && e.s === s; })) out.push(s);
+    });
+    return out;
+  }
+  function anaFor(rec, s, cache) {
+    if (cache[s]) return cache[s];
+    var cards = knownCards(rec, s), list = [], by = {};
+    try { list = cards && ADV ? ADV.analyze(rec, s, cards, { iters: 700 }) : []; } catch (e) { list = []; }
+    list.forEach(function (a) { by[a.i] = a; });
+    return (cache[s] = { list: list, by: by });
+  }
+  // analysis is kept per record (and per set of shown cards) for the history list and the replay alike
+  function anaStore(r) {
+    if (!O.ana) O.ana = {};
+    var key = r.k + ':' + Object.keys((r.res && r.res.show) || {}).length;
+    return O.ana[key] || (O.ana[key] = {});
+  }
+  function anaCached(r) { return anaFor(r, r.me, anaStore(r)); }
+  function optLabel(o, adv) {
+    var t = OPT_N[o.k] || o.k;
+    if (o.to && (o.k === 'bet' || o.k === 'raise' || o.k === 'allin')) t += ' ' + money(o.to);
+    else if (o.k === 'call' && adv && adv.toCall) t += ' ' + money(adv.toCall);
+    return t;
+  }
+  function didTxt(e) { return actTxt(e, '').trim(); }
+  function histDetail(r) {
+    var html = '<div class="hdet"><button class="btn small primary" data-act="rpOpen" data-rk="' + esc(r.k) + '">▶ 테이블로 다시 보기 · GTO 분석</button>';
+    var A = r.my && r.me >= 0 && r.live[r.me] ? anaCached(r) : null;
+    if (A && A.list.length) {
+      var by = {}, rows = '';
+      A.list.forEach(function (a) { (by[a.street] = by[a.street] || []).push(a); });
+      Object.keys(by).forEach(function (st) {
+        rows += '<div class="sm-row"><span class="sm-st">' + STREET[st] + '</span><span class="sm-b">' + by[st].map(function (a) {
+          var top = a.opts.slice(0, 2).map(function (o) { return optLabel(o, a) + ' ' + pc(o.f); }).join(' · ');
+          return '<span class="sm-i"><span class="vm v-' + a.verdict.v + '">' + VMARK[a.verdict.v] + '</span><b>' + esc(didTxt(a.e)) + '</b> <small>권장 ' + esc(top) + '</small></span>';
+        }).join('') + '</span></div>';
+      });
+      html += '<div class="ssum"><div class="sm-h">GTO 근사 권장 · 내 결정</div>' + rows + '</div>';
+    }
+    return html + '<pre>' + esc(handText(r)) + '</pre></div>';
+  }
+  // the steps the arrows walk through: blinds in one go, then every action and every street, then the result
+  function viewSteps(rec, steps) {
+    var L = rec.log, out = [], j = 0, k;
+    while (j < L.length && (L[j].a === 'S' || L[j].a === 'B' || L[j].a === 'N')) j++;
+    out.push({ at: j, e: null, kind: 'start', j: -1 });
+    for (; j < L.length; j++) {
+      var e = L[j];
+      if (!e.d && !decides(e)) continue;
+      for (k = j + 1; k < L.length && (L[k].a === 'R' || L[k].a === 'T'); k++);
+      out.push({ at: k, e: e, j: j });
+    }
+    if (rec.res) out.push({ at: steps.length - 1, e: null, kind: 'end', j: L.length });
+    return out;
+  }
+  function openReplay(k) {
+    var rec = findRec(k);
+    if (!rec || !ADV) { toast('이 핸드는 다시 볼 수 없어요'); return; }
+    var steps = ADV.replay(rec), cand = analyzable(rec);
+    RP = { k: k, rec: rec, steps: steps, vs: viewSteps(rec, steps), ana: anaStore(rec), cand: cand };
+    O.rp = { k: k, i: 0, seat: cand.indexOf(rec.me) >= 0 ? rec.me : cand.length ? cand[0] : -1, all: true, play: 0, st: { handKey: 'open' } };
+    render();
+  }
+  function closeReplay() { O.rp = null; RP = null; render(); }
+  function rpGo(i) {
+    if (!O.rp || !RP) return;
+    i = Math.max(0, Math.min(RP.vs.length - 1, i));
+    if (i === O.rp.i) return;
+    var fwd = i === O.rp.i + 1, v = RP.vs[i];
+    O.rp.i = i;
+    if (fwd && sfxReady()) { try { if (v.e) sfxEntry(v.e, 0); else if (v.kind === 'end') SFX.win(0.05); } catch (e) { /* sound is a nicety */ } }
+    render();
+  }
+  function rpView() {
+    var rec = RP.rec, seat = O.rp.seat, bottom = seat >= 0 ? seat : rec.me >= 0 && rec.live[rec.me] ? rec.me : 0;
+    return {
+      st: O.rp.st, me: bottom, bottom: bottom, flags: false, replay: true, note: rpNote(RP.vs[O.rp.i]), total: sum(rec.start),
+      cards: function (T, s) { return s === rec.me && rec.my ? rec.my : O.rp.all || s === seat ? knownCards(rec, s) : null; }
+    };
+  }
+  function rpNote(v) {
+    var rec = RP.rec;
+    if (v.kind === 'start') {
+      var a = RP.steps[v.at].hand.actor;
+      return '블라인드·앤티' + (a >= 0 ? ' · <span class="who">' + esc(rec.names[a]) + '</span> 차례' : '');
+    }
+    if (v.kind === 'end') return null;
+    if (v.e.d) return STREET[v.e.d];
+    return '<span class="who">' + esc(rec.names[v.e.s]) + '</span> ' + esc(didTxt(v.e));
+  }
+  function rpHeadline(v) {
+    var rec = RP.rec, r = rec.res;
+    if (v.kind === 'start') return '<b>블라인드와 앤티</b>를 내고 카드를 받았어요';
+    if (v.kind === 'end') {
+      return r ? r.pots.map(function (pt, k) {
+        return (r.pots.length > 1 ? potLabel(k, r.pots.length) + ' ' : '') + money(pt.a) + ' → <b>' + pt.w.map(function (s) { return esc(rec.names[s]); }).join(', ') + '</b>' +
+          (!r.fold && r.names && pt.w.length === 1 && r.names[pt.w[0]] ? ' · ' + esc(r.names[pt.w[0]]) : '');
+      }).join('<br>') : '결과';
+    }
+    if (v.e.d) return '<b>' + STREET[v.e.d] + '</b> ' + cardsInline(v.e.c);
+    var e = v.e, h = RP.steps[v.j].hand;
+    return '<span class="st-l">' + STREET[h.street] + '</span><b>' + esc(rec.names[e.s]) + '</b> ' + esc(didTxt(e));
+  }
+  function gtoCard(adv, rec, seat) {
+    var cards = knownCards(rec, seat), bb = adv.bb || rec.bb, vd = adv.verdict;
+    var bars = adv.opts.map(function (o) {
+      var big = o.to && bb && (o.k === 'bet' || o.k === 'raise' || o.k === 'allin');
+      return '<div class="gbar k-' + o.k + '"><span class="lbl">' + esc(optLabel(o, adv)) + (big ? '<small>' + f1(o.to / bb) + 'BB</small>' : '') + '</span>' +
+        '<i><b style="width:' + Math.max(2, Math.round(o.f * 100)) + '%"></b></i><span class="pc">' + pc(o.f) + '</span></div>';
+    }).join('');
+    var meta = [];
+    if (adv.eq != null) meta.push('에퀴티 <b>' + pc(adv.eq) + '</b>');
+    if (adv.need != null) meta.push('콜에 필요 <b>' + pc(adv.need) + '</b>');
+    if (adv.mdf != null) meta.push('MDF <b>' + pc(adv.mdf) + '</b>');
+    meta.push('팟 ' + money(adv.pot));
+    return '<div class="gto"><div class="gto-h"><b>GTO 근사 권장</b><span>' + STREET[adv.street] + (adv.pos ? ' · ' + adv.pos : '') + ' · ' + esc(rec.names[seat]) + ' <span class="nw">' + cardsInline(cards) + '</span></span></div>' +
+      bars + '<div class="gmeta">' + meta.join(' · ') + '</div>' +
+      '<ul class="gnotes">' + adv.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul>' +
+      '<div class="verdict v-' + vd.v + '">실제: <b>' + esc(didTxt(adv.e)) + '</b> — ' + VERD[vd.v] +
+      ' <small>(' + (vd.kind === 'bet' || vd.kind === 'raise' || vd.kind === 'allin' ? '벳·레이즈 권장 빈도 ' : '이 액션 권장 빈도 ') + pc(vd.f) + ')</small>' +
+      (vd.note ? '<br><small>' + esc(vd.note) + '</small>' : '') + '</div></div>';
+  }
+  function rpSideHtml() {
+    var rec = RP.rec, i = O.rp.i, v = RP.vs[i], seat = O.rp.seat, A = seat >= 0 ? anaFor(rec, seat, RP.ana) : null, html = '';
+    html += '<div class="rp-now">' + rpHeadline(v) + '</div>';
+    var adv = A && v.e && !v.e.d && v.e.s === seat ? A.by[v.j] : null;
+    if (adv) html += gtoCard(adv, rec, seat);
+    else if (A && A.list.length) {
+      var nx = null;
+      for (var k = i + 1; k < RP.vs.length && !nx; k++) if (RP.vs[k].e && RP.vs[k].e.s === seat && A.by[RP.vs[k].j]) nx = k;
+      html += '<p class="hint rp-tip">' + (nx ? '› 로 넘기다 <b>' + esc(rec.names[seat]) + '</b>의 결정이 나오면 GTO 권장이 보여요. <button class="link" data-act="rpGo" data-v="' + nx + '">다음 결정으로</button>'
+        : esc(rec.names[seat]) + '의 결정은 여기까지예요. 아래 목록에서 다시 볼 수 있어요.') + '</p>';
+    }
+    if (A && A.list.length) {
+      var rows = '', st = -1;
+      A.list.forEach(function (a) {
+        var vi = 0;
+        for (var q = 0; q < RP.vs.length; q++) if (RP.vs[q].j === a.i) vi = q;
+        if (a.street !== st) { st = a.street; rows += '<li class="st">' + STREET[st] + '</li>'; }
+        rows += '<li><button class="drow' + (vi === i ? ' on' : '') + '" data-act="rpGo" data-v="' + vi + '"><span class="vm v-' + a.verdict.v + '">' + VMARK[a.verdict.v] + '</span>' +
+          '<span class="da">' + esc(didTxt(a.e)) + '</span><span class="dr">권장 ' + esc(optLabel(a.opts[0], a)) + ' ' + pc(a.opts[0].f) + '</span></button></li>';
+      });
+      html += '<h4>' + esc(rec.names[seat]) + '의 결정</h4><ol class="dlist">' + rows + '</ol>';
+    } else if (!RP.cand.length) html += '<p class="hint">카드를 아는 사람이 없어서 GTO 분석은 할 수 없어요. 내가 카드를 받은 핸드나 쇼다운에서 카드가 공개된 핸드만 분석돼요.</p>';
+    if (RP.cand.length > 1) {
+      html += '<div class="rp-opt"><span>분석할 사람</span>' + RP.cand.map(function (s) {
+        return '<button class="chip' + (s === seat ? ' on' : '') + '" data-act="rpSeat" data-v="' + s + '">' + esc(rec.names[s]) + '</button>';
+      }).join('') + '</div>';
+    }
+    var others = Object.keys((rec.res && rec.res.show) || {}).filter(function (s) { return +s !== rec.me; }).length;
+    if (others) html += '<div class="rp-opt"><span>공개된 카드</span><button class="chip' + (O.rp.all ? ' on' : '') + '" data-act="rpAll" data-v="1">처음부터 보기</button>' +
+      '<button class="chip' + (O.rp.all ? '' : ' on') + '" data-act="rpAll" data-v="0">쇼다운에서 보기</button></div>';
+    return html + '<p class="hint gto-note">' + GTO_NOTE + '</p>';
+  }
+  function rpCtlHtml() {
+    var i = O.rp.i, n = RP.vs.length;
+    return '<button data-act="rpFirst" aria-label="처음으로"' + (i <= 0 ? ' disabled' : '') + '>⏮</button>' +
+      '<button class="big" data-act="rpPrev" aria-label="이전"' + (i <= 0 ? ' disabled' : '') + '>‹</button>' +
+      '<span class="pos">' + (i + 1) + ' / ' + n + '</span>' +
+      '<button class="big" data-act="rpNext" aria-label="다음"' + (i >= n - 1 ? ' disabled' : '') + '>›</button>' +
+      '<button data-act="rpLast" aria-label="끝으로"' + (i >= n - 1 ? ' disabled' : '') + '>⏭</button>' +
+      '<button data-act="rpPlay" aria-label="' + (O.rp.play ? '멈춤' : '자동 재생') + '">' + (O.rp.play ? '⏸' : '▶') + '</button>';
+  }
+  function drawReplay() {
+    var el = $('#replay');
+    if (!O.rp || !RP) {
+      if (!el.hidden) { el.hidden = true; el.innerHTML = ''; el._sig = ''; }
+      return;
+    }
+    el.hidden = false;
+    if (el._sig !== RP.k) {
+      el.innerHTML = '<div class="rp-head" data-r="head"></div><div class="rp-main"><div class="rp-stage"><div class="tbl" id="rtable"></div>' +
+        '<div class="rp-ctl" data-r="ctl"></div></div><div class="rp-side" data-r="side"></div></div>';
+      el._sig = RP.k;
+      if (RO) RO.observe($('#rtable'));
+    }
+    var v = RP.vs[O.rp.i], sp = RP.steps[v.at], rec = RP.rec;
+    drawTable({ tid: rec.tid || 'rp', st: 'run', seats: sp.seats, hand: sp.hand, cfg: { act: 30 } }, $('#rtable'), rpView());
+    setHTML($('[data-r=head]', el), '<span class="t">핸드 #' + rec.no + ' · Lv ' + (rec.lvl + 1) + ' · ' + money(rec.sb) + '/' + money(rec.bb) +
+      (rec.ante ? ' · 앤티 ' + money(rec.ante) : '') + '</span><span class="d">' + (rec.at ? stamp(rec.at) : '') + '</span>' +
+      '<button class="x" data-act="rpClose" aria-label="닫기">✕</button>');
+    setHTML($('[data-r=ctl]', el), rpCtlHtml());
+    setHTML($('[data-r=side]', el), rpSideHtml());
   }
   function rulesHtml() {
     var T = curT(), cfg = (T && T.cfg) || O.form || CFG0, rows = '', i;
@@ -2964,7 +4340,9 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
       '같은 핸드에서 여러 명이 탈락하면, 그 핸드를 시작할 때 칩이 많았던 사람이 더 높은 순위예요.',
       '액션 시간은 ' + cfg.act + '초예요. 타임 카드(' + cfg.tc + '장)를 쓰면 1장에 30초씩 늘어나요. 시간이 끝나면 체크할 수 있으면 체크, 아니면 폴드돼요.',
       '접속이 끊기거나 \'자리 비움\'이면 차례가 왔을 때 자동으로 체크/폴드되고, 블라인드와 앤티는 계속 내요.',
-      '카드는 딜러 화면이 섞어서 나눠 줘요. 각자의 카드는 그 사람 기기에서만 풀리도록 암호화돼서 다른 참가자나 중계 서버는 볼 수 없어요. 딜러 화면은 숨겨진 카드를 화면에 표시하지 않아요.'
+      '카드는 딜러 화면이 섞어서 나눠 줘요. 각자의 카드는 그 사람 기기에서만 풀리도록 암호화돼서 다른 참가자나 중계 서버는 볼 수 없어요. 딜러 화면은 숨겨진 카드를 화면에 표시하지 않아요.',
+      'AI 플레이어는 딜러 화면에서 돌아가요(쉬움·보통·어려움). 자기 카드만 보고 판단하고, 사람이 모두 탈락하면 남은 AI끼리 빠르게 끝까지 진행해서 결과와 \'다시 하기\'가 곧 나와요.',
+      '기록에서 핸드를 열면 테이블 리플레이(‹ › 로 한 단계씩)와 결정마다 GTO 근사 권장을 볼 수 있어요. 솔버 결과가 아니라 표준 레인지·푸시/폴드 표와 에퀴티·팟 오즈·MDF로 계산한 근사치예요.'
     ];
     return '<h2>규칙</h2><ul class="rules">' + li.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
       '<h2>상금 (머니인)</h2><table class="struct"><thead><tr><th>참가자</th><th>상금 받는 자리</th><th>나누는 비율</th></tr></thead><tbody>' +
@@ -2989,6 +4367,9 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
   // ------------------------------------------------------------ clocks on screen
   function uiTick() {
     var now = Date.now(), T = curT(), off = offset(), scr = screen();
+    if (O.rp && O.rp.play && RP && now - O.rp.play >= 1150) {
+      if (O.rp.i >= RP.vs.length - 1) { O.rp.play = 0; render(); } else { O.rp.play = now; rpGo(O.rp.i + 1); }
+    }
     if (scr === 'connecting' && now - O.connDrawn > 1000) { O.connDrawn = now; $('#overlay')._h = ''; render(); }
     if (!T) return;
     $$('[data-dl]').forEach(function (el) {
@@ -3139,6 +4520,12 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
         break;
       }
       case 'ready': if (T && T.st === 'lobby') { O.rdy = O.rdy === T.round ? 0 : T.round; publish(); render(); } break;
+      case 'start': if (O.dealer && D.ready && !D.S) { D.startReq = true; dealerKick(); } break;
+      case 'aiN': if (T && T.st === 'lobby') {
+        var aw = aiWant(T), hum = T.lobby.filter(function (x) { return !x.bot; }).length;
+        sendAi(Math.min(aw.n, MAX_SEATS - hum) + (+t.getAttribute('data-d') || 0), aw.lv);
+      } break;
+      case 'aiLv': if (T && T.st === 'lobby') sendAi(aiWant(T).n, +t.getAttribute('data-v') || 2); break;
       case 'leaveSeat': O.want = 0; O.rdy = 0; saveSess(); publish(); render(); break;
       case 'again':
         if (T && T.st === 'end') {
@@ -3182,6 +4569,22 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
       case 'away': setAway(!O.away); break;
       case 'show': if (h && h.done) sendReq({ k: 'show', h: h.no }).then(function (ok) { if (ok) toast('카드를 보여 줬어요'); }); break;
       case 'export': download('holdem-' + O.code + '.txt', exportText()); break;
+      case 'rpOpen': openReplay(t.getAttribute('data-rk')); break;
+      case 'rpClose': closeReplay(); break;
+      case 'rpFirst': if (O.rp) { O.rp.play = 0; O.rp.st.handKey = 'again'; O.rp.i = 1; rpGo(0); } break;
+      case 'rpPrev': if (O.rp) { O.rp.play = 0; rpGo(O.rp.i - 1); } break;
+      case 'rpNext': if (O.rp) { O.rp.play = 0; rpGo(O.rp.i + 1); } break;
+      case 'rpLast': if (O.rp && RP) { O.rp.play = 0; rpGo(RP.vs.length - 1); } break;
+      case 'rpPlay':
+        if (O.rp && RP) {
+          if (O.rp.play) O.rp.play = 0;
+          else { if (O.rp.i >= RP.vs.length - 1) { O.rp.st.handKey = 'again'; O.rp.i = 0; } O.rp.play = Date.now(); }
+          render();
+        }
+        break;
+      case 'rpGo': if (O.rp) { O.rp.play = 0; rpGo(+t.getAttribute('data-v') || 0); } break;
+      case 'rpSeat': if (O.rp) { O.rp.seat = +t.getAttribute('data-v'); $('#rtable')._sig = ''; render(); } break;
+      case 'rpAll': if (O.rp) { O.rp.all = t.getAttribute('data-v') === '1'; render(); } break;
       case 'copyHist': copyText(exportText(), '기록을 복사했어요'); break;
       case 'fullscreen': try { document.documentElement.requestFullscreen(); } catch (e) { /* ignore */ } O.sheet = ''; render(); break;
       case 'leave':
@@ -3216,6 +4619,17 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     }
   }
   function onKey(ev) {
+    if (O.rp && RP) {
+      var k = ev.key;
+      if (k === 'ArrowRight' || k === 'ArrowLeft' || k === 'Home' || k === 'End' || k === ' ' || k === 'Escape') ev.preventDefault();
+      if (k === 'ArrowRight') { O.rp.play = 0; rpGo(O.rp.i + 1); }
+      else if (k === 'ArrowLeft') { O.rp.play = 0; rpGo(O.rp.i - 1); }
+      else if (k === 'Home') { O.rp.play = 0; rpGo(0); }
+      else if (k === 'End') { O.rp.play = 0; rpGo(RP.vs.length - 1); }
+      else if (k === ' ') { O.rp.play = O.rp.play ? 0 : Date.now(); render(); }
+      else if (k === 'Escape') closeReplay();
+      return;
+    }
     if (ev.key === 'Escape' && O.sheet) { O.sheet = ''; render(); return; }
     if (ev.key === 'Enter' && ev.target && ev.target.id === 'nickIn') { ev.preventDefault(); var b = $('[data-act=join]'); if (b) b.click(); }
     if (ev.key === 'Enter' && ev.target && ev.target.id === 'ramt') { ev.preventDefault(); var g = $('[data-act=raiseGo]'); if (g) g.click(); }
@@ -3226,7 +4640,20 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     document.addEventListener('click', onClick);
     document.addEventListener('input', onInput);
     document.addEventListener('keydown', onKey);
-    window.addEventListener('resize', function () { $('#table')._sig = ''; render(); });
+    window.addEventListener('resize', function () { $('#table')._sig = ''; var rt = $('#rtable'); if (rt) rt._sig = ''; render(); });
+    if (window.ResizeObserver) { RO = new ResizeObserver(function () { render(); }); RO.observe($('#table')); }
+    var sw = null;
+    document.addEventListener('touchstart', function (ev) {
+      var t = ev.touches[0];
+      sw = O.rp && t && ev.target.closest && ev.target.closest('#rtable') ? { x: t.clientX, y: t.clientY } : null;
+    }, { passive: true });
+    document.addEventListener('touchend', function (ev) {
+      var t = ev.changedTouches[0];
+      if (!sw || !t || !O.rp) return;
+      var dx = t.clientX - sw.x, dy = t.clientY - sw.y;
+      sw = null;
+      if (Math.abs(dx) > 45 && Math.abs(dy) < 60) { O.rp.play = 0; rpGo(O.rp.i + (dx < 0 ? 1 : -1)); }
+    }, { passive: true });
     document.addEventListener('visibilitychange', function () { keepAwake(); if (O.dealer) dealerKick(); render(); });
     window.addEventListener('hashchange', function () { location.reload(); });
     setInterval(uiTick, 200);
@@ -3235,7 +4662,7 @@ body.is-player.scr-table.lay-port #toast { bottom: 170px; }
     if (m) enterRoom(m[1]); else render();
   }
 
-  if (DEBUG) window.__hd = { O: O, D: D, T: curT, me: mySeat, cards: function () { return myCards(curT()); }, hist: loadHist, exportText: exportText };
+  if (DEBUG) window.__hd = { O: O, D: D, T: curT, me: mySeat, cards: function () { return myCards(curT()); }, hist: loadHist, exportText: exportText, replay: openReplay, histKey: histKey, render: render, draw: draw };
   boot();
 })();
 
