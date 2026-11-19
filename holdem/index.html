@@ -752,6 +752,14 @@ body.lay-land .myturn .tcard { margin-left: auto; }
 .mi.vol > span:first-child { flex: 1; }
 .mi.vol .chips { display: flex; gap: 6px; }
 .mi.vol .chip { padding: 5px 11px; font-size: 13px; }
+/* odds as on a broadcast: ✓ once a hand cannot lose */
+.tag .ck { display: inline-block; margin-right: 4px; font-weight: 900; color: #0d6a3a; }
+.tag.t-lock { background: #1d8a52; color: #fff; box-shadow: 0 0 0 1px rgba(110, 240, 170, .7), 0 0 14px rgba(70, 220, 140, .45); }
+.tag.t-lock .ck { color: #fff; margin: 0; }
+.tag:not(.t-win):not(.t-lock) .ck { color: #57e39c; }
+.tag.dead { opacity: .5; }
+.tag.dead .eq { color: var(--ink3); }
+.tag.t-eq:empty { display: none; }
 
 </style>
 </head>
@@ -1955,10 +1963,12 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     }
   }
 
-  // every hand known: each one's share of the pot from here (exact from the flop on, sampled before)
-  function allEquity(hands, board, o) {
+  // every hand known: how often each one wins outright and how often it ties, from here on
+  // (exact from the flop on, sampled before; share counts a tie as a part of the pot)
+  function allOdds(hands, board, o) {
     o = o || {};
-    var n = hands.length, dead = new Uint8Array(52), rest = [], i, j, win = hands.map(function () { return 0; }), cnt = 0;
+    var n = hands.length, dead = new Uint8Array(52), rest = [], i, j, cnt = 0;
+    var win = hands.map(function () { return 0; }), tie = win.slice(), share = win.slice();
     hands.forEach(function (h) { dead[h[0]] = dead[h[1]] = 1; });
     board.forEach(function (x) { dead[x] = 1; });
     for (i = 0; i < 52; i++) if (!dead[i]) rest.push(i);
@@ -1966,7 +1976,9 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     function score(full) {
       var best = -1, ws = [], k, sc;
       for (k = 0; k < n; k++) { sc = HD.evalCards(hands[k].concat(full)).score; if (sc > best) { best = sc; ws = [k]; } else if (sc === best) ws.push(k); }
-      for (k = 0; k < ws.length; k++) win[ws[k]] += 1 / ws.length;
+      if (ws.length === 1) win[ws[0]]++;
+      else for (k = 0; k < ws.length; k++) tie[ws[k]]++;
+      for (k = 0; k < ws.length; k++) share[ws[k]] += 1 / ws.length;
       cnt++;
     }
     if (need <= 0) score(board.slice(0, 5));
@@ -1980,11 +1992,13 @@ body.lay-land .myturn .tcard { margin-left: auto; }
         score(full);
       }
     }
-    return win.map(function (w) { return cnt ? w / cnt : 0; });
+    var f = function (x) { return cnt ? x / cnt : 0; };
+    return { win: win.map(f), tie: tie.map(f), share: share.map(f), exact: need <= 2 };
   }
+  function allEquity(hands, board, o) { return allOdds(hands, board, o).share; }
 
   return {
-    allEquity: allEquity,
+    allEquity: allEquity, allOdds: allOdds,
     ORDER: ORDER, key: key, band: band, inTop: inTop, rfiPct: rfiPct, pushPct: pushPct, rng: rng, hashStr: hashStr,
     ctxFrom: ctxFrom, story: story, posName: posName, preOrder: preOrder, equity: equity, classify: classify, drawInfo: drawInfo,
     texture: texture, advise: advise, judge: judge, replay: replay, analyze: analyze, botAct: botAct, handLabel: handLabel
@@ -3214,23 +3228,39 @@ body.lay-land .myturn .tcard { margin-left: auto; }
   // the dealer screen can show every hand (for a screen the players can't see, or a watching crowd)
   function setOpen(v) {
     if (!O.dealer) return;
-    D.open = !!v; D.dirty = true; O.eqc = null;
+    D.open = !!v; D.dirty = true; O.odds = null;
     toast(D.open ? '이 화면에 모든 패가 보여요 · 참가자 폰에도 \'패 공개 중\'이 표시돼요' : '패를 다시 가렸어요');
     dealerKick(); render();
   }
-  // each live hand's share of the pot, for the dealer screen with hands shown
-  function dealerEquity(T) {
-    var h = T.hand, S = D.S, H = S && S.hand, who = [], i;
-    if (!h || !H || h.res || h.done || S.tid !== T.tid || H.no !== h.no || !ADV) return null;
-    for (i = 0; i < h.live.length; i++) if (h.live[i] && !h.fold[i] && H.holes[i]) who.push(i);
+  // how often each hand still in wins outright (ties left out), whenever this screen knows the hands: the dealer
+  // screen with hands shown, an all-in run-out (hands are tabled for everyone) and the showdown itself
+  function tableOdds(T, V) {
+    var h = T.hand, res = h && h.res, who = [], hands = [], i, c;
+    if (!h || !ADV || T.fast || (res && res.fold)) return null;
+    if (!(V.open || h.reveal || res)) return null;
+    for (i = 0; i < h.live.length; i++) {
+      if (!h.live[i] || h.fold[i]) continue;
+      c = (res && res.show && res.show[i]) || (h.reveal && h.reveal[i]) || (V.open ? dealerHole(T, i) : null);
+      if (c) { who.push(i); hands.push(c); } else if (!res) return null;   // a hand still hidden: no odds for anyone
+    }
     if (who.length < 2) return null;
+    var out = {};
+    if (res) { who.forEach(function (s) { out[s] = { done: 1, w: res.won[s] > 0 ? 1 : 0, t: 0 }; }); return out; }
     var k = T.tid + ':' + h.no + ':' + h.board.join('.') + ':' + who.join(',');
-    if (O.eqc && O.eqc.k === k) return O.eqc.v;
-    var e = ADV.allEquity(who.map(function (s) { return H.holes[s]; }), h.board, { iters: Math.max(600, Math.min(1500, Math.round(6000 / who.length))), rnd: ADV.rng(ADV.hashStr(k)) });
-    var v = [];
-    who.forEach(function (s, j) { v[s] = e[j]; });
-    O.eqc = { k: k, v: v };
-    return v;
+    if (V.st.odds && V.st.odds.k === k) return V.st.odds.v;
+    var r = ADV.allOdds(hands, h.board, { iters: Math.max(600, Math.min(1500, Math.round(6000 / who.length))), rnd: ADV.rng(ADV.hashStr(k)) });
+    who.forEach(function (s, j) { out[s] = { w: r.win[j], t: r.tie[j], exact: r.exact }; });
+    V.st.odds = { k: k, v: out };
+    return out;
+  }
+  // a hand's odds as the broadcast shows them: ✓ once it cannot lose, '스플릿' for a locked chop, else its win %
+  function oddsLabel(pr) {
+    if (!pr) return null;
+    if (pr.done) return pr.w ? { lock: 1 } : { txt: '0%', dead: 1 };
+    if (pr.exact && pr.w >= 1 - 1e-9) return { lock: 1 };
+    if (pr.t >= 1 - 1e-9) return { txt: '스플릿' };
+    if (pr.w <= 0) return { txt: '0%', dead: pr.t <= 0 };
+    return { txt: Math.max(1, Math.min(99, Math.round(pr.w * 100))) + '%' };
   }
   function dealerHole(T, s) {
     var S = D.S, H = S && S.hand;
@@ -3899,7 +3929,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     // a phone held sideways draws the top bar over the table: keep that strip free of seats
     var top = !O.dealer && O.lay === 'land' && hud && getComputedStyle(hud).position === 'absolute' ? hud.offsetHeight + 2 : 0;
     var open = O.dealer && D.open;
-    return { st: O, me: me, bottom: me >= 0 ? me : 0, flags: true, top: top, showFolded: open, eq: open ? dealerEquity : null,
+    return { st: O, me: me, bottom: me >= 0 ? me : 0, flags: true, top: top, showFolded: open, open: open, odds: tableOdds,
       cards: function (T, s) { return s === me ? myCards(T) : open ? dealerHole(T, s) : null; } };
   }
   var LAYV = ['sw', 'ph', 'cw', 'ch', 'bw', 'bh', 'cgap', 'cbw', 'noteh'];
@@ -3981,13 +4011,14 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     var stk = p.out ? (V.replay ? '탈락' : p.place + '위' + (p.prize ? ' · ' + money(p.prize) : '')) : shownName ? '<span class="hnm" title="' + esc(shownName) + '">' + esc(shortHand(shownName)) + '</span>'
       : (live && h.allin[s] && !h.done ? '올인' : money(p.stack));
     var tag = won ? ['+' + money(h.res.won[s]), 'win'] : !p.out && h && !shownName ? actionTag(T, s) : null, sub = '', flag = p.out || p.bot || !V.flags ? '' : flagFor(T, p.pid);
-    var eqs = V.eq && live && !folded && !won ? V.eq(T) : null, eqv = eqs && eqs[s] != null ? Math.round(eqs[s] * 100) + '%' : '';
-    if (eqv && !tag) tag = ['', 'eq'];
+    var od = V.odds && live && !folded ? V.odds(T, V) : null, ol = od ? oddsLabel(od[s]) : null;
+    if (ol && !tag) tag = ['', ol.lock ? 'lock' : 'eq'];
     if (flag) av = av.replace(/<\/div>$/, '<span class="fl">' + (flag === '연결 끊김' ? '끊김' : '비움') + '</span></div>');
     return '<div class="' + cls.join(' ') + '" style="left:' + f2(P.x) + '%;top:' + f2(P.y) + '%" data-seat="' + s + '">' +
       '<div class="plate">' + av + '<div class="info"><div class="nm">' + esc(p.nick) + '</div><div class="stk">' + stk + '</div></div>' +
       (h && h.btn === s ? '<i class="dbtn" title="딜러 버튼">D</i>' : '') + '</div>' +
-      (tag ? '<div class="tag t-' + tag[1] + '">' + tag[0] + (eqv ? '<b class="eq">' + eqv + '</b>' : '') + '</div>' : '') + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+      (tag ? '<div class="tag t-' + tag[1] + (ol && ol.dead ? ' dead' : '') + '">' + (ol && ol.lock ? '<b class="ck" aria-label="확정">✓</b>' : '') + tag[0] +
+        (ol && ol.txt ? '<b class="eq">' + ol.txt + '</b>' : '') + '</div>' : '') + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
   }
   // a hand name short enough for a seat plate (the full name is in the centre note and the feed)
   function shortHand(nm) {
