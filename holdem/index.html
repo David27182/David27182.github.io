@@ -739,6 +739,20 @@ body.lay-land .myturn .tcard { margin-left: auto; }
   .panel.draw .hint { margin: 4px 0; }
 }
 
+/* ---- dealer screen with hands shown */
+.ic.eye.on { background: var(--gold); color: #1d1607; border-color: var(--gold); font-weight: 700; }
+.opn { font: 700 11.5px var(--sans); color: #1d1607; background: var(--gold); border-radius: 6px; padding: 2px 7px; white-space: nowrap; }
+.tag .eq { font: 700 1em var(--mono); color: var(--gold); margin-left: 5px; }
+.tag.t-eq { background: rgba(10, 16, 13, .85); box-shadow: inset 0 0 0 1px rgba(230, 192, 104, .45); }
+.tag.t-eq .eq { margin-left: 0; }
+.eye-row { justify-content: center; margin-top: 10px !important; }
+.opn-h { color: var(--gold) !important; }
+.hl1 .opn { margin-left: 6px; font-size: 11px; padding: 1px 6px; }
+.mi.vol { display: flex; align-items: center; gap: 10px; cursor: default; }
+.mi.vol > span:first-child { flex: 1; }
+.mi.vol .chips { display: flex; gap: 6px; }
+.mi.vol .chip { padding: 5px 11px; font-size: 13px; }
+
 </style>
 </head>
 <body>
@@ -1941,7 +1955,36 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     }
   }
 
+  // every hand known: each one's share of the pot from here (exact from the flop on, sampled before)
+  function allEquity(hands, board, o) {
+    o = o || {};
+    var n = hands.length, dead = new Uint8Array(52), rest = [], i, j, win = hands.map(function () { return 0; }), cnt = 0;
+    hands.forEach(function (h) { dead[h[0]] = dead[h[1]] = 1; });
+    board.forEach(function (x) { dead[x] = 1; });
+    for (i = 0; i < 52; i++) if (!dead[i]) rest.push(i);
+    var need = 5 - board.length;
+    function score(full) {
+      var best = -1, ws = [], k, sc;
+      for (k = 0; k < n; k++) { sc = HD.evalCards(hands[k].concat(full)).score; if (sc > best) { best = sc; ws = [k]; } else if (sc === best) ws.push(k); }
+      for (k = 0; k < ws.length; k++) win[ws[k]] += 1 / ws.length;
+      cnt++;
+    }
+    if (need <= 0) score(board.slice(0, 5));
+    else if (need === 1) rest.forEach(function (x) { score(board.concat([x])); });
+    else if (need === 2) { for (i = 0; i < rest.length; i++) for (j = i + 1; j < rest.length; j++) score(board.concat([rest[i], rest[j]])); }
+    else {
+      var rnd = o.rnd || Math.random, it = o.iters || 1500, pick = rest.slice();
+      for (var t = 0; t < it; t++) {
+        var full = board.slice();
+        for (var k = 0; k < need; k++) { var r = k + Math.floor(rnd() * (pick.length - k)), tmp = pick[k]; pick[k] = pick[r]; pick[r] = tmp; full.push(pick[k]); }
+        score(full);
+      }
+    }
+    return win.map(function (w) { return cnt ? w / cnt : 0; });
+  }
+
   return {
+    allEquity: allEquity,
     ORDER: ORDER, key: key, band: band, inTop: inTop, rfiPct: rfiPct, pushPct: pushPct, rng: rng, hashStr: hashStr,
     ctxFrom: ctxFrom, story: story, posName: posName, preOrder: preOrder, equity: equity, classify: classify, drawInfo: drawInfo,
     texture: texture, advise: advise, judge: judge, replay: replay, analyze: analyze, botAct: botAct, handLabel: handLabel
@@ -2760,13 +2803,14 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     want: 0, rdy: 0, away: 0, q: [], qseq: 0, pending: null, turnKey: '', warned: {}, tcKey: '', tcUsed: 0,
     raiseOpen: false, raiseTo: 0, endShown: false, endHidden: false, recorded: {}, lastLvl: -1,
     yielded: false, reclaimDone: false, sheet: '', histOpen: '', form: null, nickDraft: null, stackDraft: '',
-    leaveArmed: 0, busy: false, sound: LS.get('hd.snd', true), four: LS.get('hd.4c', false), toastT: 0, connDrawn: 0,
+    leaveArmed: 0, busy: false, sound: LS.get('hd.snd', true), vol: LS.get('hd.vol', 0.7), four: LS.get('hd.4c', false), toastT: 0, connDrawn: 0,
     lay: 'land', rotOk: !!SS.get('hd.rotok', false), pre: null, snd: null, handKey: '', dealFrom: 0, ai: null
   };
   var D = {
     ready: false, waitFrom: 0, S: null, cfg: CFG0, round: 1, v: 0, lobby: [], wait: [], joinAt: {}, go: 0, sig: '',
     last: null, seen: {}, offSince: {}, enc: null, T: null, H: null, made: 0, lastTick: 0,
-    chain: Promise.resolve(), queued: false, stopTick: null, aiAt: 0, bot: null, vnow: 0, fast: false, allReady: false, startReq: false
+    chain: Promise.resolve(), queued: false, stopTick: null, aiAt: 0, bot: null, vnow: 0, fast: false, allReady: false, startReq: false,
+    open: false, dirty: false
   };
 
   function curT() { return O.dealer ? (D.ready ? D.T : null) : O.T; }
@@ -2940,7 +2984,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
   function loadDealer() {
     var host = LS.get('hd.host.' + O.code, null) || {};
     D.cfg = validCfg(host.cfg); D.S = host.S || null; D.round = host.round || 1; D.v = host.v || 0;
-    D.joinAt = host.joinAt || {}; D.last = host.last || null; D.made = host.made || Date.now(); D.aiAt = host.aiAt || 0;
+    D.joinAt = host.joinAt || {}; D.last = host.last || null; D.made = host.made || Date.now(); D.aiAt = host.aiAt || 0; D.open = !!host.open;
     D.go = 0; D.sig = ''; D.enc = null; D.seen = {}; D.offSince = {}; D.bot = null; D.vnow = 0; D.fast = false;
     if (D.S && D.S.st === 'run' && host.at) {
       var gap = Date.now() - host.at;
@@ -2949,7 +2993,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     D.lastTick = Date.now(); D.ready = true;
   }
   function persistDealer(now) {
-    LS.set('hd.host.' + O.code, { cfg: D.cfg, S: D.S, round: D.round, v: D.v, joinAt: D.joinAt, last: D.last, at: now, jwk: O.id.jwk, made: D.made, aiAt: D.aiAt });
+    LS.set('hd.host.' + O.code, { cfg: D.cfg, S: D.S, round: D.round, v: D.v, joinAt: D.joinAt, last: D.last, at: now, jwk: O.id.jwk, made: D.made, aiAt: D.aiAt, open: D.open });
   }
   function dealerKick() {
     if (!O.dealer || D.queued) return;
@@ -2983,6 +3027,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     if (!D.S) dirty = lobbyStep(peers, now) || dirty;
     else if (D.S.st === 'run') dirty = (await runStep(peers, now)) || dirty;
     else dirty = endStep(peers) || dirty;
+    if (D.dirty) { D.dirty = false; dirty = true; }
     if (dirty) await dealerPublish(Date.now());
   }
 
@@ -3005,7 +3050,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     var allReady = humans.length >= 1 && seats.length >= 2 && humans.every(function (x) { return x.rdy; });
     var sig = JSON.stringify([seats.map(function (x) { return [x.pid, x.nick, x.rdy, x.bot || 0]; }), wait.map(function (x) { return x.pid; }), allReady, D.cfg.bots, D.cfg.botLv]);
     var changed = sig !== D.sig;
-    if (allReady && !D.allReady && D.ready) chime();             // everyone is ready: tell the dealer screen
+    if (allReady && !D.allReady && D.ready) play(function (X, t) { SFX.ready(X, t); });   // everyone is ready: tell the dealer screen
     D.sig = sig; D.lobby = seats; D.wait = wait; D.go = 0; D.allReady = allReady;
     var start = D.startReq;
     D.startReq = false;
@@ -3158,12 +3203,38 @@ body.lay-land .myturn .tcard { margin-left: auto; }
       if (D.fast) { T.fast = 1; if (T.hand) T.hand.dl = 0; }
       if (D.S.hand) Hm = await sealHoles(D.S);
     }
-    T.now = now;
+    T.now = now; T.open = D.open ? 1 : 0;        // phones are told when the dealer screen shows every hand
     D.T = T; D.H = Hm;
     persistDealer(now);
     publish();
     onTable(T);
     render();
+  }
+
+  // the dealer screen can show every hand (for a screen the players can't see, or a watching crowd)
+  function setOpen(v) {
+    if (!O.dealer) return;
+    D.open = !!v; D.dirty = true; O.eqc = null;
+    toast(D.open ? '이 화면에 모든 패가 보여요 · 참가자 폰에도 \'패 공개 중\'이 표시돼요' : '패를 다시 가렸어요');
+    dealerKick(); render();
+  }
+  // each live hand's share of the pot, for the dealer screen with hands shown
+  function dealerEquity(T) {
+    var h = T.hand, S = D.S, H = S && S.hand, who = [], i;
+    if (!h || !H || h.res || h.done || S.tid !== T.tid || H.no !== h.no || !ADV) return null;
+    for (i = 0; i < h.live.length; i++) if (h.live[i] && !h.fold[i] && H.holes[i]) who.push(i);
+    if (who.length < 2) return null;
+    var k = T.tid + ':' + h.no + ':' + h.board.join('.') + ':' + who.join(',');
+    if (O.eqc && O.eqc.k === k) return O.eqc.v;
+    var e = ADV.allEquity(who.map(function (s) { return H.holes[s]; }), h.board, { iters: Math.max(600, Math.min(1500, Math.round(6000 / who.length))), rnd: ADV.rng(ADV.hashStr(k)) });
+    var v = [];
+    who.forEach(function (s, j) { v[s] = e[j]; });
+    O.eqc = { k: k, v: v };
+    return v;
+  }
+  function dealerHole(T, s) {
+    var S = D.S, H = S && S.hand;
+    return H && T.hand && S.tid === T.tid && H.no === T.hand.no && H.holes[s] ? H.holes[s] : null;
   }
 
   // ------------------------------------------------------------ player
@@ -3224,7 +3295,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     if (T.st === 'run' || T.st === 'end') {
       if (h && h.done && h.res && !T.fast) recordHand(T);
       if (T.st === 'end') recordEnd(T);
-      if (T.st === 'run' && !T.fast && O.lastLvl >= 0 && T.lvl > O.lastLvl) toast('레벨 ' + (T.lvl + 1) + ' · ' + blinds(T.lvl) + ' — 다음 핸드부터');
+      if (T.st === 'run' && !T.fast && O.lastLvl >= 0 && T.lvl > O.lastLvl) { toast('레벨 ' + (T.lvl + 1) + ' · ' + blinds(T.lvl) + ' — 다음 핸드부터'); play(function (X, t) { SFX.level(X, t); }); }
       O.lastLvl = T.lvl;
       var ms = moneyState(T), mk = T.tid + ':' + ms.k;
       if (ms.k && !T.fast && O.moneyKey && O.moneyKey.split(':')[0] === T.tid && O.moneyKey !== mk) {
@@ -3269,8 +3340,11 @@ body.lay-land .myturn .tcard { margin-left: auto; }
       prizes: T.seats.map(function (s) { return s.prize || 0; }), bots: T.seats.map(function (s) { return s.bot || 0; }), pids: T.seats.map(function (s) { return s.pid; }),
       me: me, my: myCards(T)
     };
+    if (O.dealer && D.open && D.S && D.S.hand && D.S.tid === T.tid && D.S.hand.no === h.no) {
+      rec.holes = D.S.hand.holes.map(function (x, s2) { return h.live[s2] && x ? x.slice() : null; });
+    }
     for (i = 0; i < X.hands.length; i++) if (X.hands[i].k === k) break;
-    if (i < X.hands.length) { rec.at = X.hands[i].at; if (!rec.my) rec.my = X.hands[i].my; X.hands[i] = rec; }
+    if (i < X.hands.length) { rec.at = X.hands[i].at; if (!rec.my) rec.my = X.hands[i].my; if (!rec.holes && X.hands[i].holes) rec.holes = X.hands[i].holes; X.hands[i] = rec; }
     else X.hands.push(rec);
     if (X.hands.length > 400) X.hands = X.hands.slice(-400);
     if (!X.tours[T.tid]) X.tours[T.tid] = { at: Date.now(), cfg: T.cfg, names: rec.names };
@@ -3369,20 +3443,138 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     if (AC && AC.state === 'suspended') { try { AC.resume(); } catch (e) { /* ignore */ } }
     return AC;
   }
-  function beep(freq, dur, vol, at) {
-    if (!O.sound || !AC) return;
-    try {
-      var t = AC.currentTime + (at || 0), o = AC.createOscillator(), g = AC.createGain();
-      o.type = 'sine'; o.frequency.value = freq;
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(vol || 0.08, t + 0.012);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-      o.connect(g); g.connect(AC.destination);
-      o.start(t); o.stop(t + dur + 0.03);
-    } catch (e) { /* ignore */ }
+  // ------------------------------------------------------------ sound: all synthesized, through one bus (a gentle
+  // compressor and a little room) so chips, cards and chimes sit together at an even level; each seat's sounds come
+  // from its side of the table
+  var BUS = null, VOLS = [[0.35, '작게'], [0.7, '보통'], [1, '크게']];
+  function makeBus(ac, vol) {
+    var input = ac.createGain(), hp = ac.createBiquadFilter(), comp = ac.createDynamicsCompressor(), master = ac.createGain();
+    var rev = ac.createConvolver(), wet = ac.createGain(), makeup = ac.createGain(), lim = ac.createDynamicsCompressor(), i, ch;
+    hp.type = 'highpass'; hp.frequency.value = 48; hp.Q.value = 0.7;
+    comp.threshold.value = -15; comp.knee.value = 10; comp.ratio.value = 3; comp.attack.value = 0.002; comp.release.value = 0.12;
+    var n = Math.floor(ac.sampleRate * 0.6), ir = ac.createBuffer(2, n, ac.sampleRate);
+    for (ch = 0; ch < 2; ch++) {
+      var d = ir.getChannelData(ch), lp = 0;
+      for (i = 0; i < n; i++) { lp += 0.3 * (Math.random() * 2 - 1 - lp); d[i] = i < ac.sampleRate * 0.007 ? 0 : lp * Math.exp(-i / ac.sampleRate / 0.12); }
+    }
+    rev.buffer = ir; wet.gain.value = 0.16;
+    input.connect(hp); hp.connect(comp); hp.connect(rev); rev.connect(wet); wet.connect(comp);
+    makeup.gain.value = 1.7;                                   // louder on small speakers…
+    lim.threshold.value = -2; lim.knee.value = 0; lim.ratio.value = 20; lim.attack.value = 0.001; lim.release.value = 0.08;   // …and never clipping
+    comp.connect(makeup); makeup.connect(master); master.gain.value = vol; master.connect(lim); lim.connect(ac.destination);
+    var nb = ac.createBuffer(1, ac.sampleRate, ac.sampleRate), nd = nb.getChannelData(0);
+    for (i = 0; i < nd.length; i++) nd[i] = Math.random() * 2 - 1;
+    return { ac: ac, input: input, master: master, noise: nb };
   }
-  function chime() {
-    beep(660, 0.12, 0.09); beep(880, 0.18, 0.09, 0.13);
+  function sfxBus() {
+    if (!O.sound || !AC || AC.state !== 'running') return null;
+    if (!BUS || BUS.ac !== AC) BUS = makeBus(AC, O.vol);
+    return BUS;
+  }
+  function sndErr(e) { if (DEBUG) { try { console.error('sound: ' + (e && e.stack || e)); } catch (e2) { /* ignore */ } } }
+  function play(fn) { var X = sfxBus(); if (!X) return; try { fn(X, X.ac.currentTime + 0.02); } catch (e) { sndErr(e); } }
+  function setVol(v) {
+    O.vol = v; LS.set('hd.vol', v);
+    if (BUS) BUS.master.gain.setTargetAtTime(v, BUS.ac.currentTime, 0.02);
+    play(function (X, t) { SFX.chips(X, t, 3, 0); });
+  }
+  function voice(X, pan) {
+    if (pan && X.ac.createStereoPanner) { var p = X.ac.createStereoPanner(); p.pan.value = Math.max(-0.8, Math.min(0.8, pan)); p.connect(X.input); return p; }
+    return X.input;
+  }
+  function part(X, dst, t, f, a, dec, f2) {                // one decaying partial (sine)
+    var o = X.ac.createOscillator(), g = X.ac.createGain();
+    o.frequency.setValueAtTime(f, t);
+    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dec * 0.8);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(a, t + 0.0012); g.gain.exponentialRampToValueAtTime(0.0001, t + dec);
+    o.connect(g); g.connect(dst); o.start(t); o.stop(t + dec + 0.03);
+  }
+  function hiss(X, dst, t, dur, type, f, q, a, f2, att) {   // shaped noise
+    var src = X.ac.createBufferSource(), fl = X.ac.createBiquadFilter(), g = X.ac.createGain();
+    att = att || 0.0015;
+    src.buffer = X.noise; fl.type = type; fl.Q.value = q; fl.frequency.setValueAtTime(f, t);
+    if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(a, t + att); g.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(dur, att + 0.004));
+    src.connect(fl); fl.connect(g); g.connect(dst); src.start(t, Math.random() * 0.7, dur + 0.06);
+  }
+  function clack(X, dst, t, v) {                           // two clay chips meeting
+    var p = 0.9 + Math.random() * 0.2;
+    hiss(X, dst, t, 0.009, 'highpass', 4600 * p, 0.8, 0.30 * v);
+    hiss(X, dst, t, 0.026, 'bandpass', 2700 * p, 3.2, 0.24 * v);
+    part(X, dst, t, 3350 * p, 0.055 * v, 0.028);
+    part(X, dst, t, 5150 * p, 0.03 * v, 0.018);
+  }
+  function thud(X, dst, t, v) {                            // a chip settling on the felt
+    part(X, dst, t, 240, 0.15 * v, 0.045, 150);
+    hiss(X, dst, t, 0.03, 'lowpass', 900, 0.7, 0.09 * v);
+  }
+  function knock(X, dst, t, v) {                           // a knuckle on the padded rail
+    part(X, dst, t, 230, 0.4 * v, 0.075, 92);
+    hiss(X, dst, t, 0.04, 'lowpass', 1200, 0.8, 0.2 * v);
+    hiss(X, dst, t, 0.012, 'bandpass', 2600, 1.4, 0.07 * v);
+  }
+  function bell(X, dst, t, f, a) {                         // a soft, warm bell
+    part(X, dst, t, f, a, 1.1); part(X, dst, t, f * 2.01, a * 0.42, 0.7);
+    part(X, dst, t, f * 3.02, a * 0.18, 0.42); part(X, dst, t, f * 4.21, a * 0.08, 0.25);
+  }
+  function mallet(X, dst, t, f, a) {                       // round and short, like a marimba bar
+    part(X, dst, t, f, a, 0.5); part(X, dst, t, f * 3.98, a * 0.28, 0.14); part(X, dst, t, f * 9.9, a * 0.05, 0.04);
+    hiss(X, dst, t, 0.012, 'bandpass', f * 2, 2, a * 0.45);
+  }
+  // every sound returns how long it takes, so a run of actions can follow one another
+  var SFX = {
+    chips: function (X, t, n, pan) {
+      var dst = voice(X, pan), tt = t, i;
+      thud(X, dst, t, 0.8);
+      for (i = 0; i < n; i++) { if (i) tt += 0.018 + Math.random() * 0.032; clack(X, dst, tt, 1 - 0.55 * i / Math.max(1, n)); }
+      return tt - t + 0.07;
+    },
+    allin: function (X, t, pan) {
+      var dst = voice(X, pan), tt = t, i;
+      hiss(X, dst, t, 0.42, 'bandpass', 900, 0.9, 0.09, 380, 0.05);           // the whole stack slides in
+      part(X, dst, t, 82, 0.1, 0.38, 55);
+      for (i = 0; i < 14; i++) { tt += 0.016 + Math.random() * 0.03; clack(X, dst, tt, 0.95 - 0.04 * i); }
+      return tt - t + 0.08;
+    },
+    check: function (X, t, pan) { var dst = voice(X, pan); knock(X, dst, t, 1); knock(X, dst, t + 0.118, 0.78); return 0.24; },
+    fold: function (X, t, pan) {
+      var dst = voice(X, pan);
+      hiss(X, dst, t, 0.2, 'bandpass', 2400, 1.1, 0.26, 650, 0.03);           // the cards slide away…
+      hiss(X, dst, t + 0.16, 0.035, 'lowpass', 1300, 0.7, 0.15);              // …onto the muck
+      return 0.22;
+    },
+    deal: function (X, t, pan) {
+      var dst = voice(X, pan);
+      hiss(X, dst, t, 0.06, 'bandpass', 2600, 1.3, 0.22, 5200, 0.012);         // the flick through the air
+      hiss(X, dst, t + 0.052, 0.024, 'lowpass', 1700, 0.8, 0.18);             // landing on the felt
+      return 0.08;
+    },
+    flip: function (X, t, pan) {
+      var dst = voice(X, pan);
+      hiss(X, dst, t, 0.05, 'bandpass', 1500, 1, 0.07, 3600, 0.01);
+      hiss(X, dst, t + 0.035, 0.016, 'highpass', 3200, 0.8, 0.13);
+      part(X, dst, t + 0.035, 190, 0.09, 0.035, 130);
+      return 0.09;
+    },
+    win: function (X, t, pan) {
+      var dst = voice(X, pan), tt = t + 0.05, i, bd = voice(X, 0);
+      hiss(X, dst, t, 0.35, 'bandpass', 800, 0.8, 0.07, 450, 0.06);
+      for (i = 0; i < 10; i++) { tt += 0.028 + Math.random() * 0.03; clack(X, dst, tt, 0.85 - 0.05 * i); }
+      bell(X, bd, t + 0.12, 1046.5, 0.07); bell(X, bd, t + 0.24, 1318.5, 0.06); bell(X, bd, t + 0.36, 1568, 0.055);
+      return 0.9;
+    },
+    turn: function (X, t) { var d = voice(X, 0); mallet(X, d, t, 784, 0.17); mallet(X, d, t + 0.11, 1046.5, 0.17); return 0.6; },
+    tick: function (X, t, v) {
+      var d = voice(X, 0);
+      part(X, d, t, 1900, 0.12 * v, 0.03); part(X, d, t, 1250, 0.09 * v, 0.035); hiss(X, d, t, 0.008, 'bandpass', 3000, 1.5, 0.08 * v);
+      return 0.05;
+    },
+    ding: function (X, t) { var d = voice(X, 0); bell(X, d, t, 880, 0.075); bell(X, d, t + 0.08, 1318.5, 0.05); return 0.5; },
+    ready: function (X, t) { var d = voice(X, 0); mallet(X, d, t, 1046.5, 0.15); mallet(X, d, t + 0.1, 1318.5, 0.15); mallet(X, d, t + 0.2, 1568, 0.15); return 0.7; },
+    level: function (X, t) { var d = voice(X, 0); bell(X, d, t, 784, 0.06); bell(X, d, t + 0.14, 1174.7, 0.06); return 0.8; }
+  };
+  function chime() {                                       // it is my turn
+    play(function (X, t) { SFX.turn(X, t); });
     if (navigator.vibrate) { try { navigator.vibrate(70); } catch (e) { /* ignore */ } }
   }
   function keepAwake() {
@@ -3544,6 +3736,8 @@ body.lay-land .myturn .tcard { margin-left: auto; }
       ctl = '<div class="linkbox"><input id="linkIn" readonly value="' + esc(roomUrl()) + '"><button class="btn" data-act="copy">링크 복사</button>' +
         (navigator.share ? '<button class="btn ghost" data-act="share">공유</button>' : '') + '</div>' +
         '<button class="btn primary big startb" data-act="start"' + (T.ready ? '' : ' disabled') + '>게임 시작</button>' +
+        '<div class="row eye-row"><button class="chip' + (D.open ? ' on' : '') + '" data-act="eye" aria-pressed="' + (D.open ? 'true' : 'false') + '">' +
+          (D.open ? '이 화면에 패 보이기 · 켜짐' : '이 화면에 패 보이기') + '</button></div>' +
         '<p class="hint">이 링크를 참가자에게 보내 주세요. 모두 \'준비\'를 누르면 \'게임 시작\'으로 시작해요. 방장도 플레이하려면 이 링크를 자기 폰에서 열면 돼요. 이 화면은 끝날 때까지 켜 두세요 — 카드를 섞고 시간을 재는 곳이에요.</p>';
     } else if (!O.want || !O.id.nick) {
       ctl = '<div class="join"><input id="nickIn" maxlength="12" placeholder="닉네임" autocomplete="nickname" value="' + esc(O.nickDraft != null ? O.nickDraft : O.id.nick) + '">' +
@@ -3556,6 +3750,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
       ctl = '<button class="btn ' + (rdyLocal ? 'ghost' : 'primary') + ' big" data-act="ready">' + (rdyLocal ? '준비 취소' : '준비') + '</button>' + aiBoxHtml(T, humans);
     }
     var watching = !dealerView && O.want && O.id.nick ? '<button class="link" data-act="leaveSeat">관전만 할게요</button>' : '';
+    if (!dealerView && T.open) ctl += '<p class="hint opn-h">딜러 화면에 모든 참가자의 패가 보이도록 켜져 있어요.</p>';
     var nIn = Math.min(T.lobby.length, MAX_SEATS);
     var pz = nIn >= 2 ? '<p class="prize">상금 풀 ' + money(nIn * T.cfg.stack) + ' · ' + prizeLine(HD.prizes(nIn, nIn * T.cfg.stack)) + '</p>' : '';
     return panel('<div class="lcol">' + head + ctl + go + lastHtml(T.last) +
@@ -3627,8 +3822,11 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     }
     var mute = O.sound && O.code && (!AC || AC.state !== 'running') ? '<button class="ic snd" data-act="unmute" aria-label="소리 켜기">🔈<span class="lbl"> 소리 켜기</span></button>' : '';
     return '<div class="hud"><div class="hud-l"><div class="hl1"><span class="lvchip">Lv ' + (lv + 1) + '</span><span class="bl">' + money(L.sb) + '/' + money(L.bb) +
-      ' <small>앤티 ' + money(L.ante) + '</small></span></div>' + (next ? '<div class="hl2">' + next + '</div>' : '') + '<div class="hl3">' + tableInfo(T) +
-      (me < 0 && !O.dealer ? '<span class="watch">관전 중</span>' : '') + '</div></div><div class="hud-r">' + mute + (T.st === 'end' ? '<button class="ic" data-act="showEnd">결과</button>' : '') +
+      ' <small>앤티 ' + money(L.ante) + '</small></span>' + (T.open && !O.dealer ? '<span class="opn" title="딜러 화면에 모든 참가자의 패가 보이고 있어요">딜러 화면 패 공개 중</span>' : '') +
+      '</div>' + (next ? '<div class="hl2">' + next + '</div>' : '') + '<div class="hl3">' + tableInfo(T) +
+      (me < 0 && !O.dealer ? '<span class="watch">관전 중</span>' : '') + (T.open && O.dealer ? '<span class="opn">패 공개 중</span>' : '') +
+      '</div></div><div class="hud-r">' + mute + (O.dealer ? '<button class="ic eye' + (D.open ? ' on' : '') + '" data-act="eye" aria-pressed="' + (D.open ? 'true' : 'false') + '">' +
+        (D.open ? '패 가리기' : '패 보기') + '</button>' : '') + (T.st === 'end' ? '<button class="ic" data-act="showEnd">결과</button>' : '') +
       '<button class="ic" data-act="hist">기록</button><button class="ic" data-act="rules">규칙</button><button class="ic" data-act="menu">메뉴</button></div></div>' + warn + rot;
   }
 
@@ -3700,7 +3898,9 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     var me = mySeat(), hud = $('#top');
     // a phone held sideways draws the top bar over the table: keep that strip free of seats
     var top = !O.dealer && O.lay === 'land' && hud && getComputedStyle(hud).position === 'absolute' ? hud.offsetHeight + 2 : 0;
-    return { st: O, me: me, bottom: me >= 0 ? me : 0, flags: true, top: top, cards: function (T, s) { return s === me ? myCards(T) : null; } };
+    var open = O.dealer && D.open;
+    return { st: O, me: me, bottom: me >= 0 ? me : 0, flags: true, top: top, showFolded: open, eq: open ? dealerEquity : null,
+      cards: function (T, s) { return s === me ? myCards(T) : open ? dealerHole(T, s) : null; } };
   }
   var LAYV = ['sw', 'ph', 'cw', 'ch', 'bw', 'bh', 'cgap', 'cbw', 'noteh'];
   function drawTable(T, el, V) {
@@ -3748,8 +3948,8 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     var h = T.hand;
     if (!h || !h.live[s]) return '';
     var shownRes = h.res && h.res.show && h.res.show[s], won = h.res && h.res.won && h.res.won[s] > 0;
-    if (h.fold[s] && !shownRes) return '';
     var show = shownRes || (h.reveal && h.reveal[s]) || V.cards(T, s);
+    if (h.fold[s] && !shownRes && !(V.showFolded && show)) return '';
     var d0 = '', d1 = '';
     if (deal && deal.order[s] !== undefined) {
       d0 = ' deal" style="animation-delay:' + (DEAL_BASE + deal.order[s] * DEAL_GAP) + 'ms';
@@ -3781,11 +3981,13 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     var stk = p.out ? (V.replay ? '탈락' : p.place + '위' + (p.prize ? ' · ' + money(p.prize) : '')) : shownName ? '<span class="hnm" title="' + esc(shownName) + '">' + esc(shortHand(shownName)) + '</span>'
       : (live && h.allin[s] && !h.done ? '올인' : money(p.stack));
     var tag = won ? ['+' + money(h.res.won[s]), 'win'] : !p.out && h && !shownName ? actionTag(T, s) : null, sub = '', flag = p.out || p.bot || !V.flags ? '' : flagFor(T, p.pid);
+    var eqs = V.eq && live && !folded && !won ? V.eq(T) : null, eqv = eqs && eqs[s] != null ? Math.round(eqs[s] * 100) + '%' : '';
+    if (eqv && !tag) tag = ['', 'eq'];
     if (flag) av = av.replace(/<\/div>$/, '<span class="fl">' + (flag === '연결 끊김' ? '끊김' : '비움') + '</span></div>');
     return '<div class="' + cls.join(' ') + '" style="left:' + f2(P.x) + '%;top:' + f2(P.y) + '%" data-seat="' + s + '">' +
       '<div class="plate">' + av + '<div class="info"><div class="nm">' + esc(p.nick) + '</div><div class="stk">' + stk + '</div></div>' +
       (h && h.btn === s ? '<i class="dbtn" title="딜러 버튼">D</i>' : '') + '</div>' +
-      (tag ? '<div class="tag t-' + tag[1] + '">' + tag[0] + '</div>' : '') + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
+      (tag ? '<div class="tag t-' + tag[1] + '">' + tag[0] + (eqv ? '<b class="eq">' + eqv + '</b>' : '') + '</div>' : '') + (sub ? '<div class="sub">' + sub + '</div>' : '') + '</div>';
   }
   // a hand name short enough for a seat plate (the full name is in the centre note and the feed)
   function shortHand(nm) {
@@ -4011,95 +4213,72 @@ body.lay-land .myturn .tcard { margin-left: auto; }
   function raiseLabel(L, v) { return (v >= L.maxTo ? '올인 ' : (L.isBet ? '벳 ' : '레이즈 ')) + money(v); }
 
   // ---- sound effects, made on the spot (no files): chips, knocks, card swishes
-  var NB = null;
-  function noiseBuf() {
-    if (!NB && AC) {
-      NB = AC.createBuffer(1, AC.sampleRate, AC.sampleRate);
-      var d = NB.getChannelData(0);
-      for (var i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
-    return NB;
+  function sfxReady() { return !!sfxBus(); }
+  // (debug) one sound rendered offline: its peak and loudness, and the samples as 16-bit WAV in base64
+  function sfxRender(name, args, secs) {
+    var sr = 44100, off = new OfflineAudioContext(2, Math.ceil(sr * (secs || 1.6)), sr), X = makeBus(off, O.vol);
+    SFX[name].apply(null, [X, 0.03].concat(args || []));
+    return off.startRendering().then(function (buf) {
+      var L = buf.getChannelData(0), R = buf.getChannelData(1), n = L.length, peak = 0, sq = 0, i, last = 0;
+      for (i = 0; i < n; i++) { var a = Math.max(Math.abs(L[i]), Math.abs(R[i])); if (a > peak) peak = a; sq += (L[i] * L[i] + R[i] * R[i]) / 2; if (a > 0.003) last = i; }
+      var bytes = new Uint8Array(44 + n * 4), dv = new DataView(bytes.buffer), w = function (o, str) { for (var k = 0; k < str.length; k++) bytes[o + k] = str.charCodeAt(k); };
+      w(0, 'RIFF'); dv.setUint32(4, 36 + n * 4, true); w(8, 'WAVEfmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 2, true);
+      dv.setUint32(24, sr, true); dv.setUint32(28, sr * 4, true); dv.setUint16(32, 4, true); dv.setUint16(34, 16, true); w(36, 'data'); dv.setUint32(40, n * 4, true);
+      for (i = 0; i < n; i++) { dv.setInt16(44 + i * 4, Math.max(-1, Math.min(1, L[i])) * 32767, true); dv.setInt16(46 + i * 4, Math.max(-1, Math.min(1, R[i])) * 32767, true); }
+      var bin = '', CH = 0x8000;
+      for (i = 0; i < bytes.length; i += CH) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+      return { peak: peak, rms: Math.sqrt(sq / n), tail: last / sr, wav: btoa(bin) };
+    });
   }
-  function sfxReady() { return O.sound && AC && AC.state === 'running'; }
-  function burst(at, dur, type, freq, q, vol, sweep) {
-    var t = AC.currentTime + at, src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
-    src.buffer = noiseBuf();
-    f.type = type; f.Q.value = q;
-    f.frequency.setValueAtTime(freq, t);
-    if (sweep) f.frequency.exponentialRampToValueAtTime(sweep, t + dur);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.004);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    src.connect(f); f.connect(g); g.connect(AC.destination);
-    src.start(t, Math.random() * 0.6, dur + 0.05);
+  // where a seat sits on this screen, as a stereo position
+  function panOf(T, s, el) {
+    el = el || $('#table');
+    var G = el && el._G, n = T.seats.length;
+    if (!G || !G.seats || G.seats.length !== n || s === undefined || s < 0) return 0;
+    var b = el === $('#table') ? mainView().bottom : (O.rp && RP ? rpView().bottom : 0), P = G.seats[(s - b + n) % n];
+    return P ? (P.x - 50) / 50 * 0.6 : 0;
   }
-  function tone(at, freq, dur, vol, type) {
-    var t = AC.currentTime + at, o = AC.createOscillator(), g = AC.createGain();
-    o.type = type || 'sine'; o.frequency.setValueAtTime(freq, t);
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.exponentialRampToValueAtTime(vol, t + 0.005);
-    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-    o.connect(g); g.connect(AC.destination);
-    o.start(t); o.stop(t + dur + 0.03);
-  }
-  var SFX = {
-    chips: function (n, at) {             // clay chips landing on each other
-      for (var i = 0; i < n; i++) {
-        var t = (at || 0) + i * 0.05 + Math.random() * 0.018;
-        burst(t, 0.05, 'bandpass', 2600 + Math.random() * 1800, 5, 0.32);
-        tone(t, 3900 + Math.random() * 900, 0.035, 0.022, 'triangle');
-      }
-    },
-    check: function (at) {                 // two knuckle taps on the felt
-      [0, 0.12].forEach(function (d) {
-        var t = AC.currentTime + (at || 0) + d, o = AC.createOscillator(), g = AC.createGain();
-        o.type = 'sine'; o.frequency.setValueAtTime(190, t); o.frequency.exponentialRampToValueAtTime(70, t + 0.09);
-        g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.28, t + 0.004); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
-        o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + 0.14);
-        burst((at || 0) + d, 0.05, 'lowpass', 700, 0.7, 0.14);
-      });
-    },
-    fold: function (at) { burst(at || 0, 0.18, 'bandpass', 2600, 1.1, 0.13, 650); },
-    deal: function (at) { burst(at || 0, 0.06, 'highpass', 3200, 0.7, 0.09); burst((at || 0) + 0.02, 0.05, 'bandpass', 1200, 1, 0.05); },
-    flip: function (at) { burst(at || 0, 0.08, 'bandpass', 1600, 1, 0.12, 3800); tone((at || 0) + 0.05, 220, 0.05, 0.05); },
-    win: function (at) {
-      for (var i = 0; i < 9; i++) SFX.chips(1, (at || 0) + i * 0.055 + Math.random() * 0.03);
-      tone((at || 0) + 0.12, 1046.5, 0.2, 0.045); tone((at || 0) + 0.24, 1318.5, 0.28, 0.045);
-    },
-    ding: function (at) { tone(at || 0, 1568, 0.3, 0.06); tone((at || 0) + 0.02, 3136, 0.15, 0.015); }
-  };
-  function sfxEntry(e, at) {
-    if (e.d) { for (var i = 0; i < e.c.length; i++) SFX.flip(at + i * 0.11); return at + 0.11 * e.c.length; }
+  function chipCount(x, bb, raise) { return Math.max(2, Math.min(8, Math.round(1.6 + 1.25 * Math.log(Math.max(1, x / Math.max(1, bb))) / Math.LN2) + (raise ? 1 : 0))); }
+  function sfxEntry(X, e, at, T, el) {
+    if (e.d) { for (var i = 0; i < e.c.length; i++) SFX.flip(X, at + i * 0.11, 0); return at + 0.11 * e.c.length + 0.05; }
+    var pan = panOf(T, e.s, el), bb = (T.hand && T.hand.bb) || 2;
     switch (e.a) {
-      case 'f': SFX.fold(at); break;
-      case 'k': SFX.check(at); break;
-      case 'c': SFX.chips(e.ai ? 6 : 2, at); break;
-      case 'b': case 'r': SFX.chips(e.ai ? 7 : 4, at); break;
-      case 'S': case 'B': case 'N': case 'R': SFX.chips(1, at); break;
-      case 'T': SFX.ding(at); break;
-      default: return at;
+      case 'f': return at + SFX.fold(X, at, pan);
+      case 'k': return at + SFX.check(X, at, pan);
+      case 'c': case 'b': case 'r': return at + (e.ai ? SFX.allin(X, at, pan) : SFX.chips(X, at, chipCount(e.x || bb, bb, e.a !== 'c'), pan));
+      case 'S': case 'B': case 'N': return at + SFX.chips(X, at, 1, pan) * 0.6;
+      case 'R': return at + SFX.chips(X, at, 2, pan);
+      case 'T': SFX.ding(X, at); return at + 0.2;
     }
-    return at + 0.14;
+    return at;
   }
   // play what changed since the last table state this page saw
   function sfxFor(T) {
     var h = T.hand, prev = O.snd;
     if (!h) return;
-    var k = T.tid + ':' + h.no, cur = { k: k, tid: T.tid, len: h.log.length, res: !!h.res };
-    O.snd = cur;
-    if (!prev || prev.tid !== T.tid || !sfxReady() || T.fast) return;  // first look (or fast-forward): no noise
+    var k = T.tid + ':' + h.no, shown = h.res && h.res.show ? Object.keys(h.res.show).length : 0;
+    O.snd = { k: k, tid: T.tid, len: h.log.length, res: !!h.res };
+    if (!prev || prev.tid !== T.tid || T.fast) return;                // first look (or fast-forward): no noise
+    var X = sfxBus();
+    if (!X) return;
     try {
-      if (prev.k !== k) {                                               // blinds go in, then the deal
-        var live = 0;
-        h.live.forEach(function (x) { if (x) live++; });
-        SFX.chips(2, 0);
-        for (var i = 0; i < live * 2; i++) SFX.deal(DEAL_BASE / 1000 + i * DEAL_GAP / 1000);
+      var t0 = X.ac.currentTime + 0.02;
+      if (prev.k !== k) {                                               // blinds go in, then the deal, seat by seat
+        var D0 = dealOrder(T), seats = [];
+        Object.keys(D0.order).forEach(function (s2) { seats[D0.order[s2]] = +s2; });
+        SFX.chips(X, t0, 2, 0);
+        for (var i = 0; i < D0.live * 2; i++) SFX.deal(X, t0 + DEAL_BASE / 1000 + i * DEAL_GAP / 1000, panOf(T, seats[i % D0.live]) * 0.7);
         return;
       }
-      var at = 0, fresh = h.log.slice(prev.len).slice(-4);
-      fresh.forEach(function (e) { at = sfxEntry(e, at); });
-      if (h.res && !prev.res) SFX.win(at + 0.1);
-    } catch (e) { /* sound is a nicety */ }
+      var at = t0, fresh = h.log.slice(prev.len).slice(-4);
+      fresh.forEach(function (e) { at = sfxEntry(X, e, at, T); });
+      if (h.res && !prev.res) {
+        if (shown && !h.reveal) for (var j = 0; j < Math.min(shown, 4); j++) SFX.flip(X, at + 0.05 + j * 0.13, 0);
+        var w = -1;
+        (h.res.won || []).forEach(function (x, s2) { if (x > 0 && w < 0) w = s2; });
+        SFX.win(X, at + 0.12 + (shown && !h.reveal ? 0.15 + Math.min(shown, 4) * 0.13 : 0), panOf(T, w));
+      }
+    } catch (e) { sndErr(e); }
   }
 
   function sheetHtml(anim) {
@@ -4129,6 +4308,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
   function findRec(k) { var X = loadHist(); for (var i = 0; i < X.hands.length; i++) if (X.hands[i].k === k) return X.hands[i]; return null; }
   function knownCards(rec, s) {
     if (s === rec.me && rec.my && rec.my.length === 2) return rec.my;
+    if (rec.holes && rec.holes[s] && rec.holes[s].length === 2) return rec.holes[s];
     var sh = rec.res && rec.res.show && rec.res.show[s];
     return sh && sh.length === 2 ? sh : null;
   }
@@ -4206,7 +4386,11 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     if (i === O.rp.i) return;
     var fwd = i === O.rp.i + 1, v = RP.vs[i];
     O.rp.i = i;
-    if (fwd && sfxReady()) { try { if (v.e) sfxEntry(v.e, 0); else if (v.kind === 'end') SFX.win(0.05); } catch (e) { /* sound is a nicety */ } }
+    if (fwd) play(function (X, t) {
+      var sp = RP.steps[v.at], T2 = { tid: RP.rec.tid || 'rp', seats: sp.seats, hand: sp.hand }, el = $('#rtable');
+      if (v.e) sfxEntry(X, v.e, t, T2, el);
+      else if (v.kind === 'end') { var w = -1; (RP.rec.res.won || []).forEach(function (x, s2) { if (x > 0 && w < 0) w = s2; }); SFX.win(X, t, panOf(T2, w, el)); }
+    });
     render();
   }
   function rpView() {
@@ -4285,8 +4469,8 @@ body.lay-land .myturn .tcard { margin-left: auto; }
         return '<button class="chip' + (s === seat ? ' on' : '') + '" data-act="rpSeat" data-v="' + s + '">' + esc(rec.names[s]) + '</button>';
       }).join('') + '</div>';
     }
-    var others = Object.keys((rec.res && rec.res.show) || {}).filter(function (s) { return +s !== rec.me; }).length;
-    if (others) html += '<div class="rp-opt"><span>공개된 카드</span><button class="chip' + (O.rp.all ? ' on' : '') + '" data-act="rpAll" data-v="1">처음부터 보기</button>' +
+    var others = rec.names.filter(function (_, s) { return s !== rec.me && knownCards(rec, s); }).length;
+    if (others) html += '<div class="rp-opt"><span>' + (rec.holes ? '다른 사람 카드' : '공개된 카드') + '</span><button class="chip' + (O.rp.all ? ' on' : '') + '" data-act="rpAll" data-v="1">처음부터 보기</button>' +
       '<button class="chip' + (O.rp.all ? '' : ' on') + '" data-act="rpAll" data-v="0">쇼다운에서 보기</button></div>';
     return html + '<p class="hint gto-note">' + GTO_NOTE + '</p>';
   }
@@ -4355,10 +4539,14 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     var T = curT(), me = mySeat();
     return '<h2>메뉴</h2><div class="menu">' +
       '<button class="mi' + (O.sound ? ' on' : '') + '" data-tog="sound">소리</button>' +
+      (O.sound ? '<div class="mi vol"><span>효과음 크기</span><span class="chips">' + VOLS.map(function (v) {
+        return '<button class="chip' + (Math.abs(O.vol - v[0]) < 0.01 ? ' on' : '') + '" data-act="vol" data-v="' + v[0] + '">' + v[1] + '</button>';
+      }).join('') + '</span></div>' : '') +
       '<button class="mi' + (O.four ? ' on' : '') + '" data-tog="four">4색 카드 (♦ 파랑 · ♣ 초록)</button>' +
       (!O.dealer && me >= 0 && T && T.st === 'run' ? '<button class="mi' + (O.away ? ' on' : '') + '" data-tog="away">자리 비움 — 내 차례에 자동 체크/폴드</button>' : '') +
       (!O.dealer && canLockLand() ? '<button class="mi" data-act="land">가로 모드 (전체 화면)</button>' : '') +
       '<button class="mi" data-act="copy">참가 링크 복사</button>' +
+      (O.dealer ? '<button class="mi' + (D.open ? ' on' : '') + '" data-tog="open">패 보기 — 이 화면에 모든 참가자의 패와 승률을 보여 줘요 (참가자 폰에도 표시돼요)</button>' : '') +
       (O.dealer && document.documentElement.requestFullscreen ? '<button class="mi" data-act="fullscreen">전체 화면</button>' : '') +
       '<button class="mi danger" data-act="leave">' + (O.leaveArmed && Date.now() - O.leaveArmed < 4000 ? '한 번 더 누르면 나가요' : (O.dealer ? '딜러 화면 닫기 (게임이 멈춰요)' : '방 나가기')) + '</button>' +
       '</div><p class="hint diag">' + esc(diagText()) + '</p>';
@@ -4394,10 +4582,12 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     var h = T.hand, me = mySeat();
     if (h && me >= 0 && h.actor === me && h.dl && !h.next) {
       var left = h.dl - off - now;
-      if (left <= 10000 && left > 8500 && !O.warned[10]) { O.warned[10] = 1; beep(880, 0.08, 0.06); }
-      if (left <= 5000 && left > 0 && !O.warned[5]) {
-        O.warned[5] = 1; beep(988, 0.08, 0.07); beep(988, 0.08, 0.07, 0.16);
-        if (navigator.vibrate) { try { navigator.vibrate([40, 60, 40]); } catch (e) { /* ignore */ } }
+      if (left <= 10000 && left > 8500 && !O.warned[10]) { O.warned[10] = 1; play(function (X, t) { SFX.tick(X, t, 0.7); SFX.tick(X, t + 0.15, 0.55); }); }
+      var sec = Math.ceil(left / 1000);                                  // the last five seconds tick
+      if (sec >= 1 && sec <= 5 && !O.warned['s' + sec]) {
+        O.warned['s' + sec] = 1;
+        play(function (X, t) { SFX.tick(X, t, sec <= 3 ? 1 : 0.75); });
+        if (sec === 5 && navigator.vibrate) { try { navigator.vibrate([40, 60, 40]); } catch (e) { /* ignore */ } }
       }
     }
     if (O.pending && now - O.pending.at > 7000) { O.pending = null; toast('응답이 늦어요. 다시 눌러 주세요'); render(); }
@@ -4495,9 +4685,10 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     if (t.hasAttribute('data-hk')) { var hk = t.getAttribute('data-hk'); O.histOpen = O.histOpen === hk ? '' : hk; render(); return; }
     if (t.hasAttribute('data-tog')) {
       var g = t.getAttribute('data-tog');
-      if (g === 'sound') { O.sound = !O.sound; LS.set('hd.snd', O.sound); if (O.sound) { audio(); beep(660, 0.1, 0.07); } }
+      if (g === 'sound') { O.sound = !O.sound; LS.set('hd.snd', O.sound); if (O.sound) { audio(); setTimeout(function () { play(function (X, t) { SFX.turn(X, t); }); }, 60); } }
       else if (g === 'four') { O.four = !O.four; LS.set('hd.4c', O.four); }
       else if (g === 'away') { setAway(!O.away); return; }
+      else if (g === 'open') { setOpen(!D.open); return; }
       render();
       return;
     }
@@ -4521,6 +4712,8 @@ body.lay-land .myturn .tcard { margin-left: auto; }
       }
       case 'ready': if (T && T.st === 'lobby') { O.rdy = O.rdy === T.round ? 0 : T.round; publish(); render(); } break;
       case 'start': if (O.dealer && D.ready && !D.S) { D.startReq = true; dealerKick(); } break;
+      case 'eye': setOpen(!D.open); break;
+      case 'vol': audio(); setVol(+t.getAttribute('data-v') || 0.7); render(); break;
       case 'aiN': if (T && T.st === 'lobby') {
         var aw = aiWant(T), hum = T.lobby.filter(function (x) { return !x.bot; }).length;
         sendAi(Math.min(aw.n, MAX_SEATS - hum) + (+t.getAttribute('data-d') || 0), aw.lv);
@@ -4662,7 +4855,7 @@ body.lay-land .myturn .tcard { margin-left: auto; }
     if (m) enterRoom(m[1]); else render();
   }
 
-  if (DEBUG) window.__hd = { O: O, D: D, T: curT, me: mySeat, cards: function () { return myCards(curT()); }, hist: loadHist, exportText: exportText, replay: openReplay, histKey: histKey, render: render, draw: draw };
+  if (DEBUG) window.__hd = { O: O, D: D, T: curT, me: mySeat, cards: function () { return myCards(curT()); }, hist: loadHist, exportText: exportText, replay: openReplay, histKey: histKey, render: render, draw: draw, sfxRender: sfxRender, SFX: SFX, makeBus: makeBus };
   boot();
 })();
 
